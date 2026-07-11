@@ -14,8 +14,8 @@ class RegisterUseCase implements UseCase<User, RegisterParams> {
     return repository.register(
       name: params.name,
       email: params.email,
-      phoneNumber: params.phoneNumber,
       password: params.password,
+      otpCode: params.otpCode,
     );
   }
 }
@@ -23,13 +23,13 @@ class RegisterUseCase implements UseCase<User, RegisterParams> {
 class RegisterParams {
   final String name;
   final String email;
-  final String phoneNumber;
   final String password;
+  final String otpCode;
 
   RegisterParams({
     required this.name,
     required this.email,
-    required this.phoneNumber,
     required this.password,
+    required this.otpCode,
   });
 }

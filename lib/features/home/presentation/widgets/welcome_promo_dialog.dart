@@ -1,5 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:store/features/auth/presentation/pages/login_page.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:kdx/features/auth/presentation/pages/login_page.dart';
+import 'package:kdx/core/constants/colors.dart';
 
 class WelcomePromoDialog extends StatelessWidget {
   const WelcomePromoDialog({super.key});
@@ -9,12 +12,12 @@ class WelcomePromoDialog extends StatelessWidget {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+      insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
-          color: const Color(0xFFE0F7F6), // Light cyan/mint background
+          color: context.primaryColor, // Light cyan/mint background
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -26,67 +29,72 @@ class WelcomePromoDialog extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
                 child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: context.backgroundColor,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.close, size: 18, color: Colors.black87),
+                  child: Icon(Icons.close,
+                      size: 18,
+                      color: context.textDark.withValues(alpha: 0.87)),
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
 
             // Title
-            const Text(
-              'سجل دخولك واحصل على:',
+            Text(
+              'log_in_and_get'.tr(),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 20.sp,
                 fontWeight: FontWeight.w900,
-                color: Colors.black87,
+                color: context.textDark.withValues(alpha: 0.87),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
 
             // 3 Benefit Cards
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildBenefitCard(
+                  context: context,
                   icon: Icons.local_shipping_outlined,
                   iconColor: Colors.orange,
-                  titleHighlight: 'توصيل',
-                  titleRest: 'مضمون وسريع',
+                  titleHighlight: 'delivery'.tr(),
+                  titleRest: 'guaranteed_and_fast'.tr(),
                 ),
                 _buildBenefitCard(
+                  context: context,
                   icon: Icons.inventory_2_outlined,
-                  iconColor: Colors.green,
-                  titleHighlight: 'تمتع',
-                  titleRest: 'بمنتجات حصرية',
+                  iconColor: context.successColor,
+                  titleHighlight: 'enjoy'.tr(),
+                  titleRest: 'with_exclusive_products'.tr(),
                 ),
                 _buildBenefitCard(
+                  context: context,
                   icon: Icons.local_offer_outlined,
                   iconColor: Colors.purple,
-                  titleHighlight: 'خصومات',
-                  titleRest: 'حصرية رهيبة',
+                  titleHighlight: 'discounts'.tr(),
+                  titleRest: 'awesome_exclusive'.tr(),
                 ),
               ],
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32.h),
 
             // Free Shipping Text
-            const Text(
+            Text(
               'شحن مجاني\nعلى أول طلب',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 24.sp,
                 fontWeight: FontWeight.w900,
-                height: 1.2,
-                color: Colors.black87,
+                height: 1.2.h,
+                color: context.textDark.withValues(alpha: 0.87),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
 
             // Promo Code Button - Tap to Copy (Industry Standard)
             GestureDetector(
@@ -102,35 +110,38 @@ class WelcomePromoDialog extends StatelessWidget {
                   ),
                 );
                 // We mock the actual clipboard copy to avoid needing flutter/services import if not present,
-                // but usually it's: Clipboard.setData(const ClipboardData(text: 'أولى'));
+                // but usually it's: Clipboard.setData(ClipboardData(text: 'first'.tr()));
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
                 decoration: BoxDecoration(
-                  color: Colors.black,
+                  color: context.textDark,
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: const [
-                    BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+                    BoxShadow(
+                        color: Color(0x421A1A2E),
+                        blurRadius: 4,
+                        offset: Offset(0, 2)),
                   ],
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.copy, color: Colors.white, size: 16),
-                    SizedBox(width: 8),
+                    Icon(Icons.copy, color: context.backgroundColor, size: 16),
+                    SizedBox(width: 8.w),
                     Text(
-                      'استخدم الرمز: أولى',
+                      'use_code_first'.tr(),
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.backgroundColor,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
 
             // Login Button
             GestureDetector(
@@ -140,16 +151,16 @@ class WelcomePromoDialog extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const LoginPage()),
                 );
               },
-              child: const Text(
-                'سجل الدخول الان',
+              child: Text(
+                'log_in_now'.tr(),
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 16.sp,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: context.textDark.withValues(alpha: 0.87),
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
           ],
         ),
       ),
@@ -157,6 +168,7 @@ class WelcomePromoDialog extends StatelessWidget {
   }
 
   Widget _buildBenefitCard({
+    required BuildContext context,
     required IconData icon,
     required Color iconColor,
     required String titleHighlight,
@@ -164,14 +176,14 @@ class WelcomePromoDialog extends StatelessWidget {
   }) {
     return Expanded(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        margin: EdgeInsets.symmetric(horizontal: 4.w),
+        padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.backgroundColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: const [
             BoxShadow(
-              color: Colors.black12,
+              color: Color(0x1F1A1A2E),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -180,31 +192,31 @@ class WelcomePromoDialog extends StatelessWidget {
         child: Column(
           children: [
             Icon(icon, color: iconColor, size: 36),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 titleHighlight,
-                style: const TextStyle(
-                  fontSize: 10,
+                style: TextStyle(
+                  fontSize: 10.sp,
                   fontWeight: FontWeight.bold,
                   color: Colors.green,
                 ),
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4.h),
             Text(
               titleRest,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 10,
+              style: TextStyle(
+                fontSize: 10.sp,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
-                height: 1.2,
+                color: const Color(0xDE1A1A2E),
+                height: 1.2.h,
               ),
             ),
           ],

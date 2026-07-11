@@ -12,15 +12,15 @@ class LoginUseCase implements UseCase<User, LoginParams> {
   @override
   Future<Either<Failure, User>> call(LoginParams params) {
     return repository.login(
-      phoneNumber: params.phoneNumber,
+      email: params.email,
       password: params.password,
     );
   }
 }
 
 class LoginParams {
-  final String phoneNumber;
+  final String email;
   final String password;
 
-  LoginParams({required this.phoneNumber, required this.password});
+  LoginParams({required this.email, required this.password});
 }

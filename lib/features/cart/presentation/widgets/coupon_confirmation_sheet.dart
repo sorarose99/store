@@ -1,4 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 
 class CouponConfirmationSheet extends StatelessWidget {
@@ -18,12 +20,12 @@ class CouponConfirmationSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+        decoration: BoxDecoration(
+          color: context.backgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -32,132 +34,133 @@ class CouponConfirmationSheet extends StatelessWidget {
             // Top drag handle
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 40.w,
+                height: 4.h,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5E5EA),
+                  color: context.primaryColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
 
             // Coupon Icon with Glow
             Center(
               child: Container(
-                width: 64,
-                height: 64,
+                width: 64.w,
+                height: 64.h,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
+                  color: context.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.local_offer_rounded,
                   size: 32,
-                  color: AppColors.primary,
+                  color: context.primaryColor,
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.h),
 
             // Title
-            const Text(
-              'تأكيد تطبيق الكوبون',
+            Text(
+              'confirm_the_coupon_application'.tr(),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                color: context.textDark,
                 fontFamily: 'Tajawal',
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
 
             // Subtitle
             RichText(
               textAlign: TextAlign.center,
               text: TextSpan(
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textGrey,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: context.textGrey,
                   fontFamily: 'Tajawal',
-                  height: 1.4,
+                  height: 1.4.h,
                 ),
                 children: [
-                  const TextSpan(text: 'هل ترغب في تطبيق الكوبون '),
+                  TextSpan(text: 'would_you_like_to'.tr()),
                   TextSpan(
                     text: '"$couponCode"',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
+                      color: context.textDark,
                     ),
                   ),
                   const TextSpan(text: '؟\n'),
-                  const TextSpan(text: 'سوف تحصل على خصم إضافي بقيمة '),
+                  TextSpan(text: 'you_will_get_an'.tr()),
                   TextSpan(
                     text: '${discountAmount.toStringAsFixed(1)} ر.س',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                      color: context.primaryColor,
                     ),
                   ),
-                  const TextSpan(text: ' على هذا الطلب.'),
+                  TextSpan(text: 'on_this_request'.tr()),
                 ],
               ),
             ),
-            const SizedBox(height: 28),
+            SizedBox(height: 28.h),
 
             // Action Buttons
             Row(
               children: [
                 Expanded(
                   child: SizedBox(
-                    height: 46,
+                    height: 46.h,
                     child: ElevatedButton(
                       onPressed: () {
                         onAccept();
                         Navigator.of(context).pop();
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: context.primaryColor,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
-                        'قبول وتطبيق',
+                      child: Text(
+                        'accept_and_apply'.tr(),
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 13.sp,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: context.backgroundColor,
                           fontFamily: 'Tajawal',
                         ),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12.w),
                 Expanded(
                   child: SizedBox(
-                    height: 46,
+                    height: 46.h,
                     child: OutlinedButton(
                       onPressed: () {
                         onCancel();
                         Navigator.of(context).pop();
                       },
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.textGreyLight, width: 1.5),
+                        side: BorderSide(
+                            color: context.textGreyLight, width: 1.5.w),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
-                        'إلغاء الكود',
+                      child: Text(
+                        'cancel_the_code'.tr(),
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 13.sp,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textGrey,
+                          color: context.textGrey,
                           fontFamily: 'Tajawal',
                         ),
                       ),
@@ -166,7 +169,7 @@ class CouponConfirmationSheet extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
           ],
         ),
       ),

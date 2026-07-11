@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/colors.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 
 class PaymentCardEntity {
   final String id;
@@ -66,7 +67,7 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: context.surfaceColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -83,19 +84,19 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Center(
+              Center(
                 child: Text(
-                  'إضافة بطاقة جديدة',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  'add_new_card'.tr(),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
               const SizedBox(height: 20),
               TextField(
-                decoration: _buildInputDecoration('اسم حامل البطاقة'),
+                decoration: _buildInputDecoration('cardholder_name'.tr()),
               ),
               const SizedBox(height: 12),
               TextField(
-                decoration: _buildInputDecoration('رقم البطاقة (16 خانة)'),
+                decoration: _buildInputDecoration('card_number_16_digits'.tr()),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 12),
@@ -103,14 +104,16 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
                 children: [
                   Expanded(
                     child: TextField(
-                      decoration: _buildInputDecoration('تاريخ الانتهاء MM/YY'),
+                      decoration:
+                          _buildInputDecoration('expiry_date_mm_yy'.tr()),
                       keyboardType: TextInputType.number,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
-                      decoration: _buildInputDecoration('رمز الأمان CVV'),
+                      decoration:
+                          _buildInputDecoration('cvv_security_code'.tr()),
                       keyboardType: TextInputType.number,
                       obscureText: true,
                     ),
@@ -124,13 +127,13 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
                   onPressed: () {
                     setState(() {
                       _cards.add(
-                        const PaymentCardEntity(
+                        PaymentCardEntity(
                           id: 'temp',
-                          providerName: 'بطاقة جديدة',
+                          providerName: 'new_card'.tr(),
                           cardHolder: 'MOHAMMED AHMED',
                           lastFourDigits: '1111',
                           expiryDate: '10/29',
-                          cardColor: Color(0xFF8E44AD), // Purple
+                          cardColor: const Color(0xFF8E44AD), // Purple
                           logoText: 'Card',
                         ),
                       );
@@ -144,7 +147,7 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text('إضافة البطاقة'),
+                  child: Text('add_card'.tr()),
                 ),
               ),
             ],
@@ -157,17 +160,17 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
   InputDecoration _buildInputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.textGrey, fontSize: 13),
+      hintStyle: TextStyle(color: context.textGrey, fontSize: 13),
       filled: true,
-      fillColor: const Color(0xFFF9F9F9),
+      fillColor: context.surfaceColor,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+        borderSide: BorderSide(color: context.border),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+        borderSide: BorderSide(color: context.border),
       ),
     );
   }
@@ -177,18 +180,22 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9F9F9),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: context.surfaceColor,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, size: 20, color: AppColors.textDark),
+            icon: Icon(Icons.arrow_back_ios,
+                size: 20, color: context.textDark),
             onPressed: () => Navigator.pop(context),
           ),
           centerTitle: true,
-          title: const Text(
-            'بطاقات الدفع',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+          title: Text(
+            'payment_cards'.tr(),
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: context.textDark),
           ),
         ),
         body: SingleChildScrollView(
@@ -197,9 +204,12 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Saved cards list
-              const Text(
-                'البطاقات المحفوظة',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
+              Text(
+                'saved_cards'.tr(),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: context.textDark),
               ),
               const SizedBox(height: 12),
               ListView.builder(
@@ -217,7 +227,7 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: card.cardColor.withOpacity(0.3),
+                          color: card.cardColor.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -267,7 +277,8 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
                               children: [
                                 const Text(
                                   'حامل البطاقة',
-                                  style: TextStyle(color: Colors.white70, fontSize: 9),
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 9),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -285,7 +296,8 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
                               children: [
                                 const Text(
                                   'تاريخ الانتهاء',
-                                  style: TextStyle(color: Colors.white70, fontSize: 9),
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 9),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -312,9 +324,9 @@ class _PaymentCardsPageState extends State<PaymentCardsPage> {
                 child: ElevatedButton.icon(
                   onPressed: _addNewCard,
                   icon: const Icon(Icons.add, size: 20),
-                  label: const Text(
-                    'إضافة بطاقة جديدة',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  label: Text(
+                    'add_new_card'.tr(),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,

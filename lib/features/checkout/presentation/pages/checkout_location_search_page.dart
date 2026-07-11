@@ -1,22 +1,48 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
-import '../../data/datasources/mock_checkout_data.dart';
 
 class CheckoutLocationSearchPage extends StatefulWidget {
   const CheckoutLocationSearchPage({super.key});
 
   @override
-  State<CheckoutLocationSearchPage> createState() => _CheckoutLocationSearchPageState();
+  State<CheckoutLocationSearchPage> createState() =>
+      _CheckoutLocationSearchPageState();
 }
 
-class _CheckoutLocationSearchPageState extends State<CheckoutLocationSearchPage> {
+class _CheckoutLocationSearchPageState
+    extends State<CheckoutLocationSearchPage> {
+  List<String> get saudiCities => [
+    'riyadh_1'.tr(),
+    'grandmother'.tr(),
+    'mecca'.tr(),
+    'al_madinah_al_munawwarah'.tr(),
+    'dammam'.tr(),
+    'the_news'.tr(),
+    'jubail'.tr(),
+    'alhofuf'.tr(),
+    'taif'.tr(),
+    'tabuk'.tr(),
+    'khamis_mushayt'.tr(),
+    'hail'.tr(),
+    'najran'.tr(),
+    'jazan'.tr(),
+    'abha'.tr(),
+    'buraidah'.tr(),
+    'unayzah'.tr(),
+    'al_kharj'.tr(),
+    'it_stems'.tr(),
+    'qatif'.tr(),
+  ];
+
   final _searchController = TextEditingController();
   List<String> _filteredCities = [];
 
   @override
   void initState() {
     super.initState();
-    _filteredCities = MockCheckoutDataSource.saudiCities;
+    _filteredCities = saudiCities;
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -30,9 +56,9 @@ class _CheckoutLocationSearchPageState extends State<CheckoutLocationSearchPage>
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        _filteredCities = MockCheckoutDataSource.saudiCities;
+        _filteredCities = saudiCities;
       } else {
-        _filteredCities = MockCheckoutDataSource.saudiCities
+        _filteredCities = saudiCities
             .where((city) => city.toLowerCase().contains(query))
             .toList();
       }
@@ -42,22 +68,22 @@ class _CheckoutLocationSearchPageState extends State<CheckoutLocationSearchPage>
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: context.surfaceColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: context.surfaceColor,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark, size: 20),
+            icon: Icon(Icons.arrow_back_ios, color: context.textDark, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
           centerTitle: true,
-          title: const Text(
-            'عنوان الشحن',
+          title: Text(
+            'shipping_address'.tr(),
             style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 16,
+              color: context.textDark,
+              fontSize: 16.sp,
               fontWeight: FontWeight.bold,
               fontFamily: 'Tajawal',
             ),
@@ -67,28 +93,39 @@ class _CheckoutLocationSearchPageState extends State<CheckoutLocationSearchPage>
           children: [
             // Search Input container
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding:
+                  EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 12.0.h),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF2F3F8),
+                  color: context.surfaceColor,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: context.border),
                 ),
                 child: TextField(
                   controller: _searchController,
                   autofocus: true,
-                  style: const TextStyle(fontSize: 14, color: AppColors.textDark, fontFamily: 'Tajawal'),
+                  style: TextStyle(
+                      fontSize: 14.sp,
+                      color: context.textDark,
+                      fontFamily: 'Tajawal'),
                   decoration: InputDecoration(
-                    hintText: 'ابحث عن المدينة أو المنطقة...',
-                    hintStyle: const TextStyle(fontSize: 13, color: AppColors.textGrey, fontFamily: 'Tajawal'),
-                    prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 22),
+                    hintText: 'search_for_a_city'.tr(),
+                    hintStyle: TextStyle(
+                        fontSize: 13.sp,
+                        color: context.textGrey,
+                        fontFamily: 'Tajawal'),
+                    prefixIcon: Icon(Icons.location_on_outlined,
+                        color: context.primaryColor, size: 22),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: AppColors.textGrey, size: 18),
+                            icon: Icon(Icons.clear,
+                                color: context.textGrey, size: 18),
                             onPressed: () => _searchController.clear(),
                           )
                         : null,
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
                   ),
                 ),
               ),
@@ -96,24 +133,26 @@ class _CheckoutLocationSearchPageState extends State<CheckoutLocationSearchPage>
 
             // Top indicator / Subtitle
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding:
+                  EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 8.0.h),
               child: Row(
                 children: [
-                  const Icon(Icons.my_location_rounded, color: AppColors.primary, size: 18),
-                  const SizedBox(width: 8),
+                  Icon(Icons.my_location_rounded,
+                      color: context.primaryColor, size: 18),
+                  SizedBox(width: 8.w),
                   Text(
-                    'المدن المتاحة في المملكة العربية السعودية',
+                    'available_cities_in_the'.tr(),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textMid,
+                      color: context.textMid,
                       fontFamily: 'Tajawal',
                     ),
                   ),
                 ],
               ),
             ),
-            const Divider(color: AppColors.border, height: 16, thickness: 1),
+            Divider(color: context.border, height: 16.h, thickness: 1),
 
             // Cities List
             Expanded(
@@ -122,23 +161,25 @@ class _CheckoutLocationSearchPageState extends State<CheckoutLocationSearchPage>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.location_off_outlined, color: AppColors.textGrey.withOpacity(0.5), size: 64),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'لم يتم العثور على نتائج',
+                          Icon(Icons.location_off_outlined,
+                              color: context.textGrey.withValues(alpha: 0.5),
+                              size: 64),
+                          SizedBox(height: 16.h),
+                          Text(
+                            'no_results_found'.tr(),
                             style: TextStyle(
-                              fontSize: 15,
-                              color: AppColors.textGrey,
+                              fontSize: 15.sp,
+                              color: context.textGrey,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Tajawal',
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'تأكد من كتابة اسم المدينة بشكل صحيح',
+                          SizedBox(height: 4.h),
+                          Text(
+                            'make_sure_you_type'.tr(),
                             style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textGrey,
+                              fontSize: 12.sp,
+                              color: context.textGrey,
                               fontFamily: 'Tajawal',
                             ),
                           ),
@@ -146,31 +187,35 @@ class _CheckoutLocationSearchPageState extends State<CheckoutLocationSearchPage>
                       ),
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
                       itemCount: _filteredCities.length,
-                      separatorBuilder: (context, index) => const Divider(height: 1, color: AppColors.border),
+                      separatorBuilder: (context, index) =>
+                          Divider(height: 1.h, color: context.border),
                       itemBuilder: (context, index) {
                         final city = _filteredCities[index];
                         return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 4.h, horizontal: 8.w),
                           leading: Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: EdgeInsets.all(8.w),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryLight,
+                              color: context.primaryLight,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.map_outlined, color: AppColors.primary, size: 18),
+                            child: Icon(Icons.map_outlined,
+                                color: context.primaryColor, size: 18),
                           ),
                           title: Text(
                             city,
-                            style: const TextStyle(
-                              fontSize: 14,
+                            style: TextStyle(
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textDark,
+                              color: context.textDark,
                               fontFamily: 'Tajawal',
                             ),
                           ),
-                          trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textGrey),
+                          trailing: Icon(Icons.arrow_forward_ios,
+                              size: 14, color: context.textGrey),
                           onTap: () {
                             // Return selected city to the calling screen
                             Navigator.of(context).pop(city);

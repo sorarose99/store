@@ -1,13 +1,17 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 import '../../domain/entities/cart_item_entity.dart';
+import '../../../product/presentation/pages/product_details_page.dart';
 
 class CartItemCard extends StatelessWidget {
   final CartItemEntity item;
-  final VoidCallback onQuantityIncrease;
-  final VoidCallback onQuantityDecrease;
+  final void Function(String?) onQuantityIncrease;
+  final void Function(String?) onQuantityDecrease;
   final VoidCallback onDelete;
   final VoidCallback onShare;
+  final void Function(String?)? onEditSize;
 
   const CartItemCard({
     super.key,
@@ -16,22 +20,23 @@ class CartItemCard extends StatelessWidget {
     required this.onQuantityDecrease,
     required this.onDelete,
     required this.onShare,
+    this.onEditSize,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.backgroundColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: item.isAvailable ? const Color(0xFFECEEF5) : const Color(0xFFFFCDD2),
+          color: item.isAvailable ? context.primaryColor : context.errorColor,
           width: item.isAvailable ? 1 : 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: context.textDark.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -40,154 +45,291 @@ class CartItemCard extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Product Image (3:4 ratio)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    item.imageUrl,
-                    width: 76,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 76,
-                      height: 100,
-                      color: const Color(0xFFF2F3F8),
-                      child: const Icon(Icons.image_outlined, color: AppColors.textGrey, size: 24),
+            padding: EdgeInsets.all(12.w),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                print('CartItemCard onTap: item.id=${item.id}, item.slug=${item.slug}, item.productId=${item.productId}');
+                final identifier = item.slug.isNotEmpty ? item.slug : item.productId;
+                if (identifier.isNotEmpty) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ProductDetailsPage(slug: identifier),
+                    ),
+                  );
+                }
+              },
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Product Image (3:4 ratio)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      item.imageUrl,
+                      width: 76.w,
+                      height: 100.h,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 76.w,
+                        height: 100.h,
+                        color: context.primaryColor,
+                        child: Icon(Icons.image_outlined,
+                            color: context.textGrey, size: 24),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 14),
+                  SizedBox(width: 8.w),
 
-                // Details (Center)
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Product Name
-                      Text(
-                        item.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      // Size attribute
-                      Text(
-                        'المقاس: ${item.size}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textGrey,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      // Color attribute
-                      Text(
-                        'اللون: ${item.color}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textGrey,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      // Price (Red text in mockup)
-                      Text(
-                        '${item.price.toInt()} ر.س',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFFE53935), // Red price
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Actions & Stepper (Left)
-                SizedBox(
-                  height: 100,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      // Top Row: Share and Delete buttons
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.share_outlined, size: 18, color: AppColors.textGrey),
-                            onPressed: onShare,
-                            constraints: const BoxConstraints(),
-                            padding: const EdgeInsets.all(4),
+                  // Details (Center)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Product Name
+                        Text(
+                          item.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.bold,
+                            color: context.textDark,
+                            fontFamily: 'Tajawal',
                           ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.textGrey),
-                            onPressed: onDelete,
-                            constraints: const BoxConstraints(),
-                            padding: const EdgeInsets.all(4),
-                          ),
-                        ],
-                      ),
-                      // Bottom Row: Stepper quantity selector
-                      Container(
-                        height: 28,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFE5E5EA), width: 1),
-                          borderRadius: BorderRadius.circular(14),
-                          color: Colors.white,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Increase Quantity (+)
-                            GestureDetector(
-                              onTap: item.isAvailable ? onQuantityIncrease : null,
-                              child: Container(
-                                width: 28,
-                                alignment: Alignment.center,
-                                child: const Icon(Icons.add, size: 12, color: AppColors.textDark),
-                              ),
+                        if (!item.isAvailable) ...[
+                          SizedBox(height: 4.h),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: context.errorColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: context.errorColor, width: 0.5),
                             ),
-                            // Quantity display
-                            Text(
-                              '${item.quantity}',
-                              style: const TextStyle(
-                                fontSize: 12,
+                            child: Text(
+                              'out_of_stock'.tr(),
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                color: context.errorColor,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textDark,
                                 fontFamily: 'Tajawal',
                               ),
                             ),
-                            // Decrease Quantity (-)
-                            GestureDetector(
-                              onTap: item.isAvailable ? onQuantityDecrease : null,
-                              child: Container(
-                                width: 28,
-                                alignment: Alignment.center,
-                                child: const Icon(Icons.remove, size: 12, color: AppColors.textDark),
-                              ),
+                          ),
+                        ],
+                        SizedBox(height: 6.h),
+                        // Size attribute
+                        if (item.size.isNotEmpty) ...[
+                          Text(
+                            '${'size_label'.tr()}: ${item.size}',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: context.textGrey,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Tajawal',
+                            ),
+                          ),
+                          SizedBox(height: 2.h),
+                        ],
+                        if (item.color.isNotEmpty) ...[
+                          Text(
+                            '${'color_label'.tr()}: ${item.color}',
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              color: context.textGrey,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Tajawal',
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                        ],
+                        if (item.breakdown.isNotEmpty) ...[
+                          SizedBox(height: 8.h),
+                          ...item.breakdown
+                              .where((b) => (b['size_name']?.toString() ?? '') != '-')
+                              .map((b) => Padding(
+                                padding: EdgeInsets.only(bottom: 6.h),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${'size_label'.tr()} ${b['size_name']}',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 11.sp,
+                                          color: context.primaryColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Tajawal',
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    Container(
+                                      height: 24.h,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color: context.primaryColor,
+                                            width: 1.w),
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: context.backgroundColor,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          GestureDetector(
+                                            behavior: HitTestBehavior.opaque,
+                                            onTap: item.isAvailable
+                                                ? () => onQuantityIncrease(
+                                                    b['size_name']
+                                                            ?.toString() ??
+                                                        '')
+                                                : null,
+                                            child: Container(
+                                              width: 24.w,
+                                              color: Colors.transparent,
+                                              alignment: Alignment.center,
+                                              child: Icon(Icons.add,
+                                                  size: 10,
+                                                  color: context.textDark),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${b['qty']}',
+                                            style: TextStyle(
+                                              fontSize: 11.sp,
+                                              fontWeight: FontWeight.bold,
+                                              color: context.textDark,
+                                              fontFamily: 'Tajawal',
+                                            ),
+                                          ),
+                                          GestureDetector(
+                                            behavior: HitTestBehavior.opaque,
+                                            onTap: item.isAvailable
+                                                ? () => onQuantityDecrease(
+                                                    b['size_name']
+                                                            ?.toString() ??
+                                                        '')
+                                                : null,
+                                            child: Container(
+                                              width: 24.w,
+                                              color: Colors.transparent,
+                                              alignment: Alignment.center,
+                                              child: Icon(Icons.remove,
+                                                  size: 10,
+                                                  color: context.textDark),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                        ],
+                        SizedBox(height: 12.h),
+                        // Price (Red text in mockup)
+                        Text(
+                          '${item.price.toInt()} SAR',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w900,
+                            color: context.primaryColor, // Red price
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Actions & Stepper (Left)
+                  SizedBox(
+                    height: 100.h,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Top Row: Share and Delete buttons
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.share_outlined,
+                                  size: 20, color: context.textGrey),
+                              onPressed: onShare,
+                              padding: EdgeInsets.all(8.w),
+                            ),
+                            SizedBox(width: 8.w),
+                            IconButton(
+                              icon: Icon(Icons.delete_outline_rounded,
+                                  size: 20, color: context.textGrey),
+                              onPressed: onDelete,
+                              padding: EdgeInsets.all(8.w),
                             ),
                           ],
                         ),
-                      ),
-                    ],
+
+                        // Bottom Row: Stepper quantity selector
+                        // Stepper quantity selector only if there's no breakdown or just one size
+                        if (item.breakdown.isEmpty ||
+                            item.breakdown.length == 1)
+                          Container(
+                            height: 28.h,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                  color: context.primaryColor, width: 1.w),
+                              borderRadius: BorderRadius.circular(14),
+                              color: context.backgroundColor,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: item.isAvailable
+                                      ? () => onQuantityIncrease(null)
+                                      : null,
+                                  child: Container(
+                                    width: 28.w,
+                                    color: Colors.transparent,
+                                    alignment: Alignment.center,
+                                    child: Icon(Icons.add,
+                                        size: 12, color: context.textDark),
+                                  ),
+                                ),
+                                Text(
+                                  '${item.quantity}',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: context.textDark,
+                                    fontFamily: 'Tajawal',
+                                  ),
+                                ),
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: item.isAvailable
+                                      ? () => onQuantityDecrease(null)
+                                      : null,
+                                  child: Container(
+                                    width: 28.w,
+                                    color: Colors.transparent,
+                                    alignment: Alignment.center,
+                                    child: Icon(Icons.remove,
+                                        size: 12, color: context.textDark),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -195,19 +337,20 @@ class CartItemCard extends StatelessWidget {
           if (!item.isAvailable)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFEBEE), // Soft red background
-                borderRadius: BorderRadius.only(
+              padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),
+              decoration: BoxDecoration(
+                color: context.primaryColor, // Soft red background
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(10),
                   bottomRight: Radius.circular(10),
                 ),
               ),
-              child: const Text(
-                'هذا المنتج لم يعد متوفراً. احذف المنتج لإتمام عملية الشراء',
+              child: Text(
+                'this_product_is_no'.tr(),
                 style: TextStyle(
-                  fontSize: 10.5,
-                  color: Color(0xFFC62828), // Deep red text
+                  fontSize: 10.5.sp,
+                  color:
+                      context.backgroundColor, // White text on teal background
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Tajawal',
                 ),

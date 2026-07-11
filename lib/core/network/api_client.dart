@@ -1,34 +1,146 @@
+import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../error/exceptions.dart';
 import 'api_endpoints.dart';
-
+import 'token_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+/// ─────────────────────────────────────────────────────────────────
+///  KDX Store — Dio HTTP Client
+///
+///  Automatically injects `Authorization: Bearer <token>` on every
+///  request if the user is logged in.
+///
+///  Error handling maps Laravel JSON error responses to typed
+///  exceptions that the BLoC layer can handle cleanly.
+/// ─────────────────────────────────────────────────────────────────
 class ApiClient {
   final Dio _dio;
+  final TokenService _tokenService;
 
-  ApiClient(this._dio) {
+  ApiClient(this._dio, this._tokenService) {
     _dio.options.baseUrl = ApiEndpoints.baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 15);
-    _dio.options.receiveTimeout = const Duration(seconds: 15);
+    _dio.options.connectTimeout = const Duration(seconds: 20);
+    _dio.options.receiveTimeout = const Duration(seconds: 20);
     _dio.options.headers = {
-      'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'Content-Type': 'application/json',
     };
 
-    // Logging & Header Interceptors
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
-          // If a token is saved, you can add it dynamically here:
-          // options.headers['Authorization'] = 'Bearer $token';
+        // ── Auto-inject Bearer token ──────────────────────────────
+        onRequest: (options, handler) async {
+          // API_KEY is not in use currently
+
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            final lang = prefs.getString('app_language') ?? 'ar';
+            options.headers['Accept-Language'] = lang;
+            options.headers['X-Firebase-Locale'] = lang; // Just in case it needs it
+          } catch (_) {}
+
+          // Always try to attach the sanctum token first
+          final sanctumToken = _tokenService.getSanctumToken();
+          if (sanctumToken != null && sanctumToken.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $sanctumToken';
+          }
+
+          // In Firebase Native mode, we fetch the token directly from Firebase Auth
+          final currentUser = FirebaseAuth.instance.currentUser;
+          if (currentUser != null) {
+            try {
+              final token = await currentUser.getIdToken();
+              if (token != null && token.isNotEmpty) {
+                options.headers['X-Firebase-Token'] = token;
+                
+                // Fallback to Firebase token for authorization if Sanctum token is missing
+                if (sanctumToken == null || sanctumToken.isEmpty) {
+                  options.headers['Authorization'] = 'Bearer $token';
+                }
+              }
+            } catch (e) {
+              // Ignore token fetch errors here
+            }
+          }
           return handler.next(options);
         },
-        onError: (DioException e, handler) {
+
+        // ── Log responses in debug ────────────────────────────────
+        onResponse: (response, handler) {
+          return handler.next(response);
+        },
+
+        // ── Map HTTP errors to typed exceptions & handle retries ──
+        onError: (DioException e, handler) async {
+          // Check if we should retry (network issue or 503)
+          final isNetworkError = e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout ||
+              e.type == DioExceptionType.sendTimeout ||
+              e.type == DioExceptionType.connectionError ||
+              (e.response != null && e.response!.statusCode == 503);
+
+          final noRetry = e.requestOptions.extra['no-retry'] == true;
+
+          if (isNetworkError && !noRetry) {
+            int retries = 3;
+            Duration delay = const Duration(seconds: 1);
+            for (int i = 0; i < retries; i++) {
+              await Future.delayed(delay);
+              try {
+                final options = Options(
+                  method: e.requestOptions.method,
+                  headers: e.requestOptions.headers,
+                  extra: {...e.requestOptions.extra, 'no-retry': true},
+                );
+                final response = await _dio.request(
+                  e.requestOptions.path,
+                  data: e.requestOptions.data,
+                  queryParameters: e.requestOptions.queryParameters,
+                  options: options,
+                );
+                return handler.resolve(response);
+              } on DioException catch (retryErr) {
+                if (i == retries - 1) {
+                  e = retryErr;
+                }
+                delay = delay * 2 +
+                    Duration(
+                        milliseconds: (delay.inMilliseconds * 0.1).toInt());
+              }
+            }
+          }
+
+          // Global 401 Unauthorized handling:
+          // Since Firebase is the single source of truth, a 401 from the legacy backend
+          // should NOT force a Firebase sign out. We simply pass the error along.
+          if (e.response?.statusCode == 401) {
+            // Do not call _tokenService.clearAll() here anymore.
+          }
+
           return handler.next(e);
         },
       ),
     );
   }
 
+  // ── GET ───────────────────────────────────────────────────────────
+  Future<Response> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    try {
+      return await _dio.get(path,
+          queryParameters: queryParameters, options: options);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    } catch (e) {
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  // ── POST ──────────────────────────────────────────────────────────
   Future<Response> post(
     String path, {
     dynamic data,
@@ -36,47 +148,97 @@ class ApiClient {
     Options? options,
   }) async {
     try {
-      final response = await _dio.post(
-        path,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-      );
-      return response;
+      return await _dio.post(path,
+          data: data, queryParameters: queryParameters, options: options);
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw _handleError(e);
     } catch (e) {
       throw ServerException(message: e.toString());
     }
   }
 
-  Future<Response> get(
+  // ── PUT ───────────────────────────────────────────────────────────
+  Future<Response> put(
     String path, {
+    dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
     try {
-      final response = await _dio.get(
-        path,
-        queryParameters: queryParameters,
-        options: options,
-      );
-      return response;
+      return await _dio.put(path,
+          data: data, queryParameters: queryParameters, options: options);
     } on DioException catch (e) {
-      throw _handleDioException(e);
+      throw _handleError(e);
     } catch (e) {
       throw ServerException(message: e.toString());
     }
   }
 
-  Exception _handleDioException(DioException e) {
+  // ── DELETE ────────────────────────────────────────────────────────
+  Future<Response> delete(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    try {
+      return await _dio.delete(path,
+          data: data, queryParameters: queryParameters, options: options);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    } catch (e) {
+      throw ServerException(message: e.toString());
+    }
+  }
+
+  // ── Error Handler ─────────────────────────────────────────────────
+  Exception _handleError(DioException e) {
+    // Network / timeout errors
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||
-        e.type == DioExceptionType.sendTimeout) {
-      return ConnectionException(message: 'انتهت مهلة الاتصال بالخادم. يرجى التحقق من الشبكة.');
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.connectionError) {
+      return ConnectionException(
+          message: 'تعذّر الاتصال بالخادم. تحقق من الإنترنت وحاول مجدداً.');
     }
-    
-    final message = e.response?.data?['message'] ?? e.response?.data?['error'] ?? 'حدث خطأ غير متوقع في الاتصال بالخادم';
-    return ServerException(message: message.toString());
+
+    final statusCode = e.response?.statusCode;
+    final data = e.response?.data;
+
+    // Extract error message from Laravel JSON response
+    String message = 'حدث خطأ غير متوقع';
+    if (data is Map) {
+      message = data['message']?.toString() ??
+          data['error']?.toString() ??
+          (data['errors'] as Map?)?.values.first?.first?.toString() ??
+          message;
+    }
+
+    switch (statusCode) {
+      case 401:
+        return UnauthorizedException(message: message);
+      case 403:
+        return ServerException(
+            message: 'ليس لديك صلاحية للوصول إلى هذه الصفحة.');
+      case 404:
+        return NotFoundException(message: message);
+      case 422:
+        // Laravel validation errors
+        final errors = data is Map ? data['errors'] as Map? : null;
+        final validationMsg =
+            errors?.values.first?.first?.toString() ?? message;
+        return ValidationException(
+            message: validationMsg, errors: errors?.cast());
+      case 429:
+        return ServerException(
+            message: 'طلبات كثيرة. يرجى الانتظار قليلاً ثم المحاولة.');
+      case 500:
+      case 503:
+        developer.log('500 Error: $data');
+        return ServerException(
+            message: 'خطأ في الخادم. يرجى المحاولة لاحقاً. $message');
+      default:
+        return ServerException(message: message);
+    }
   }
 }

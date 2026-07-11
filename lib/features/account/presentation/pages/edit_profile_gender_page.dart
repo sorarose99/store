@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../../../../core/constants/colors.dart';
 
 class EditProfileGenderPage extends StatefulWidget {
@@ -29,7 +30,7 @@ class _EditProfileGenderPageState extends State<EditProfileGenderPage> {
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               width: double.infinity,
               height: double.infinity,
             ),
@@ -38,7 +39,7 @@ class _EditProfileGenderPageState extends State<EditProfileGenderPage> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Directionality(
-              textDirection: TextDirection.rtl,
+              textDirection: Directionality.of(context),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOut,
@@ -56,10 +57,10 @@ class _EditProfileGenderPageState extends State<EditProfileGenderPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Center(
+                      Center(
                         child: Text(
-                          'ما هو جنسك؟',
-                          style: TextStyle(
+                          tr('what_is_your_gender'),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textDark,
@@ -68,11 +69,11 @@ class _EditProfileGenderPageState extends State<EditProfileGenderPage> {
                       ),
                       const SizedBox(height: 24),
                       // Options list
-                      _buildGenderOption('أنثى', Icons.female, const Color(0xFFFF2D55)),
+                      _buildGenderOption(tr('female'), Icons.female, const Color(0xFFFF2D55)),
                       const SizedBox(height: 12),
-                      _buildGenderOption('ذكر', Icons.male, const Color(0xFF007AFF)),
+                      _buildGenderOption(tr('male'), Icons.male, const Color(0xFF007AFF)),
                       const SizedBox(height: 12),
-                      _buildGenderOption('مخصص', Icons.tune, Colors.purple),
+                      _buildGenderOption(tr('custom'), Icons.tune, Colors.purple),
                       const SizedBox(height: 28),
                       // Action buttons
                       SizedBox(
@@ -88,9 +89,9 @@ class _EditProfileGenderPageState extends State<EditProfileGenderPage> {
                             ),
                             elevation: 0,
                           ),
-                          child: const Text(
-                            'حفظ',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          child: Text(
+                            tr('save'),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                         ),
                       ),
@@ -116,7 +117,7 @@ class _EditProfileGenderPageState extends State<EditProfileGenderPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.05) : const Color(0xFFF9F9F9),
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.05) : const Color(0xFFF9F9F9),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? AppColors.primary : const Color(0xFFEEEEEE),
@@ -128,7 +129,7 @@ class _EditProfileGenderPageState extends State<EditProfileGenderPage> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 18),

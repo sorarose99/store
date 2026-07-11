@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:store/features/home/domain/entities/category_entity.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../domain/entities/category_entity.dart';
 import '../../../../core/constants/colors.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,13 +33,13 @@ class _CategoryTabBarState extends State<CategoryTabBar> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 40,
+      height: 40.h,
       child: ListView.separated(
         controller: _scrollController,
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
         itemCount: widget.categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => SizedBox(width: 8.w),
         itemBuilder: (ctx, i) {
           final cat = widget.categories[i];
           return _CategoryChip(
@@ -65,28 +66,28 @@ class _CategoryChip extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+        padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 0.h),
         decoration: BoxDecoration(
           gradient: isSelected
-              ? const LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryDark],
+              ? LinearGradient(
+                  colors: [context.primaryColor, context.primaryDark],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
               : null,
-          color: isSelected ? null : AppColors.surface,
+          color: isSelected ? null : context.surfaceColor,
           borderRadius: BorderRadius.circular(20),
           border: isSelected
               ? null
-              : Border.all(color: AppColors.border, width: 1.5),
+              : Border.all(color: context.border, width: 1.5.w),
           boxShadow: isSelected ? AppColors.tealGlowShadow : null,
         ),
         child: Center(
           child: Text(
             category.name,
             style: TextStyle(
-              color: isSelected ? Colors.white : AppColors.textMid,
-              fontSize: 13,
+              color: isSelected ? context.backgroundColor : context.textMid,
+              fontSize: 13.sp,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
@@ -107,12 +108,12 @@ class StoryCategoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 96,
+      height: 96.h,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, __) => SizedBox(width: 12.w),
         itemBuilder: (ctx, i) => _StoryCategoryItem(item: items[i]),
       ),
     );
@@ -146,55 +147,55 @@ class _StoryCategoryItem extends StatelessWidget {
         children: [
           // Circle with gradient border
           Container(
-            width: 64,
-            height: 64,
-            padding: const EdgeInsets.all(2.5),
+            width: 64.w,
+            height: 64.h,
+            padding: EdgeInsets.all(2.5.w),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: item.isActive
-                  ? const LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryDark],
+                  ? LinearGradient(
+                      colors: [context.primaryColor, context.primaryDark],
                     )
                   : LinearGradient(
                       colors: [
-                        AppColors.border,
-                        AppColors.border.withAlpha(200),
+                        context.border,
+                        context.border.withAlpha(200),
                       ],
                     ),
             ),
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white,
+                color: context.backgroundColor,
               ),
-              padding: const EdgeInsets.all(2),
+              padding: EdgeInsets.all(2.w),
               child: ClipOval(
-                child: Image.asset(
-                  item.imageAsset,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: AppColors.primaryLight,
-                    child: const Icon(Icons.category_outlined,
-                        color: AppColors.primary, size: 28),
-                  ),
-                ),
+                child: item.imageAsset.startsWith('http')
+                    ? Image.network(
+                        item.imageAsset,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _fallbackIcon(),
+                      )
+                    : Image.asset(
+                        item.imageAsset,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _fallbackIcon(),
+                      ),
               ),
             ),
           ),
-          const SizedBox(height: 5),
+          SizedBox(height: 5.h),
           SizedBox(
-            width: 64,
+            width: 64.w,
             child: Text(
               item.label,
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
-                fontWeight:
-                    item.isActive ? FontWeight.w700 : FontWeight.w500,
-                color:
-                    item.isActive ? AppColors.primary : AppColors.textMid,
+                fontSize: 11.sp,
+                fontWeight: item.isActive ? FontWeight.w700 : FontWeight.w500,
+                color: item.isActive ? context.primaryColor : context.textMid,
               ),
             ),
           ),
@@ -202,6 +203,14 @@ class _StoryCategoryItem extends StatelessWidget {
       ),
     );
   }
+
+  Widget _fallbackIcon() {
+    final validFallbacks = [0, 3, 9];
+    final index =
+        validFallbacks[item.label.hashCode.abs() % validFallbacks.length];
+    return Image.asset(
+      'assets/images/fallback_cat_$index.png',
+      fit: BoxFit.cover,
+    );
+  }
 }
-
-

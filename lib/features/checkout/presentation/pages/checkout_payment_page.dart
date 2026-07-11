@@ -1,112 +1,228 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../domain/entities/checkout_entities.dart';
+import '../blocs/checkout_bloc.dart';
 import 'checkout_review_page.dart';
 
 // ── 7 Payment Methods as required ──────────────────────────────────────────
-enum PaymentMethod { applePay, mada, visa, maestro, mastercard, tamara, tabby }
+enum PaymentMethod {
+  applePay,
+  mada,
+  visa,
+  maestro,
+  mastercard,
+  tamara,
+  tabby;
+
+  static const List<PaymentMethod> checkoutOptions = [
+    PaymentMethod.tabby,
+    PaymentMethod.tamara,
+    PaymentMethod.mada,
+    PaymentMethod.applePay,
+    PaymentMethod.visa,
+    PaymentMethod.mastercard,
+  ];
+
+  static PaymentMethod? fromString(String gateway) {
+    switch (gateway.toLowerCase()) {
+      case 'applepay':
+      case 'apple_pay':
+      case 'apple pay':
+        return PaymentMethod.applePay;
+      case 'mada':
+        return PaymentMethod.mada;
+      case 'visa':
+      case 'paytabs':
+        return PaymentMethod.visa;
+      case 'tamara':
+        return PaymentMethod.tamara;
+      case 'tabby':
+        return PaymentMethod.tabby;
+      case 'maestro':
+        return PaymentMethod.maestro;
+      case 'mastercard':
+        return PaymentMethod.mastercard;
+      default:
+        return null;
+    }
+  }
+}
 
 extension PaymentMethodExt on PaymentMethod {
   String get label {
     switch (this) {
-      case PaymentMethod.applePay:    return 'Apple Pay';
-      case PaymentMethod.mada:        return 'بطاقة مدى';
-      case PaymentMethod.visa:        return 'Visa';
-      case PaymentMethod.maestro:     return 'Maestro';
-      case PaymentMethod.mastercard:  return 'MasterCard';
-      case PaymentMethod.tamara:      return 'تمارا';
-      case PaymentMethod.tabby:       return 'تابي';
+      case PaymentMethod.applePay:
+        return 'Apple Pay';
+      case PaymentMethod.mada:
+        return 'mada_card'.tr();
+      case PaymentMethod.visa:
+        return 'Visa';
+      case PaymentMethod.maestro:
+        return 'Maestro';
+      case PaymentMethod.mastercard:
+        return 'MasterCard';
+      case PaymentMethod.tamara:
+        return 'tamara'.tr();
+      case PaymentMethod.tabby:
+        return 'tabby'.tr();
     }
   }
 
   String get badgeText {
     switch (this) {
-      case PaymentMethod.applePay:    return ' Pay';
-      case PaymentMethod.mada:        return 'mada';
-      case PaymentMethod.visa:        return 'VISA';
-      case PaymentMethod.maestro:     return 'Maestro';
-      case PaymentMethod.mastercard:  return 'MC';
-      case PaymentMethod.tamara:      return 'tamara';
-      case PaymentMethod.tabby:       return 'tabby';
+      case PaymentMethod.applePay:
+        return ' Pay';
+      case PaymentMethod.mada:
+        return 'mada';
+      case PaymentMethod.visa:
+        return 'VISA';
+      case PaymentMethod.maestro:
+        return 'Maestro';
+      case PaymentMethod.mastercard:
+        return 'MC';
+      case PaymentMethod.tamara:
+        return 'tamara';
+      case PaymentMethod.tabby:
+        return 'tabby';
     }
   }
 
-  Color get badgeBg {
+  Color badgeBg(BuildContext context) {
     switch (this) {
-      case PaymentMethod.applePay:    return Colors.black;
-      case PaymentMethod.mada:        return const Color(0xFF0070B8);
-      case PaymentMethod.visa:        return const Color(0xFF1A1F71);
-      case PaymentMethod.maestro:     return const Color(0xFF0099DF);
-      case PaymentMethod.mastercard:  return const Color(0xFFEB001B);
-      case PaymentMethod.tamara:      return const Color(0xFFFF6E26);
-      case PaymentMethod.tabby:       return const Color(0xFF3DF2B6);
+      case PaymentMethod.applePay:
+        return context.textDark;
+      case PaymentMethod.mada:
+        return context.primaryColor;
+      case PaymentMethod.visa:
+        return context.primaryColor;
+      case PaymentMethod.maestro:
+        return context.primaryColor;
+      case PaymentMethod.mastercard:
+        return context.primaryColor;
+      case PaymentMethod.tamara:
+        return context.primaryColor;
+      case PaymentMethod.tabby:
+        return context.primaryColor;
     }
   }
 
-  Color get badgeFg {
+  Color badgeFg(BuildContext context) {
     switch (this) {
-      case PaymentMethod.tabby: return Colors.black;
-      default: return Colors.white;
+      case PaymentMethod.tabby:
+        return context.textDark;
+      default:
+        return context.backgroundColor;
     }
   }
 
-  bool get isBNPL => this == PaymentMethod.tamara || this == PaymentMethod.tabby;
-  bool get needsCardForm => this == PaymentMethod.visa || this == PaymentMethod.maestro || this == PaymentMethod.mastercard || this == PaymentMethod.mada;
+  bool get isBNPL =>
+      this == PaymentMethod.tamara || this == PaymentMethod.tabby;
+  bool get needsCardForm =>
+      this == PaymentMethod.visa ||
+      this == PaymentMethod.maestro ||
+      this == PaymentMethod.mastercard ||
+      this == PaymentMethod.mada;
+
+  /// Backend `payment_gateway` value for POST /orders
+  String get gatewayKey {
+    switch (this) {
+      case PaymentMethod.tabby:
+        return 'tabby';
+      case PaymentMethod.tamara:
+        return 'tamara';
+      default:
+        return 'paytabs';
+    }
+  }
 }
 
 class CheckoutPaymentPage extends StatefulWidget {
-  const CheckoutPaymentPage({super.key});
+  final SavedAddressEntity address;
+  final List<String> activeGateways;
+
+  const CheckoutPaymentPage({
+    super.key, 
+    required this.address,
+    required this.activeGateways,
+  });
 
   @override
   State<CheckoutPaymentPage> createState() => _CheckoutPaymentPageState();
 }
 
 class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _cardNumberController = TextEditingController();
-  final _expiryController = TextEditingController();
-  final _cvvController = TextEditingController();
-  final _cardNameController = TextEditingController();
+  late List<PaymentMethod> _availableMethods;
+  PaymentMethod _selectedMethod = PaymentMethod.mada;
 
-  PaymentMethod _selectedMethod = PaymentMethod.applePay;
-  bool _saveCard = true;
+  @override
+  void initState() {
+    super.initState();
+    _availableMethods = _getAvailableMethods();
+    if (_availableMethods.isNotEmpty) {
+      _selectedMethod = _availableMethods.first;
+    }
+  }
+
+  List<PaymentMethod> _getAvailableMethods() {
+    if (widget.activeGateways.isEmpty) {
+      return PaymentMethod.checkoutOptions;
+    }
+    
+    final activeMethods = <PaymentMethod>{};
+    for (var gw in widget.activeGateways) {
+      final m = PaymentMethod.fromString(gw);
+      if (m != null) activeMethods.add(m);
+    }
+    
+    if (activeMethods.contains(PaymentMethod.visa)) {
+      activeMethods.add(PaymentMethod.mastercard);
+      activeMethods.add(PaymentMethod.mada);
+    }
+
+    return PaymentMethod.checkoutOptions.where((m) => activeMethods.contains(m)).toList();
+  }
 
   @override
   void dispose() {
-    _cardNumberController.dispose();
-    _expiryController.dispose();
-    _cvvController.dispose();
-    _cardNameController.dispose();
     super.dispose();
   }
 
   void _onContinue() {
-    if (_selectedMethod.needsCardForm) {
-      if (!(_formKey.currentState?.validate() ?? false)) return;
-    }
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const CheckoutReviewPage()),
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => sl<CheckoutBloc>(),
+          child: CheckoutReviewPage(
+            address: widget.address,
+            paymentMethod: _selectedMethod,
+          ),
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9F9F9),
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: context.surfaceColor,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark, size: 20),
+            icon: Icon(Icons.arrow_back_ios, color: context.textDark, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
           centerTitle: true,
-          title: const Text(
-            'طريقة الدفع',
+          title: Text(
+            'payment_method'.tr(),
             style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 16,
+              color: context.textDark,
+              fontSize: 16.sp,
               fontWeight: FontWeight.bold,
               fontFamily: 'Tajawal',
             ),
@@ -116,170 +232,65 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
           children: [
             // Breadcrumb steps
             Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              color: context.backgroundColor,
+              padding: EdgeInsets.symmetric(vertical: 12.h),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildStep(1, 'العنوان', isActive: false, isCompleted: true),
+                  _buildStep(1, 'address'.tr(),
+                      isActive: false, isCompleted: true),
                   _buildStepDivider(isActive: true),
-                  _buildStep(2, 'الدفع', isActive: true, isCompleted: false),
+                  _buildStep(2, 'payment'.tr(),
+                      isActive: true, isCompleted: false),
                   _buildStepDivider(isActive: false),
-                  _buildStep(3, 'المراجعة', isActive: false, isCompleted: false),
+                  _buildStep(3, 'review'.tr(),
+                      isActive: false, isCompleted: false),
                 ],
               ),
             ),
-            const Divider(color: AppColors.border, height: 1),
+            Divider(color: context.border, height: 1.h),
 
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ── Payment Methods List ─────────────────────────────────
-                    ...PaymentMethod.values.map((method) => _buildMethodRow(method)),
+                    ...PaymentMethod.checkoutOptions
+                        .map((method) => _buildMethodRow(context, method)),
 
-                    // ── Card form (shown for card-type methods) ──────────────
-                    if (_selectedMethod.needsCardForm) ...[
-                      const SizedBox(height: 4),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.primary, width: 1.5),
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildLabel('الاسم على البطاقة'),
-                              _buildTextField(
-                                controller: _cardNameController,
-                                hintText: 'مثال: محمد أحمد',
-                                validator: (v) => (v == null || v.trim().isEmpty) ? 'الرجاء إدخال الاسم' : null,
-                              ),
-                              const SizedBox(height: 12),
-                              _buildLabel('رقم البطاقة'),
-                              _buildTextField(
-                                controller: _cardNumberController,
-                                hintText: '0000 0000 0000 0000',
-                                keyboardType: TextInputType.number,
-                                suffixIcon: const Icon(Icons.credit_card_rounded, color: AppColors.textGrey),
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return 'الرجاء إدخال رقم البطاقة';
-                                  if (v.replaceAll(' ', '').length < 16) return 'رقم البطاقة غير مكتمل';
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        _buildLabel('تاريخ الانتهاء'),
-                                        _buildTextField(
-                                          controller: _expiryController,
-                                          hintText: 'MM/YY',
-                                          keyboardType: TextInputType.number,
-                                          validator: (v) {
-                                            if (v == null || v.trim().isEmpty) return 'مطلوب';
-                                            if (!RegExp(r'^(0[1-9]|1[0-2])\/?([0-9]{2})$').hasMatch(v)) return 'صيغة غير صحيحة';
-                                            return null;
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        _buildLabel('الرمز السري (CVV)'),
-                                        _buildTextField(
-                                          controller: _cvvController,
-                                          hintText: '123',
-                                          keyboardType: TextInputType.number,
-                                          validator: (v) {
-                                            if (v == null || v.trim().isEmpty) return 'مطلوب';
-                                            if (v.trim().length < 3) return 'غير صحيح';
-                                            return null;
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              GestureDetector(
-                                onTap: () => setState(() => _saveCard = !_saveCard),
-                                child: Row(
-                                  children: [
-                                    AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      width: 20,
-                                      height: 20,
-                                      decoration: BoxDecoration(
-                                        color: _saveCard ? AppColors.primary : Colors.white,
-                                        border: Border.all(
-                                          color: _saveCard ? AppColors.primary : const Color(0xFFD1D1D6),
-                                          width: 2,
-                                        ),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: _saveCard
-                                          ? const Icon(Icons.check, size: 14, color: Colors.white)
-                                          : null,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    const Text(
-                                      'حفظ البطاقة للاستخدام لاحقاً',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.textDark,
-                                        fontFamily: 'Tajawal',
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                    // Removed raw credit card inputs as payment gateways handle this directly
 
                     // BNPL info snippet
                     if (_selectedMethod.isBNPL) ...[
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8.h),
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: EdgeInsets.all(12.w),
                         decoration: BoxDecoration(
-                          color: _selectedMethod.badgeBg.withValues(alpha: 0.08),
+                          color: _selectedMethod
+                              .badgeBg(context)
+                              .withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: _selectedMethod.badgeBg.withValues(alpha: 0.3)),
+                          border: Border.all(
+                              color: _selectedMethod
+                                  .badgeBg(context)
+                                  .withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info_outline_rounded, color: _selectedMethod.badgeBg, size: 18),
-                            const SizedBox(width: 10),
+                            Icon(Icons.info_outline_rounded,
+                                color: _selectedMethod.badgeBg(context),
+                                size: 18),
+                            SizedBox(width: 10.w),
                             Expanded(
                               child: Text(
                                 _selectedMethod == PaymentMethod.tamara
-                                    ? 'ادفع على 3 دفعات بدون فوائد مع تمارا'
-                                    : 'ادفع على 4 دفعات بدون فوائد مع تابي',
+                                    ? 'pay_in_3_interestfree'.tr()
+                                    : 'pay_in_4_interestfree'.tr(),
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: _selectedMethod.badgeBg,
+                                  fontSize: 12.sp,
+                                  color: _selectedMethod.badgeBg(context),
                                   fontFamily: 'Tajawal',
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -291,26 +302,28 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
                     ],
 
                     // معلومات التواصل tile
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     GestureDetector(
                       onTap: () => Navigator.of(context).pop(),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16.w, vertical: 14.h),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.backgroundColor,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: context.border),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.arrow_forward_ios, color: AppColors.textGrey, size: 14),
-                            SizedBox(width: 12),
+                            Icon(Icons.arrow_forward_ios,
+                                color: context.textGrey, size: 14),
+                            SizedBox(width: 12.w),
                             Text(
-                              'معلومات التواصل',
+                              'contact_information'.tr(),
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 14.sp,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textDark,
+                                color: context.textDark,
                                 fontFamily: 'Tajawal',
                               ),
                             ),
@@ -318,7 +331,7 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
                   ],
                 ),
               ),
@@ -326,36 +339,42 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
 
             // Sticky bottom bar
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, -4)),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+              decoration: BoxDecoration(
+                color: context.backgroundColor,
+                boxShadow: const [
+                  BoxShadow(
+                      color: Color(0x0A000000),
+                      blurRadius: 10,
+                      offset: Offset(0, -4)),
                 ],
               ),
               child: SafeArea(
                 top: false,
                 child: SizedBox(
                   width: double.infinity,
-                  height: 52,
+                  height: 52.h,
                   child: ElevatedButton.icon(
                     onPressed: _onContinue,
                     icon: _selectedMethod == PaymentMethod.applePay
-                        ? const Icon(Icons.apple, color: Colors.white, size: 20)
-                        : const Icon(Icons.lock_outline_rounded, color: Colors.white, size: 18),
+                        ? Icon(Icons.apple,
+                            color: context.backgroundColor, size: 20)
+                        : Icon(Icons.lock_outline_rounded,
+                            color: context.backgroundColor, size: 18),
                     label: Text(
                       'المتابعة / ${_selectedMethod.label}',
-                      style: const TextStyle(
-                        fontSize: 15,
+                      style: TextStyle(
+                        fontSize: 15.sp,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: context.backgroundColor,
                         fontFamily: 'Tajawal',
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _selectedMethod.badgeBg,
+                      backgroundColor: _selectedMethod.badgeBg(context),
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
                 ),
@@ -367,65 +386,74 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
     );
   }
 
-  Widget _buildMethodRow(PaymentMethod method) {
+  Widget _buildMethodRow(BuildContext context, PaymentMethod method) {
     final isSelected = _selectedMethod == method;
     return GestureDetector(
       onTap: () => setState(() => _selectedMethod = method),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        margin: EdgeInsets.only(bottom: 10.h),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         decoration: BoxDecoration(
-          color: isSelected ? method.badgeBg.withValues(alpha: 0.06) : Colors.white,
+          color: isSelected
+                  ? method.badgeBg(context).withValues(alpha: 0.06)
+                  : context.backgroundColor,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? method.badgeBg : const Color(0xFFEEEEEE),
+            color: isSelected ? method.badgeBg(context) : context.primaryColor,
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
-              ? [BoxShadow(color: method.badgeBg.withValues(alpha: 0.12), blurRadius: 10, offset: const Offset(0, 3))]
+              ? [
+                  BoxShadow(
+                      color: method.badgeBg(context).withValues(alpha: 0.12),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3))
+                ]
               : AppColors.cardShadow,
         ),
         child: Row(
           children: [
             // Radio dot
             Container(
-              width: 20,
-              height: 20,
+              width: 20.w,
+              height: 20.h,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? method.badgeBg : const Color(0xFFD1D1D6),
+                  color: isSelected
+                          ? method.badgeBg(context)
+                          : context.primaryColor,
                   width: isSelected ? 6 : 2,
                 ),
-                color: Colors.white,
+                color: context.backgroundColor,
               ),
             ),
-            const SizedBox(width: 14),
+            SizedBox(width: 14.w),
             // Label
             Expanded(
               child: Text(
                 method.label,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: isSelected ? AppColors.textDark : AppColors.textMid,
+                  fontSize: 14.sp,
+                  color: isSelected ? context.textDark : context.textMid,
                   fontFamily: 'Tajawal',
                 ),
               ),
             ),
             // Branded badge
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
               decoration: BoxDecoration(
-                color: method.badgeBg,
+                color: method.badgeBg(context),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 method.badgeText,
                 style: TextStyle(
-                  color: method.badgeFg,
-                  fontSize: 11,
+                  color: method.badgeFg(context),
+                  fontSize: 11.sp,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.4,
                 ),
@@ -437,85 +465,56 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textDark,
-          fontFamily: 'Tajawal',
-        ),
-      ),
-    );
-  }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    Widget? suffixIcon,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      textAlign: TextAlign.start,
-      style: const TextStyle(fontSize: 14, color: AppColors.textDark, fontFamily: 'Tajawal'),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(fontSize: 13, color: AppColors.textGrey, fontFamily: 'Tajawal'),
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: const Color(0xFFF9F9FC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E2EA))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E2EA))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFFF3B30))),
-      ),
-    );
-  }
 
-  Widget _buildStep(int number, String label, {required bool isActive, required bool isCompleted}) {
+  Widget _buildStep(int number, String label,
+      {required bool isActive, required bool isCompleted}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 22,
-          height: 22,
+          width: 22.w,
+          height: 22.h,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white,
+            color: isCompleted
+                ? context.primaryColor
+                : isActive
+                    ? context.primaryColor.withValues(alpha: 0.1)
+                    : context.cardBackground,
             border: Border.all(
-              color: isCompleted || isActive ? AppColors.primary : const Color(0xFFD1D1D6),
-              width: 2,
+              color: isCompleted || isActive
+                  ? context.primaryColor
+                  : context.border,
+              width: 1.5.w,
             ),
           ),
           child: Center(
             child: isCompleted
-                ? const Icon(Icons.check, size: 12, color: AppColors.primary)
+                ? const Icon(Icons.check, size: 12, color: Colors.white)
                 : Text(
                     number.toString(),
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.bold,
-                      color: isActive ? AppColors.primary : const Color(0xFF8E8E93),
+                      color: isActive
+                          ? context.primaryColor
+                          : context.textGrey,
                       fontFamily: 'Tajawal',
                     ),
                   ),
           ),
         ),
-        const SizedBox(width: 6),
+        SizedBox(width: 6.w),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: isActive || isCompleted ? FontWeight.bold : FontWeight.normal,
-            color: isActive || isCompleted ? AppColors.textDark : const Color(0xFF8E8E93),
+            fontSize: 11.sp,
+            fontWeight:
+                isActive || isCompleted ? FontWeight.bold : FontWeight.normal,
+            color: isActive || isCompleted
+                ? context.primaryColor
+                : context.textGrey,
             fontFamily: 'Tajawal',
           ),
         ),
@@ -525,10 +524,10 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
 
   Widget _buildStepDivider({required bool isActive}) {
     return Container(
-      width: 30,
-      height: 1.5,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: isActive ? AppColors.primary : const Color(0xFFD1D1D6),
+      width: 30.w,
+      height: 1.5.h,
+      margin: EdgeInsets.symmetric(horizontal: 8.w),
+      color: isActive ? context.primaryColor : context.border,
     );
   }
 }

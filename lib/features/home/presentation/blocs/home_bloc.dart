@@ -2,17 +2,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/category_entity.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../domain/usecases/get_home_data.dart';
-import '../../data/datasources/home_local_datasource.dart';
 import 'home_event.dart';
 import 'home_state.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetHomeData getHomeData;
-  final HomeLocalDatasource localDatasource;
 
   HomeBloc({
     required this.getHomeData,
-    required this.localDatasource,
   }) : super(const HomeInitial()) {
     on<HomeStarted>(_onHomeStarted);
     on<CategorySelected>(_onCategorySelected);
@@ -43,9 +40,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         banners: data.banners,
         categories: data.categories,
         products: data.products,
+        allProducts: data.products,
         brands: data.brands,
         flashSaleProducts: data.flashSaleProducts,
         trendingProducts: data.trendingProducts,
+        flashSaleEndDate: data.flashSaleEndDate,
       )),
     );
   }
@@ -61,18 +60,21 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     final updatedCategories = current.categories
         .map((c) => CategoryEntity(
               id: c.id,
+              slug: c.slug,
+              parentId: c.parentId,
               name: c.name,
               imageAsset: c.imageAsset,
+              showInHome: c.showInHome,
               isSelected: c.id == event.categoryId,
             ))
         .toList();
 
-    // Filter products by category
-    final filteredProducts = localDatasource
-        .getProducts(
-          categoryId: event.categoryId == 'cat_all' ? null : event.categoryId,
-        )
-        .cast<ProductEntity>();
+    // Filter products by category using allProducts cached in state
+    final filteredProducts = event.categoryId == 'cat_all'
+        ? current.allProducts
+        : current.allProducts
+            .where((p) => p.categoryId == event.categoryId)
+            .toList();
 
     emit(current.copyWith(
       categories: updatedCategories,
@@ -92,6 +94,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       if (p.id != event.productId) return p;
       return ProductEntity(
         id: p.id,
+        slug: p.slug,
         name: p.name,
         brand: p.brand,
         price: p.price,
@@ -105,11 +108,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         isWishlisted: !p.isWishlisted,
         discountLabel: p.discountLabel,
         categoryId: p.categoryId,
+        featured: p.featured,
+        requiresShipping: p.requiresShipping,
       );
     }
 
     emit(current.copyWith(
       products: current.products.map(toggleWishlist).toList(),
+      allProducts: current.allProducts.map(toggleWishlist).toList(),
       flashSaleProducts: current.flashSaleProducts.map(toggleWishlist).toList(),
       trendingProducts: current.trendingProducts.map(toggleWishlist).toList(),
     ));

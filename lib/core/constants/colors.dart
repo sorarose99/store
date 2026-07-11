@@ -21,8 +21,11 @@ class AppColors {
   static const Color success = Color(0xFF00C48C);
 
   // ── Text ─────────────────────────────────────────────────────────────────
-  /// Deep navy-black for headlines
   static const Color textDark = Color(0xFF1A1A2E);
+  static const Color textDark12 = Color(0x1F1A1A2E);
+  static const Color textDark26 = Color(0x421A1A2E);
+  static const Color textDark54 = Color(0x8A1A1A2E);
+  static const Color textDark87 = Color(0xDE1A1A2E);
 
   /// Mid-tone body text
   static const Color textMid = Color(0xFF4A4A68);
@@ -71,4 +74,40 @@ class AppColors {
   static const List<BoxShadow> elevatedShadow = [
     BoxShadow(color: Color(0x0D000000), blurRadius: 8, offset: Offset(0, 2)),
   ];
+}
+
+extension AppThemeColors on BuildContext {
+  Color get primaryColor => Theme.of(this).colorScheme.primary;
+  Color get primaryDark => Theme.of(this).colorScheme.primaryContainer;
+  Color get primaryLight => Theme.of(this).colorScheme.primaryFixedDim;
+  Color get accentColor => Theme.of(this).colorScheme.secondary;
+  Color get textDark => Theme.of(this).colorScheme.onSurface;
+  Color get textDark12 =>
+      Theme.of(this).colorScheme.onSurface.withValues(alpha: 0.12);
+  Color get textDark26 =>
+      Theme.of(this).colorScheme.onSurface.withValues(alpha: 0.26);
+  Color get textDark54 =>
+      Theme.of(this).colorScheme.onSurface.withValues(alpha: 0.54);
+  Color get textDark87 =>
+      Theme.of(this).colorScheme.onSurface.withValues(alpha: 0.87);
+  Color get textMid => Theme.of(this).colorScheme.onSurfaceVariant;
+  Color get textGrey => Theme.of(this).colorScheme.outline;
+  Color get textGreyLight => Theme.of(this).colorScheme.outlineVariant;
+  Color get backgroundColor => Theme.of(this).colorScheme.surface;
+  Color get surfaceColor => Theme.of(this).colorScheme.surface;
+  Color get cardBackground => Theme.of(this).colorScheme.surfaceContainer;
+  Color get borderColor => Theme.of(this).colorScheme.surfaceContainerHighest;
+  Color get errorColor => Theme.of(this).colorScheme.error;
+  Color get successColor =>
+      const Color(0xFF00C48C); // Or use custom color scheme
+  Color get appleBlack => Theme.of(this).brightness == Brightness.dark
+      ? Colors.white
+      : Colors.black;
+  Color get googleWhite => Theme.of(this).brightness == Brightness.dark
+      ? Colors.grey[800]!
+      : const Color(0xFFF2F3F8);
+  Color get inputBorderActive => primaryColor;
+  Color get border => borderColor;
+  Color get accentDark => textDark;
+  Color get shadowColor => Theme.of(this).colorScheme.shadow;
 }

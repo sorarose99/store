@@ -1,123 +1,61 @@
+import 'dart:ui' as ui;
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../home/domain/entities/product_entity.dart';
+import '../../../../core/di/injection_container.dart' as di;
 import '../../../home/presentation/widgets/product_list_widgets.dart'; // For similar products row
 import '../../domain/entities/product_details_entity.dart';
-import '../../domain/entities/review_entity.dart';
+import '../../../search_filter/presentation/pages/product_grid_page.dart';
+import '../blocs/product_details_cubit.dart';
+import '../blocs/product_details_state.dart';
 import '../widgets/review_widgets.dart';
-import '../widgets/notify_size_bottom_sheet.dart';
 import '../widgets/add_to_cart_dialog.dart';
 import '../pages/product_reviews_page.dart';
+import 'product_specs_page.dart';
 import '../../../cart/presentation/widgets/tamara_bottom_sheet.dart';
+import '../../../cart/presentation/blocs/cart_bloc.dart';
+import '../../../delivery_options/presentation/widgets/delivery_options_widget.dart';
+import '../../../cart/presentation/blocs/cart_event.dart';
+import '../../../wishlist/presentation/blocs/wishlist_bloc.dart';
+import '../../../wishlist/presentation/blocs/wishlist_event.dart';
+import '../../../wishlist/presentation/blocs/wishlist_state.dart';
+import '../../../../core/widgets/app_shimmer.dart';
+import '../../../../core/utils/auth_guard.dart';
 
-class ProductDetailsPage extends StatefulWidget {
-  final String productId;
+class ProductDetailsPage extends StatelessWidget {
+  final String slug;
+  final String? heroTag;
 
-  const ProductDetailsPage({super.key, required this.productId});
+  const ProductDetailsPage({super.key, required this.slug, this.heroTag});
 
   @override
-  State<ProductDetailsPage> createState() => _ProductDetailsPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => di.sl<ProductDetailsCubit>()..fetchProductDetails(slug),
+      child: _ProductDetailsView(heroTag: heroTag),
+    );
+  }
 }
 
-class _ProductDetailsPageState extends State<ProductDetailsPage> {
-  // Dummy Data
-  final ProductDetailsEntity _productDetails = ProductDetailsEntity(
-    baseProduct: const ProductEntity(
-      id: 'p1',
-      name: 'جاكيت شتوي كلاسيك',
-      brand: 'KDX أوريجينالز',
-      price: 199.0,
-      originalPrice: 299.0,
-      imageAsset: 'assets/images/cat_fashion.png',
-      isNew: false,
-      isSale: true,
-      isFreeDelivery: true,
-      rating: 4.6,
-      reviewCount: 1089,
-      isWishlisted: true,
-      categoryId: 'c1',
-    ),
-    imageGallery: [
-      'assets/images/cat_fashion.png',
-      'assets/images/cat_beauty.png',
-      'assets/images/cat_sports.png',
-    ],
-    description: 'جاكيت شتوي بتصميم أنيق وخطوط ناعمة يمنحك مظهراً مميزاً واحترافياً. مناسب للعمل والمناسبات الرسمية مع خامة مريحة مقاومة للماء والبرودة.',
-    availableSizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    availableColors: ['أسود داكن', 'أزرق', 'رمادي'],
-    ratingDistribution: const {
-      5: 0.70,
-      4: 0.15,
-      3: 0.08,
-      2: 0.05,
-      1: 0.02,
-    },
-    reviews: const [
-      ReviewEntity(
-        id: 'r1',
-        userName: 'خديجة محمد',
-        userAvatar: 'https://i.pravatar.cc/100?img=1',
-        rating: 5.0,
-        date: '13/8/2023',
-        comment: 'جودة تفوق التوقعات، وتفاصيل دقيقة تأسر الأنظار من النظرة الأولى.',
-        likes: 36,
-      ),
-      ReviewEntity(
-        id: 'r2',
-        userName: 'مها حسان',
-        userAvatar: 'https://i.pravatar.cc/100?img=5',
-        rating: 4.0,
-        date: '13/8/2023',
-        comment: 'بساطة في التصميم وفعالية في الأداء، يحقق الغاية المنشودة بكل سلاسة.',
-        likes: 20,
-      ),
-    ],
-    similarProducts: const [
-      ProductEntity(
-        id: 'sp1',
-        name: 'جاكيت شتوي طويل',
-        brand: 'KDX',
-        price: 249.0,
-        originalPrice: 350.0,
-        imageAsset: 'assets/images/cat_fashion.png',
-        isNew: false,
-        isSale: true,
-        isFreeDelivery: false,
-        rating: 4.8,
-        reviewCount: 200,
-        isWishlisted: false,
-        categoryId: 'c1',
-      ),
-      ProductEntity(
-        id: 'sp2',
-        name: 'هودي رجالي بقلنسوة',
-        brand: 'KDX بورت',
-        price: 129.0,
-        originalPrice: 199.0,
-        imageAsset: 'assets/images/cat_fashion.png',
-        isNew: false,
-        isSale: true,
-        isFreeDelivery: true,
-        rating: 4.9,
-        reviewCount: 150,
-        isWishlisted: true,
-        categoryId: 'c1',
-      ),
-    ],
-  );
-
-  final PageController _pageController = PageController();
-  int _currentImageIndex = 0;
-  String _selectedSize = 'L';
-  int _selectedVariantIndex = 0; // Replaces _selectedColor — driven by image thumbnail tap
-  int _quantity = 1;
-  bool _isWishlisted = true;
+class _ProductDetailsView extends StatefulWidget {
+  final String? heroTag;
+  const _ProductDetailsView({this.heroTag});
 
   @override
-  void initState() {
-    super.initState();
-    _isWishlisted = _productDetails.baseProduct.isWishlisted;
-  }
+  State<_ProductDetailsView> createState() => _ProductDetailsViewState();
+}
+
+class _ProductDetailsViewState extends State<_ProductDetailsView> {
+  ProductDetailsEntity? _productDetails;
+  final PageController _pageController = PageController();
+  int _currentImageIndex = 0;
+  int? _selectedVariantIndex; // Driven by image thumbnail tap
+  int? _selectedSizeIndex;
+  int _quantity = 1;
+  bool _triedToAdd = false; // tracks if user tapped Add to Cart without selecting
 
   @override
   void dispose() {
@@ -126,11 +64,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   void _showTamaraSheet() {
+    if (_productDetails == null) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => TamaraBottomSheet(installmentAmount: (_productDetails.baseProduct.price / 3)),
+      builder: (context) => TamaraBottomSheet(
+          installmentAmount: (_productDetails!.baseProduct.price / 3)),
     );
   }
 
@@ -139,152 +79,281 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Column(
-          children: [
-            Expanded(
-              child: CustomScrollView(
-                slivers: [
-                  _buildSliverAppBar(),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 16),
-                          _buildHeaderInfo(),
-                          const SizedBox(height: 16),
-                          _buildTamaraBanner(),
-                          const SizedBox(height: 24),
-                          _buildSizeSelector(),
-                          const SizedBox(height: 24),
-                          _buildImageVariantPicker(),
-                          const SizedBox(height: 24),
-                          _buildDeliveryInfo(),
-                          const SizedBox(height: 24),
-                          const Divider(color: AppColors.border, thickness: 1),
-                          const SizedBox(height: 20),
-                          _buildDescription(),
-                          const SizedBox(height: 20),
-                          const Divider(color: AppColors.border, thickness: 1),
-                          const SizedBox(height: 20),
-                          _buildReviewsSection(),
-                          const SizedBox(height: 20),
-                          const Divider(color: AppColors.border, thickness: 1),
-                          const SizedBox(height: 20),
-                          _buildAIPromptSection(),
-                          const SizedBox(height: 20),
-                          const Divider(color: AppColors.border, thickness: 1),
-                          const SizedBox(height: 20),
-                          _buildSimilarProducts(),
-                          const SizedBox(height: 32),
-                        ],
+        backgroundColor: context.surfaceColor,
+        body: BlocConsumer<ProductDetailsCubit, ProductDetailsState>(
+          listener: (context, state) {
+            if (state is ProductDetailsLoaded) {
+              setState(() {
+                _productDetails = state.productDetails;
+                // Auto-select ONLY if there is a single choice
+                final sizes = state.productDetails.availableSizes.where((s) => s.trim().isNotEmpty).toList();
+                if (sizes.length == 1) {
+                  _selectedSizeIndex = 0;
+                } else {
+                  _selectedSizeIndex = null;
+                }
+                // Auto-select variant when there are 0 or 1 distinct colors
+                // (gallery images are angle shots, not color options).
+                // Only require manual selection when there are >1 real color variants.
+                final requiresVariantSelection = state.productDetails.imageGallery.length > 1;
+                if (!requiresVariantSelection) {
+                  _selectedVariantIndex = 0;
+                } else {
+                  _selectedVariantIndex = null;
+                }
+              });
+            }
+          },
+          builder: (context, state) {
+            if (state is ProductDetailsLoading ||
+                state is ProductDetailsInitial) {
+              return Padding(
+                padding: EdgeInsets.all(16.0.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppShimmer(
+                        width: double.infinity,
+                        height: 400.h,
+                        borderRadius: 12),
+                    SizedBox(height: 24.h),
+                    AppShimmer(width: 200.w, height: 24.h),
+                    SizedBox(height: 12.h),
+                    AppShimmer(width: 150.w, height: 20.h),
+                    SizedBox(height: 32.h),
+                    AppShimmer(
+                        width: double.infinity, height: 60.h, borderRadius: 8),
+                  ],
+                ),
+              );
+            } else if (state is ProductDetailsError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(state.message,
+                        style: TextStyle(
+                            color: context.errorColor, fontSize: 16.sp)),
+                    SizedBox(height: 16.h),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('back'.tr()),
+                    )
+                  ],
+                ),
+              );
+            }
+
+            if (state is ProductDetailsLoaded) {
+              if (_productDetails == null || _productDetails!.baseProduct.id != state.productDetails.baseProduct.id) {
+                _productDetails = state.productDetails;
+                final sizes = _productDetails!.availableSizes.where((s) => s.trim().isNotEmpty).toList();
+                if (sizes.length == 1) {
+                  _selectedSizeIndex = 0;
+                } else {
+                  _selectedSizeIndex = null;
+                }
+                // Require variant selection if there are multiple images.
+                final requiresVariantSelection = _productDetails!.imageGallery.length > 1;
+                if (!requiresVariantSelection) {
+                  _selectedVariantIndex = 0;
+                } else {
+                  _selectedVariantIndex = null;
+                }
+              }
+            }
+
+            if (_productDetails == null) return const SizedBox.shrink();
+
+            return Column(
+              children: [
+                Expanded(
+                  child: CustomScrollView(
+                    slivers: [
+                      _buildSliverAppBar(context),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0.w),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 16.h),
+                              _buildHeaderInfo(context),
+                              SizedBox(height: 16.h),
+                              _buildTamaraBanner(context),
+                              SizedBox(height: 24.h),
+                              SizedBox(height: 24.h),
+                              _buildImageVariantPicker(context),
+                              if (_productDetails!
+                                  .availableSizes.isNotEmpty) ...[
+                                SizedBox(height: 24.h),
+                                _buildSizePicker(context),
+                              ],
+                              SizedBox(height: 24.h),
+                              const DeliveryOptionsWidget(),
+                              SizedBox(height: 24.h),
+                              Divider(color: context.border, thickness: 1),
+                              SizedBox(height: 20.h),
+                              _buildDescription(context),
+                              SizedBox(height: 20.h),
+                              Divider(color: context.border, thickness: 1),
+                              SizedBox(height: 20.h),
+                              _buildReviewsSection(context),
+                              SizedBox(height: 20.h),
+                              _buildSimilarProducts(context),
+                              SizedBox(height: 32.h),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            _buildBottomBar(),
-          ],
+                ),
+                _buildBottomBar(context),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildSliverAppBar() {
-    final hasDiscount = _productDetails.baseProduct.originalPrice != null;
-    final discountPct = _productDetails.baseProduct.discountPercent;
+  Widget _buildSliverAppBar(BuildContext context) {
+    final hasDiscount = _productDetails!.baseProduct.originalPrice != null;
+    final discountPct = _productDetails!.baseProduct.discountPercent;
 
     return SliverAppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: context.surfaceColor,
       elevation: 0,
       expandedHeight: 440.0,
       pinned: true,
       automaticallyImplyLeading: false,
       leading: Container(
-        margin: const EdgeInsets.all(8),
+        margin: EdgeInsets.all(8.w),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.9),
+          color: context.backgroundColor.withValues(alpha: 0.9),
           shape: BoxShape.circle,
           boxShadow: AppColors.cardShadow,
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textDark, size: 20),
+          icon: Icon(Icons.arrow_back, color: context.textDark, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       actions: [
         Container(
-          margin: const EdgeInsets.all(8),
+          margin: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
+            color: context.backgroundColor.withValues(alpha: 0.9),
             shape: BoxShape.circle,
             boxShadow: AppColors.cardShadow,
           ),
           child: IconButton(
-            icon: const Icon(Icons.share_outlined, color: AppColors.textDark, size: 20),
+            icon: Icon(Icons.share_outlined, color: context.textDark, size: 20),
             onPressed: () {},
           ),
         ),
         Container(
-          margin: const EdgeInsets.all(8),
+          margin: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
+            color: context.backgroundColor.withValues(alpha: 0.9),
             shape: BoxShape.circle,
-            boxShadow: _isWishlisted ? AppColors.tealGlowShadow : AppColors.cardShadow,
+            boxShadow: AppColors.cardShadow,
           ),
-          child: IconButton(
-            icon: Icon(
-              _isWishlisted ? Icons.favorite : Icons.favorite_border,
-              color: _isWishlisted ? AppColors.accent : AppColors.textDark,
-              size: 20,
-            ),
-            onPressed: () {
-              setState(() {
-                _isWishlisted = !_isWishlisted;
-              });
+          child: BlocBuilder<WishlistBloc, WishlistState>(
+            builder: (context, wishlistState) {
+              final isWishlisted = _productDetails != null &&
+                  wishlistState is WishlistLoaded &&
+                  wishlistState.isWishlisted(_productDetails!.baseProduct.id);
+              return IconButton(
+                icon: Icon(
+                  isWishlisted ? Icons.favorite : Icons.favorite_border,
+                  color: isWishlisted ? context.accentColor : context.textDark,
+                  size: 20,
+                ),
+                onPressed: () async {
+                  if (_productDetails == null) return;
+                  if (!await AuthGuard.requireLogin(context)) return;
+                  if (!mounted) return;
+                  context.read<WishlistBloc>().add(
+                        WishlistToggleItemRequested(
+                          productId: _productDetails!.baseProduct.id,
+                        ),
+                      );
+                },
+              );
             },
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8.w),
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           children: [
             PageView.builder(
               controller: _pageController,
-              itemCount: _productDetails.imageGallery.length,
+              itemCount: _productDetails!.imageGallery.length,
               onPageChanged: (index) {
                 setState(() {
                   _currentImageIndex = index;
+                  _selectedVariantIndex = index;
                 });
               },
               itemBuilder: (context, index) {
-                return Image.asset(
-                  _productDetails.imageGallery[index],
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                );
+                if (index == 0) {
+                  return Hero(
+                    tag: widget.heroTag ?? 'product_image_${_productDetails!.baseProduct.id}',
+                    child:
+                        _productDetails!.imageGallery[index].startsWith('http')
+                            ? Image.network(
+                                _productDetails!.imageGallery[index],
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (_, __, ___) =>
+                                    _buildFallbackProduct(context),
+                              )
+                            : Image.asset(
+                                _productDetails!.imageGallery[index],
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (_, __, ___) =>
+                                    _buildFallbackProduct(context),
+                              ),
+                  );
+                }
+                return _productDetails!.imageGallery[index].startsWith('http')
+                    ? Image.network(
+                        _productDetails!.imageGallery[index],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) =>
+                            _buildFallbackProduct(context),
+                      )
+                    : Image.asset(
+                        _productDetails!.imageGallery[index],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) =>
+                            _buildFallbackProduct(context),
+                      );
               },
             ),
             // Gradient Overlay
             Positioned.fill(
               child: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black26,
+                      context.textDark.withValues(alpha: 0.26),
                       Colors.transparent,
                       Colors.transparent,
-                      Colors.black45,
+                      context.textDark.withValues(alpha: 0.45),
                     ],
-                    stops: [0.0, 0.2, 0.8, 1.0],
+                    stops: const [0.0, 0.2, 0.8, 1.0],
                   ),
                 ),
               ),
@@ -293,18 +362,19 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             if (hasDiscount && discountPct != null)
               Positioned(
                 top: kToolbarHeight + 20,
-                right: 16,
+                right: 16.w,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                   decoration: BoxDecoration(
-                    color: AppColors.accent,
+                    color: context.accentColor,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     'خصم $discountPct%',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
+                    style: TextStyle(
+                      color: context.backgroundColor,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -312,13 +382,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               ),
             // Horizontal Thumbnail strip overlay at bottom of image
             Positioned(
-              bottom: 16,
-              left: 16,
-              right: 16,
+              bottom: 16.h,
+              left: 16.w,
+              right: 16.w,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
-                  _productDetails.imageGallery.length,
+                  _productDetails!.imageGallery.length,
                   (index) => GestureDetector(
                     onTap: () {
                       _pageController.animateToPage(
@@ -329,16 +399,16 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 250),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: 44,
-                      height: 44,
+                      margin: EdgeInsets.symmetric(horizontal: 4.w),
+                      width: 44.w,
+                      height: 44.h,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: _currentImageIndex == index
-                              ? AppColors.primary
-                              : Colors.white.withValues(alpha: 0.6),
-                          width: 2,
+                              ? context.primaryColor
+                              : context.backgroundColor.withValues(alpha: 0.6),
+                          width: 2.w,
                         ),
                         boxShadow: _currentImageIndex == index
                             ? AppColors.tealGlowShadow
@@ -346,10 +416,20 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
-                        child: Image.asset(
-                          _productDetails.imageGallery[index],
-                          fit: BoxFit.cover,
-                        ),
+                        child: _productDetails!.imageGallery[index]
+                                .startsWith('http')
+                            ? Image.network(
+                                _productDetails!.imageGallery[index],
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _buildFallbackProduct(context),
+                              )
+                            : Image.asset(
+                                _productDetails!.imageGallery[index],
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _buildFallbackProduct(context),
+                              ),
                       ),
                     ),
                   ),
@@ -362,8 +442,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     );
   }
 
-  Widget _buildHeaderInfo() {
-    final base = _productDetails.baseProduct;
+  Widget _buildHeaderInfo(BuildContext context) {
+    final base = _productDetails!.baseProduct;
     final hasDiscount = base.originalPrice != null;
 
     return Column(
@@ -374,31 +454,38 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           onTap: () {},
           child: Text(
             base.brand,
-            style: const TextStyle(
-              fontSize: 13,
+            style: TextStyle(
+              fontSize: 13.sp,
               fontWeight: FontWeight.w800,
-              color: AppColors.primary,
+              color: context.primaryColor,
               letterSpacing: 0.5,
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: 6.h),
         // Product Name
         Text(
           base.name,
-          style: const TextStyle(
-            fontSize: 22,
+          style: TextStyle(
+            fontSize: 22.sp,
             fontWeight: FontWeight.w900,
-            color: AppColors.textDark,
-            height: 1.3,
+            color: context.textDark,
+            height: 1.3.h,
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10.h),
         // Stars Rating & Reviews Chevron link
         InkWell(
           onTap: () {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ProductReviewsPage()),
+              MaterialPageRoute(
+                builder: (_) => ProductReviewsPage(
+                  reviews: _productDetails!.reviews,
+                  ratingDistribution: _productDetails!.ratingDistribution,
+                  averageRating: _productDetails!.baseProduct.rating,
+                  totalReviews: _productDetails!.baseProduct.reviewCount,
+                ),
+              ),
             );
           },
           child: Row(
@@ -408,35 +495,35 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 final full = i < base.rating.floor();
                 return Icon(
                   full ? Icons.star_rounded : Icons.star_border_rounded,
-                  color: const Color(0xFFFFB300),
+                  color: context.primaryColor,
                   size: 16,
                 );
               }),
-              const SizedBox(width: 6),
+              SizedBox(width: 6.w),
               Text(
                 base.rating.toString(),
-                style: const TextStyle(
-                  fontSize: 13,
+                style: TextStyle(
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
+                  color: context.textDark,
                 ),
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: 4.w),
               Text(
                 '·  ${base.reviewCount} تقييم',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textGrey,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: context.textGrey,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(width: 4),
-              const Icon(Icons.chevron_left, size: 16, color: AppColors.textGrey),
+              SizedBox(width: 4.w),
+              Icon(Icons.chevron_left, size: 16, color: context.textGrey),
             ],
           ),
         ),
-        const SizedBox(height: 14),
-        // Price Row with currency "ر.س"
+        SizedBox(height: 14.h),
+        // Price Row with currency 'sar'.tr()
         Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
@@ -444,18 +531,18 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             Text(
               '${base.price.toInt()} ر.س',
               style: TextStyle(
-                fontSize: 26,
+                fontSize: 26.sp,
                 fontWeight: FontWeight.w900,
-                color: hasDiscount ? AppColors.accent : AppColors.textDark,
+                color: hasDiscount ? context.accentColor : context.textDark,
               ),
             ),
             if (hasDiscount) ...[
-              const SizedBox(width: 10),
+              SizedBox(width: 10.w),
               Text(
                 '${base.originalPrice!.toInt()} ر.س',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: AppColors.textGrey,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: context.textGrey,
                   decoration: TextDecoration.lineThrough,
                   fontWeight: FontWeight.w500,
                 ),
@@ -467,158 +554,51 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     );
   }
 
-  Widget _buildTamaraBanner() {
-    final installmentVal = (_productDetails.baseProduct.price / 3).toStringAsFixed(2);
+  Widget _buildTamaraBanner(BuildContext context) {
+    final installmentVal =
+        (_productDetails!.baseProduct.price / 3).toStringAsFixed(2);
     return GestureDetector(
       onTap: _showTamaraSheet,
       child: Container(
-        margin: const EdgeInsets.only(top: 12),
-        padding: const EdgeInsets.all(12),
+        margin: EdgeInsets.only(top: 12.h),
+        padding: EdgeInsets.all(12.w),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF7F2), // Light peach Tamara tone
+          color: context.primaryColor, // Light peach Tamara tone
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFFE0CC)),
+          border: Border.all(color: context.primaryColor),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF9E66),
+                color: context.primaryColor,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text(
-                'تمارا',
+              child: Text(
+                'tamara'.tr(),
                 style: TextStyle(
-                  color: Colors.white,
+                  color: context.backgroundColor,
                   fontWeight: FontWeight.bold,
-                  fontSize: 11,
+                  fontSize: 11.sp,
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10.w),
             Expanded(
               child: Text(
                 'قسّم فاتورتك على 3 دفعات بقيمة $installmentVal ر.س بدون فوائد. لمعرفة المزيد',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textDark,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: context.textDark,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            const Icon(Icons.arrow_back_ios, textDirection: TextDirection.ltr, size: 12, color: AppColors.textGrey),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSizeSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'حدد المقاس',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => const NotifySizeBottomSheet(),
-                );
-              },
-              child: const Text(
-                'دليل المقاسات',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 52,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              // XS mocked as out of stock
-              _buildSizeChip('XS', isAvailable: false),
-              ..._productDetails.availableSizes.map((size) => _buildSizeChip(size)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Task 1: Circular Size Chip ─────────────────────────────────────────────
-  Widget _buildSizeChip(String size, {bool isAvailable = true}) {
-    final isSelected = _selectedSize == size;
-    return GestureDetector(
-      onTap: isAvailable ? () => setState(() => _selectedSize = size) : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 50,
-        height: 50,
-        margin: const EdgeInsets.only(left: 10),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected ? AppColors.primary : Colors.white,
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary
-                : isAvailable
-                    ? AppColors.border
-                    : AppColors.border.withValues(alpha: 0.4),
-            width: isSelected ? 2 : 1.5,
-          ),
-          boxShadow: isSelected
-              ? AppColors.tealGlowShadow
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Text(
-              size,
-              style: TextStyle(
-                color: isSelected
-                    ? Colors.white
-                    : isAvailable
-                        ? AppColors.textMid
-                        : AppColors.textGreyLight,
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                fontFamily: 'Tajawal',
-              ),
-            ),
-            if (!isAvailable)
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _StrikethroughPainter(),
-                ),
-              ),
+            Icon(Icons.arrow_back_ios,
+                textDirection: ui.TextDirection.ltr,
+                size: 12,
+                color: context.textGrey),
           ],
         ),
       ),
@@ -626,36 +606,54 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   // ── Task 2: Image-driven variant picker (replaces color swatches) ───────────
-  Widget _buildImageVariantPicker() {
-    final gallery = _productDetails.imageGallery;
+  Widget _buildImageVariantPicker(BuildContext context) {
+    final gallery = _productDetails!.imageGallery;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'اختر اللون / التصميم',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
-                fontFamily: 'Tajawal',
-              ),
+            Row(
+              children: [
+                Text(
+                  'اختر اللون / التصميم',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w800,
+                    color: context.textDark,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+                if (_productDetails!.imageGallery.length > 1) ...[                  
+                  SizedBox(width: 4.w),
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 200),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w900,
+                      color: (_triedToAdd && _selectedVariantIndex == null)
+                          ? context.errorColor
+                          : Colors.transparent,
+                    ),
+                    child: const Text('*'),
+                  ),
+                ],
+              ],
             ),
             Text(
-              '${_selectedVariantIndex + 1} / ${gallery.length}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textGrey,
+              '${_selectedVariantIndex != null ? _selectedVariantIndex! + 1 : 0} / ${gallery.length}',
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: context.textGrey,
                 fontFamily: 'Tajawal',
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12.h),
         SizedBox(
-          height: 68,
+          height: 68.h,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: gallery.length,
@@ -663,6 +661,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               final isSelected = _selectedVariantIndex == index;
               return GestureDetector(
                 onTap: () {
+                  HapticFeedback.lightImpact();
                   setState(() {
                     _selectedVariantIndex = index;
                     _currentImageIndex = index;
@@ -676,22 +675,32 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOut,
-                  margin: const EdgeInsets.only(left: 12),
-                  width: 60,
-                  height: 60,
+                  margin: EdgeInsets.only(left: 12.w),
+                  width: 60.w,
+                  height: 60.h,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected ? AppColors.primary : AppColors.border,
+                      color: isSelected ? context.primaryColor : context.border,
                       width: isSelected ? 2.5 : 1.5,
                     ),
                     boxShadow: isSelected ? AppColors.tealGlowShadow : null,
                   ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      gallery[index],
-                      fit: BoxFit.cover,
-                    ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: gallery[index].startsWith('http')
+                        ? Image.network(
+                            gallery[index],
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                _buildFallbackProduct(context),
+                          )
+                        : Image.asset(
+                            gallery[index],
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                _buildFallbackProduct(context),
+                          ),
                   ),
                 ),
               );
@@ -702,109 +711,240 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     );
   }
 
-  Widget _buildDeliveryInfo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: const [
-              Icon(Icons.local_shipping_outlined, color: AppColors.primary, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'الشحن السريع بواسطة KDX',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textDark),
+  Widget _buildSizePicker(BuildContext context) {
+    final sizes = _productDetails!.availableSizes;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'choose_size'.tr(),
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w800,
+                color: context.textDark,
+                fontFamily: 'Tajawal',
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: AppColors.border),
-              borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'التوصيل مضمون: خلال 4-8 أيام عمل.',
-                        style: TextStyle(fontSize: 11, color: AppColors.textDark, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'شحن سريع وآمن مع إمكانية التتبع الكامل لطلبك.',
-                        style: TextStyle(fontSize: 11, color: AppColors.textGrey),
-                      ),
-                    ],
+            SizedBox(width: 4.w),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w900,
+                color: (_triedToAdd && _selectedSizeIndex == null)
+                    ? context.errorColor
+                    : Colors.transparent,
+              ),
+              child: const Text('*'),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        Wrap(
+          spacing: 12.w,
+          runSpacing: 12.w,
+          children: List.generate(sizes.length, (index) {
+            final isSelected = _selectedSizeIndex == index;
+            return GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                setState(() {
+                  _selectedSizeIndex = index;
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? context.primaryColor
+                      : context.backgroundColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? context.primaryColor : context.border,
+                    width: 1.5.w,
+                  ),
+                  boxShadow: isSelected ? AppColors.tealGlowShadow : null,
+                ),
+                child: Text(
+                  sizes[index],
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    color:
+                        isSelected ? context.backgroundColor : context.textMid,
                   ),
                 ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+  Widget _buildFallbackProduct(BuildContext context) {
+    return Image.asset(
+      'assets/images/fallback_product.png',
+      fit: BoxFit.cover,
+    );
+  }
+
+
+  Widget _buildDescription(BuildContext context) {
+    final description = _productDetails!.description;
+    final isLong = description.length > 180;
+    final displayedText = isLong ? '${description.substring(0, 180)}...' : description;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'product_details_and_specifications'.tr(),
+          style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w800,
+              color: context.textDark),
+        ),
+        SizedBox(height: 12.h),
+        if (_productDetails!.sku != null) ...[
+          Text(
+            'رقم الصنف (SKU): ${_productDetails!.sku}',
+            style: TextStyle(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: context.textGrey,
+            ),
+          ),
+          SizedBox(height: 8.h),
+        ],
+        if (_productDetails!.tags.isNotEmpty) ...[
+          Wrap(
+            spacing: 6.w,
+            runSpacing: 6.w,
+            children: _productDetails!.tags
+                .map((tag) => Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: context.cardBackground,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        tag,
+                        style: TextStyle(
+                            fontSize: 11.sp, color: context.primaryColor),
+                      ),
+                    ))
+                .toList(),
+          ),
+          SizedBox(height: 12.h),
+        ],
+        Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            Text(
+              displayedText,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: context.textMid,
+                height: 1.8.h,
+                fontFamily: 'Tajawal',
+              ),
+            ),
+            if (isLong)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 30.h,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        context.surfaceColor.withValues(alpha: 0.0),
+                        context.surfaceColor,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (isLong) ...[
+          SizedBox(height: 10.h),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ProductSpecsPage(productDetails: _productDetails!),
+                ),
+              );
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'show_more_specifications'.tr(),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.bold,
+                    color: context.primaryColor,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+                SizedBox(width: 4.w),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 12.sp, color: context.primaryColor),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDescription() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'تفاصيل المنتج والمواصفات',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          _productDetails.description,
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColors.textMid,
-            height: 1.6,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildReviewsSection() {
+  Widget _buildReviewsSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ReviewDistributionWidget(
-          distribution: _productDetails.ratingDistribution,
-          averageRating: _productDetails.baseProduct.rating,
-          totalReviews: _productDetails.baseProduct.reviewCount,
+          distribution: _productDetails!.ratingDistribution,
+          averageRating: _productDetails!.baseProduct.rating,
+          totalReviews: _productDetails!.baseProduct.reviewCount,
         ),
-        const SizedBox(height: 20),
-        ..._productDetails.reviews.map((r) => ReviewCardWidget(review: r)),
-        const SizedBox(height: 12),
+        SizedBox(height: 20.h),
+        ..._productDetails!.reviews.map((r) => ReviewCardWidget(review: r)),
+        SizedBox(height: 12.h),
         Center(
           child: OutlinedButton(
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProductReviewsPage()),
+                MaterialPageRoute(
+                  builder: (_) => ProductReviewsPage(
+                    reviews: _productDetails!.reviews,
+                    ratingDistribution: _productDetails!.ratingDistribution,
+                    averageRating: _productDetails!.baseProduct.rating,
+                    totalReviews: _productDetails!.baseProduct.reviewCount,
+                  ),
+                ),
               );
             },
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.primary, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              side: BorderSide(color: context.primaryColor, width: 1.5.w),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
             ),
-            child: const Text(
-              'عرض كل الآراء والتقييمات',
-              style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w700),
+            child: Text(
+              'show_all_reviews'.tr(),
+              style: TextStyle(
+                  color: context.primaryColor,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700),
             ),
           ),
         ),
@@ -812,89 +952,57 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     );
   }
 
-  Widget _buildSimilarProducts() {
+  Widget _buildSimilarProducts(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'منتجات قد تعجبك أيضاً',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark),
+            Text(
+              'similar_products'.tr(),
+              style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w800,
+                  color: context.textDark),
             ),
             GestureDetector(
-              onTap: () {},
-              child: const Text(
-                'عرض الكل',
-                style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => ProductGridPage(
+                      title: 'similar_products_1'.tr(),
+                      filters: {
+                        'category_id': _productDetails!.baseProduct.categoryId
+                      },
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                'show_all'.tr(),
+                style: TextStyle(
+                    color: context.primaryColor,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.bold),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        ProductHorizontalRow(products: _productDetails.similarProducts),
+        SizedBox(height: 16.h),
+        ProductHorizontalRow(products: _productDetails!.similarProducts),
       ],
     );
   }
 
-  Widget _buildAIPromptSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'اسأل خبير الموضة الذكي',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'هل تريد معرفة كيف تنسق هذه القطعة مع ملابس أخرى؟ أو تسأل عن تفاصيل دقيقة للمنتج؟',
-          style: TextStyle(fontSize: 12, color: AppColors.textGrey),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9F9F9),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  decoration: const InputDecoration(
-                    hintText: 'اكتب سؤالك هنا...',
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(fontSize: 13, color: AppColors.textGreyLight),
-                  ),
-                  style: const TextStyle(fontSize: 13),
-                  maxLines: 2,
-                  minLines: 1,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.send_rounded, color: AppColors.primary),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('جاري تحليل سؤالك...')),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomBar() {
+  Widget _buildBottomBar(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Color(0x0F000000), blurRadius: 10, offset: Offset(0, -4)),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: context.backgroundColor,
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x0F000000), blurRadius: 10, offset: Offset(0, -4)),
         ],
       ),
       child: SafeArea(
@@ -903,15 +1011,15 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           children: [
             // Quantity Selector
             Container(
-              height: 48,
+              height: 48.h,
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border, width: 1.5),
+                border: Border.all(color: context.border, width: 1.5.w),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove, color: AppColors.textMid, size: 18),
+                    icon: Icon(Icons.remove, color: context.textMid, size: 18),
                     onPressed: () {
                       if (_quantity > 1) setState(() => _quantity--);
                     },
@@ -920,10 +1028,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   ),
                   Text(
                     _quantity.toString(),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15.sp,
+                        color: context.textDark),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add, color: AppColors.textMid, size: 18),
+                    icon: Icon(Icons.add, color: context.textMid, size: 18),
                     onPressed: () {
                       setState(() => _quantity++);
                     },
@@ -933,40 +1044,89 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 ],
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.w),
             // Add to Cart Button (Namshe-style Gradient with Shopping Bag icon)
             Expanded(
               child: Container(
-                height: 48,
+                height: 48.h,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryDark],
+                  gradient: LinearGradient(
+                    colors: [context.primaryColor, context.primaryDark],
                     begin: Alignment.topRight,
                     end: Alignment.bottomLeft,
                   ),
                   boxShadow: AppColors.tealGlowShadow,
                 ),
                 child: ElevatedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    if (_productDetails == null) return;
+                    if (!await AuthGuard.requireLogin(context)) return;
+                    if (!mounted) return;
+
+                    final sizes = _productDetails!.availableSizes.where((s) => s.trim().isNotEmpty).toList();
+                    if (sizes.isNotEmpty && _selectedSizeIndex == null) {
+                      setState(() => _triedToAdd = true);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('please_choose_the_size'.tr()),
+                            backgroundColor: context.errorColor),
+                      );
+                      return;
+                    }
+
+                    // Require a variant selection when the product has >1 images.
+                    final requiresVariantSelection = _productDetails!.imageGallery.length > 1;
+                    if (requiresVariantSelection && _selectedVariantIndex == null) {
+                      setState(() => _triedToAdd = true);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('please_choose_the_color'.tr()),
+                            backgroundColor: context.errorColor),
+                      );
+                      return;
+                    }
+
+                    final imageId =
+                        _currentImageIndex < _productDetails!.imageIds.length
+                            ? _productDetails!.imageIds[_currentImageIndex]
+                            : null;
+                    String? sizeName = _selectedSizeIndex != null
+                        ? sizes[_selectedSizeIndex!]
+                        : null;
+                    
+                    if (sizeName == null || sizeName.trim().isEmpty) {
+                      sizeName = '-'; // Fallback for products with no sizes so backend breakdown validation passes
+                    }
+
+                    HapticFeedback.mediumImpact();
+                    context.read<CartBloc>().add(CartItemAdded(
+                          productId: _productDetails!.baseProduct.id,
+                          quantity: _quantity,
+                          imageId: imageId,
+                          sizeName: sizeName,
+                        ));
+                    if (!mounted) return;
                     showDialog(
                       context: context,
                       builder: (context) => const AddToCartDialog(),
                     );
                   },
-                  icon: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
-                  label: const Text(
-                    'أضف إلى السلة',
+                  icon: Icon(Icons.shopping_bag_outlined,
+                      color: context.backgroundColor, size: 20),
+                  label: Text(
+                    'add_to_cart'.tr(),
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                      color: Colors.white,
+                      fontSize: 15.sp,
+                      color: context.backgroundColor,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
                 ),
@@ -979,21 +1139,3 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 }
 
-// ── Helper: diagonal line painter for out-of-stock circles ──────────────────
-class _StrikethroughPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.textGreyLight
-      ..strokeWidth = 1.5
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-      Offset(size.width * 0.2, size.height * 0.8),
-      Offset(size.width * 0.8, size.height * 0.2),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

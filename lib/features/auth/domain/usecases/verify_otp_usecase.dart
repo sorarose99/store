@@ -12,15 +12,15 @@ class VerifyOtpUseCase implements UseCase<User, VerifyOtpParams> {
   @override
   Future<Either<Failure, User>> call(VerifyOtpParams params) {
     return repository.verifyOtp(
-      phoneNumber: params.phoneNumber,
+      email: params.email,
       otpCode: params.otpCode,
     );
   }
 }
 
 class VerifyOtpParams {
-  final String phoneNumber;
+  final String email;
   final String otpCode;
 
-  VerifyOtpParams({required this.phoneNumber, required this.otpCode});
+  VerifyOtpParams({required this.email, required this.otpCode});
 }

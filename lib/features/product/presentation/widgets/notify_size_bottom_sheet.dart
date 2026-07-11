@@ -1,4 +1,7 @@
+import 'dart:ui' as ui;
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 
 class NotifySizeBottomSheet extends StatefulWidget {
@@ -9,95 +12,86 @@ class NotifySizeBottomSheet extends StatefulWidget {
 }
 
 class _NotifySizeBottomSheetState extends State<NotifySizeBottomSheet> {
-  final List<String> _availableSizes = [
-    '3S', '4S', '5S', '6S', '7S', '8S',
-    '3M', 'L', 'XL', '2XL', '3XL', '4XL',
-    '5XL', '6XL', '7XL', '8XL'
-  ]; // Using mock data close to image. The image has 35, 4S, 5S, 6S, 7S, 8S, 1S, S, M, L, XL, 2XL, 3XL, 4XL, 5XL, 6XL, 7XL, 8XL.
-  // Let's refine the list to exactly match image or similar grid.
-  
-  final List<String> _exactSizes = [
-    '3S', '4S', '5S', '6S', '7S', '8S',
-    '1S', 'S', 'M', 'L', 'XL', '2XL',
-    '3XL', '4XL', '5XL', '6XL', '7XL', '8XL'
-  ];
-
   String? _selectedSize;
 
+  static const List<String> _exactSizes = [
+    '3S, 4S, 5S, 6S, 7S, 8S, S, M, L, XL, 2XL, 3XL, 4XL, 5XL, 6XL, 7XL, 8XL',
+  ];
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.backgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           // Drag handle
           Center(
             child: Container(
-              width: 40,
-              height: 4,
+              width: 40.w,
+              height: 4.h,
               decoration: BoxDecoration(
-                color: const Color(0xFFE5E5EA),
+                color: context.primaryColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          
+          SizedBox(height: 16.h),
+
           // Header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: EdgeInsets.symmetric(horizontal: 16.0.w),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, size: 20, color: AppColors.textDark),
+                  icon: Icon(Icons.arrow_back_ios,
+                      size: 20, color: context.textDark),
                   onPressed: () => Navigator.of(context).pop(),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
-                const Text(
-                  'أخبرني بمقاسك',
+                Text(
+                  'tell_me_your_size'.tr(),
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+                    color: context.textDark,
                   ),
                 ),
-                const SizedBox(width: 20), // Balance
+                SizedBox(width: 20.w), // Balance
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          
+          SizedBox(height: 24.h),
+
           // Subtitle
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0.w),
             child: Text(
-              'حدد الحجم',
+              'select_size_1'.tr(),
               textAlign: TextAlign.right,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                color: context.textDark,
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          
+          SizedBox(height: 16.h),
+
           // Size Grid
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: EdgeInsets.symmetric(horizontal: 16.0.w),
             child: Directionality(
-              textDirection: TextDirection.ltr, // Align chips LTR as in design
+              textDirection: ui.TextDirection.ltr, // Align chips LTR as in design
               child: Wrap(
-                spacing: 8,
-                runSpacing: 12,
+                spacing: 8.w,
+                runSpacing: 12.w,
                 alignment: WrapAlignment.center,
                 children: _exactSizes.map((size) {
                   final isSelected = _selectedSize == size;
@@ -108,12 +102,14 @@ class _NotifySizeBottomSheetState extends State<NotifySizeBottomSheet> {
                       });
                     },
                     child: Container(
-                      width: 48,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      width: 48.w,
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.backgroundColor,
                         border: Border.all(
-                          color: isSelected ? AppColors.textDark : const Color(0xFFE5E5EA),
+                          color: isSelected
+                              ? context.textDark
+                              : context.primaryColor,
                         ),
                         borderRadius: BorderRadius.circular(24),
                       ),
@@ -121,9 +117,11 @@ class _NotifySizeBottomSheetState extends State<NotifySizeBottomSheet> {
                       child: Text(
                         size,
                         style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? AppColors.textDark : AppColors.textGrey,
+                          fontSize: 12.sp,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          color:
+                              isSelected ? context.textDark : context.textGrey,
                         ),
                       ),
                     ),
@@ -132,17 +130,17 @@ class _NotifySizeBottomSheetState extends State<NotifySizeBottomSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 32),
-          
+          SizedBox(height: 32.h),
+
           // Send Button
           Padding(
             padding: EdgeInsets.only(
-              left: 16.0,
-              right: 16.0,
+              left: 16.0.w,
+              right: 16.0.w,
               bottom: MediaQuery.of(context).padding.bottom + 16.0,
             ),
             child: SizedBox(
-              height: 48,
+              height: 48.h,
               child: ElevatedButton(
                 onPressed: _selectedSize != null
                     ? () {
@@ -151,17 +149,17 @@ class _NotifySizeBottomSheetState extends State<NotifySizeBottomSheet> {
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  disabledBackgroundColor: const Color(0xFFE5E5EA),
+                  backgroundColor: context.primaryColor,
+                  disabledBackgroundColor: context.primaryColor,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  'إرسال',
+                child: Text(
+                  'send'.tr(),
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

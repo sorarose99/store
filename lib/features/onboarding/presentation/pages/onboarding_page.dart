@@ -1,4 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../auth/presentation/pages/login_page.dart';
@@ -59,155 +61,96 @@ class _OnboardingPageState extends State<OnboardingPage>
     final isLast = _currentPage == onboardingSlides.length - 1;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Column(
-            children: [
-              // ── Page View ─────────────────────────────────────────────────
-              Expanded(
-                child: Column(
-                  children: [
-                    // KDX Brand Identity (Left, above cards)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                      child: Row(
-                        children: [
-                          // Rotated animated KDX logo
-                          RotationTransition(
-                            turns: Tween(begin: -0.05, end: 0.05)
-                                .animate(_logoAnimController),
-                            child: ScaleTransition(
-                              scale: Tween(begin: 1.0, end: 1.1)
-                                  .animate(_logoAnimController),
-                              child: Image.asset(
-                                'assets/images/logo.jpeg',
-                                width: 60,
-                                height: 30,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.image_not_supported,
-                                        size: 30),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                'KDX',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w900,
-                                  color: AppColors.textDark,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                              Text(
-                                'TRAVEL LOG',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textGrey,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+        child: Column(
+          children: [
+            // ── Page View ─────────────────────────────────────────────────
+            Expanded(
+              child: Column(
+                children: [
+                  SizedBox(height: 20.h),
 
-                    // Slide PageView
-                    Expanded(
-                      child: PageView.builder(
-                        controller: _pageController,
-                        itemCount: onboardingSlides.length,
-                        onPageChanged: (i) => setState(() => _currentPage = i),
-                        itemBuilder: (context, index) {
-                          return _SlideCard(slide: onboardingSlides[index]);
-                        },
-                      ),
+                  // Slide PageView
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: onboardingSlides.length,
+                      onPageChanged: (i) => setState(() => _currentPage = i),
+                      itemBuilder: (context, index) {
+                        return _SlideCard(
+                          slide: onboardingSlides[index],
+                          index: index,
+                        );
+                      },
                     ),
+                  ),
 
-                    // ── Dots Indicator ────────────────────────────────────
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        onboardingSlides.length,
-                        (i) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: _currentPage == i ? 22 : 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
-                            color: _currentPage == i
-                                ? AppColors.primary
-                                : AppColors.border,
-                          ),
+                  // ── Dots Indicator ────────────────────────────────────
+                  SizedBox(height: 20.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      onboardingSlides.length,
+                      (i) => AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: EdgeInsets.symmetric(horizontal: 4.w),
+                        width: _currentPage == i ? 22 : 8,
+                        height: 8.h,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(4),
+                          color: _currentPage == i
+                              ? context.primaryColor
+                              : context.border,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                  ),
+                  SizedBox(height: 24.h),
 
-                    // ── Bottom Buttons ────────────────────────────────────
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        children: [
-                          // Skip (shown only on non-last slides)
-                          if (!isLast)
-                            Expanded(
-                              child: TextButton(
-                                onPressed: _completeOnboarding,
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.textGrey,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
-                                ),
-                                child: const Text(
-                                  'تخطي',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                  // ── Bottom Buttons ────────────────────────────────────
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    child: Row(
+                      children: [
+                        // Skip (shown only on non-last slides)
+                        if (!isLast)
+                          Expanded(
+                            child: TextButton(
+                              onPressed: _completeOnboarding,
+                              style: TextButton.styleFrom(
+                                foregroundColor: context.textGrey,
+                                padding: EdgeInsets.symmetric(vertical: 14.h),
+                              ),
+                              child: Text(
+                                tr('skip'),
+                                style: TextStyle(
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
-                          if (!isLast) const SizedBox(width: 12),
-
-                          // Continue / Start
-                          Expanded(
-                            flex: 2,
-                            child: ElevatedButton(
-                              onPressed: _nextPage,
-                              child: Text(isLast ? 'ابدأ الآن' : 'استمرار'),
-                            ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                        if (!isLast) SizedBox(width: 12.w),
 
-  Widget _buildLogoTile(Color color) {
-    return Container(
-      width: 18,
-      height: 10,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(2),
+                        // Continue / Start
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: _nextPage,
+                            child: Text(isLast
+                                ? tr('get_started')
+                                : tr('continue_btn')),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 32.h),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -216,13 +159,17 @@ class _OnboardingPageState extends State<OnboardingPage>
 // ── Individual Slide Card ──────────────────────────────────────────────────
 class _SlideCard extends StatelessWidget {
   final OnboardingSlide slide;
+  final int index;
 
-  const _SlideCard({required this.slide});
+  const _SlideCard({
+    required this.slide,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: EdgeInsets.symmetric(horizontal: 20.0.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -232,10 +179,10 @@ class _SlideCard extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: const Color(0xFFEEEEEE),
+                color: context.primaryColor,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.10),
+                    color: context.textDark.withValues(alpha: 0.10),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -249,71 +196,36 @@ class _SlideCard extends StatelessWidget {
                     slide.imagePath,
                     fit: BoxFit.cover,
                   ),
-                  // KDX watermark badge (top-right in RTL = top-left visually)
-                  Positioned(
-                    top: 14,
-                    left: 14,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'KDX',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.textDark,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
-
-          // ── Tag ──────────────────────────────────────────────────────────
-          Text(
-            slide.tag,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
-              letterSpacing: 0.8,
-            ),
-            textAlign: TextAlign.right,
-          ),
-          const SizedBox(height: 6),
+          SizedBox(height: 16.h),
 
           // ── Title ────────────────────────────────────────────────────────
           Text(
-            slide.title,
-            style: const TextStyle(
-              fontSize: 16,
+            tr('onboarding_title_${index + 1}'),
+            style: TextStyle(
+              fontSize: 16.sp,
               fontWeight: FontWeight.w800,
-              color: AppColors.textDark,
-              height: 1.4,
+              color: context.textDark,
+              height: 1.4.h,
             ),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
 
           // ── Description ──────────────────────────────────────────────────
           Text(
-            slide.description,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textGrey,
-              height: 1.55,
+            tr('onboarding_desc_${index + 1}'),
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: context.textGrey,
+              height: 1.55.h,
             ),
-            textAlign: TextAlign.right,
+            textAlign: TextAlign.start,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),

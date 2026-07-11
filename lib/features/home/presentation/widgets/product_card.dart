@@ -1,4 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../../../core/constants/colors.dart';
 
@@ -11,6 +14,8 @@ class ProductCard extends StatefulWidget {
   final VoidCallback? onWishlistTap;
   final VoidCallback? onTap;
   final bool showAddToCartButton;
+  final bool isWishlisted;
+  final String? heroTag;
 
   const ProductCard({
     super.key,
@@ -18,6 +23,8 @@ class ProductCard extends StatefulWidget {
     this.onWishlistTap,
     this.onTap,
     this.showAddToCartButton = false,
+    this.isWishlisted = false,
+    this.heroTag,
   });
 
   @override
@@ -28,12 +35,10 @@ class _ProductCardState extends State<ProductCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _heartController;
   late Animation<double> _heartScale;
-  bool _isWishlisted = false;
 
   @override
   void initState() {
     super.initState();
-    _isWishlisted = widget.product.isWishlisted;
     _heartController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 250),
@@ -41,7 +46,8 @@ class _ProductCardState extends State<ProductCard>
     _heartScale = TweenSequence<double>([
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.4), weight: 50),
       TweenSequenceItem(tween: Tween(begin: 1.4, end: 1.0), weight: 50),
-    ]).animate(CurvedAnimation(parent: _heartController, curve: Curves.easeOut));
+    ]).animate(
+        CurvedAnimation(parent: _heartController, curve: Curves.easeOut));
   }
 
   @override
@@ -51,7 +57,6 @@ class _ProductCardState extends State<ProductCard>
   }
 
   void _handleWishlist() {
-    setState(() => _isWishlisted = !_isWishlisted);
     _heartController.forward(from: 0);
     widget.onWishlistTap?.call();
   }
@@ -66,7 +71,7 @@ class _ProductCardState extends State<ProductCard>
       onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.surfaceColor,
           borderRadius: BorderRadius.circular(14),
           boxShadow: AppColors.cardShadow,
         ),
@@ -82,120 +87,57 @@ class _ProductCardState extends State<ProductCard>
                   ClipRRect(
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(14)),
-                    child: Image.asset(
-                      product.imageAsset,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: AppColors.cardBackground,
-                        child: const Center(
-                          child: Icon(Icons.image_outlined,
-                              size: 44, color: AppColors.textGreyLight),
-                        ),
-                      ),
+                    child: Hero(
+                      tag: widget.heroTag ?? 'product_image_${widget.product.id}',
+                      child: product.imageAsset.startsWith('http')
+                          ? CachedNetworkImage(
+                              imageUrl: product.imageAsset,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, __, ___) =>
+                                  _buildPlaceholder(context),
+                            )
+                          : Image.asset(
+                              product.imageAsset,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  _buildPlaceholder(context),
+                            ),
                     ),
                   ),
-
-                  // Discount badge — pill shape, Namshe red
-                  if (hasDiscount && discountPct != null)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '$discountPct%−',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // NEW badge — teal pill
-                  if (product.isNew && !hasDiscount)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'جديد',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  // Wishlist heart button
+                  // Wishlist Icon Overlay
                   Positioned(
-                    top: 8,
-                    left: 8,
+                    top: 8.h,
+                    right: 8.w,
                     child: GestureDetector(
                       onTap: _handleWishlist,
-                      child: ScaleTransition(
-                        scale: _heartScale,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: _isWishlisted
-                                ? AppColors.tealGlowShadow
-                                : AppColors.cardShadow,
-                          ),
+                      child: Container(
+                        padding: EdgeInsets.all(6.w),
+                        decoration: BoxDecoration(
+                          color: context.backgroundColor,
+                          shape: BoxShape.circle,
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x1A000000),
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ScaleTransition(
+                          scale: _heartScale,
                           child: Icon(
-                            _isWishlisted
+                            widget.isWishlisted
                                 ? Icons.favorite
-                                : Icons.favorite_border_rounded,
-                            color: _isWishlisted
-                                ? AppColors.accent
-                                : AppColors.textGrey,
-                            size: 18,
+                                : Icons.favorite_border,
+                            color: widget.isWishlisted
+                                ? context.errorColor
+                                : context.textGrey,
+                            size: 18.sp,
                           ),
                         ),
                       ),
                     ),
                   ),
-
-                  // Brand logo pill at bottom of image
-                  if (product.brand.isNotEmpty)
-                    Positioned(
-                      bottom: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(230),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          product.brand,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -204,88 +146,115 @@ class _ProductCardState extends State<ProductCard>
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Product name
                   Text(
                     product.name,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textDark,
+                    style: TextStyle(
+                      fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
-                      height: 1.3,
+                      color: context.textDark,
+                      fontFamily: 'Tajawal',
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.start,
                   ),
-                  const SizedBox(height: 5),
 
-                  // Star rating row
-                  const _StarRatingRow(rating: 4.2, reviewCount: 48),
-                  const SizedBox(height: 7),
+                  SizedBox(height: 8.h),
 
                   // Price row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
                     children: [
-                      if (hasDiscount) ...[
+                      if (hasDiscount && discountPct != null) ...[
                         Text(
-                          '${product.originalPrice!.toInt()} ر.س',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textGrey,
-                            decoration: TextDecoration.lineThrough,
-                            decorationColor: AppColors.textGrey,
+                          '$discountPct%-',
+                          style: TextStyle(
+                            color:
+                                context.errorColor, // Namshi red discount text
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Tajawal',
                           ),
                         ),
-                        const SizedBox(width: 5),
+                        SizedBox(width: 8.w),
+                        Text(
+                          '${product.originalPrice!.toInt()} ر.س',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: context.textGrey,
+                            decoration: TextDecoration.lineThrough,
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
                       ],
                       Text(
                         '${product.price.toInt()} ر.س',
                         style: TextStyle(
-                          fontSize: 15,
-                          color: hasDiscount
-                              ? AppColors.accent
-                              : AppColors.textDark,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 16.sp,
+                          color: context.textDark,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Tajawal',
                         ),
                       ),
                     ],
                   ),
 
-                  // Free delivery chip
-                  if (product.isFreeDelivery) ...[
-                    const SizedBox(height: 6),
-                    _FreeDeliveryChip(),
-                  ],
+                  SizedBox(height: 8.h),
+
+                  // Today badge
+                  Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: context.primaryColor, // Namshi bright green/yellow
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'today'.tr(),
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.bold,
+                        color: context.textDark,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ),
 
                   // Add to Cart Button for Wishlist
                   if (widget.showAddToCartButton) ...[
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('تمت إضافة المنتج إلى السلة', style: TextStyle(fontWeight: FontWeight.bold)),
-                              duration: Duration(seconds: 1),
+                            SnackBar(
+                              content: Text('the_product_has_been'.tr(),
+                                  style:
+                                      const TextStyle(fontWeight: FontWeight.bold)),
+                              duration: const Duration(seconds: 1),
                             ),
                           );
                         },
-                        icon: const Icon(Icons.shopping_bag_outlined, size: 14, color: Colors.white),
-                        label: const Text(
-                          'أضف إلى السلة',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.white),
+                        icon: Icon(Icons.shopping_bag_outlined,
+                            size: 14, color: context.backgroundColor),
+                        label: Text(
+                          'add_to_cart'.tr(),
+                          style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w800,
+                              color: context.backgroundColor),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: context.primaryColor,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: EdgeInsets.symmetric(vertical: 8.h),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
                     ),
@@ -298,87 +267,14 @@ class _ProductCardState extends State<ProductCard>
       ),
     );
   }
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Star Rating Row
-// ─────────────────────────────────────────────────────────────────────────────
-class _StarRatingRow extends StatelessWidget {
-  final double rating;
-  final int reviewCount;
-
-  const _StarRatingRow({required this.rating, required this.reviewCount});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Text(
-          '($reviewCount)',
-          style: const TextStyle(
-            fontSize: 10,
-            color: AppColors.textGrey,
-          ),
-        ),
-        const SizedBox(width: 3),
-        Text(
-          rating.toStringAsFixed(1),
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textGrey,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(width: 3),
-        ...List.generate(5, (i) {
-          final full = i < rating.floor();
-          final half = !full && i < rating.ceil() && (rating % 1) >= 0.3;
-          return Icon(
-            full
-                ? Icons.star_rounded
-                : half
-                    ? Icons.star_half_rounded
-                    : Icons.star_outline_rounded,
-            color: const Color(0xFFFFB300),
-            size: 13,
-          );
-        }),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Free Delivery Chip
-// ─────────────────────────────────────────────────────────────────────────────
-class _FreeDeliveryChip extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: AppColors.success.withAlpha(25),
-        borderRadius: BorderRadius.circular(6),
-        border:
-            Border.all(color: AppColors.success.withAlpha(80), width: 0.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: const [
-          Icon(Icons.local_shipping_outlined,
-              size: 11, color: AppColors.success),
-          SizedBox(width: 3),
-          Text(
-            'توصيل مجاني',
-            style: TextStyle(
-              fontSize: 10,
-              color: AppColors.success,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+  Widget _buildPlaceholder(BuildContext context) {
+    final validFallbacks = [0, 3, 9];
+    final index = validFallbacks[
+        widget.product.id.hashCode.abs() % validFallbacks.length];
+    return Image.asset(
+      'assets/images/fallback_cat_$index.png',
+      fit: BoxFit.cover,
     );
   }
 }

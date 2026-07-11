@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/colors.dart';
-import '../../data/datasources/mock_account_data.dart';
+import '../blocs/account_bloc.dart';
+import '../blocs/account_state.dart';
 import 'change_password_page.dart';
 import 'delete_account_step1_page.dart';
 import '../../../onboarding/presentation/pages/onboarding_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/widgets/app_shimmer.dart';
 
 class AccountSettingsPage extends StatefulWidget {
   const AccountSettingsPage({super.key});
@@ -30,8 +33,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = MockAccountDataSource.currentUser; // Rana Alharbi as per mockup
-
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -53,136 +54,164 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             ),
           ),
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Profile Summary ─────────────────────────────────────────
-              Container(
-                color: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 32),
+        body: BlocBuilder<AccountBloc, AccountState>(
+          builder: (context, state) {
+            if (state is AccountLoaded) {
+              final user = state.user;
+
+              return SingleChildScrollView(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // ── Profile Summary ─────────────────────────────────────────
                     Container(
-                      width: 80,
-                      height: 80,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFFF2F2F7),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.person, size: 44, color: AppColors.textGrey),
+                      color: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFFF2F2F7),
+                            ),
+                            child: user.avatar != null && user.avatar!.isNotEmpty
+                                ? ClipOval(
+                                    child: Image.network(
+                                      user.avatar!,
+                                      fit: BoxFit.cover,
+                                      width: 80,
+                                      height: 80,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                          Icons.person,
+                                          size: 44,
+                                          color: AppColors.textGrey),
+                                    ),
+                                  )
+                                : const Center(
+                                    child: Icon(Icons.person,
+                                        size: 44, color: AppColors.textGrey),
+                                  ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            user.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            user.email,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textGrey,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      user.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+
+                    // ── Security Level (مستوى الأمان) ───────────────────────────
+                    _buildSectionHeader('مستوى الأمان'),
+                    Container(
+                      color: Colors.white,
+                      child: Column(
+                        children: [
+                          _buildNavigationTile(
+                            icon: Icons.lock_outline,
+                            title: 'تغيير كلمة المرور',
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) => const ChangePasswordPage()),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user.email,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textGrey,
+                    const SizedBox(height: 16),
+
+                    // ── App Settings (إعدادات التطبيق) ──────────────────────────
+                    _buildSectionHeader('إعدادات التطبيق'),
+                    Container(
+                      color: Colors.white,
+                      child: Column(
+                        children: [
+                          _buildNavigationTile(
+                            icon: Icons.language_outlined,
+                            title: 'اللغة',
+                            trailingText: 'العربية',
+                            onTap: () {},
+                          ),
+                          _buildDivider(),
+                          _buildNavigationTile(
+                            icon: Icons.monetization_on_outlined,
+                            title: 'العملة',
+                            trailingText: 'الريال السعودي',
+                            onTap: () {},
+                          ),
+                          _buildDivider(),
+                          _buildToggleTile(
+                            icon: Icons.notifications_none_outlined,
+                            title: 'الإشعارات',
+                            value: _notifications,
+                            onChanged: (val) {
+                              setState(() {
+                                _notifications = val;
+                              });
+                            },
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-              // ── Security Level (مستوى الأمان) ───────────────────────────
-              _buildSectionHeader('مستوى الأمان'),
-              Container(
-                color: Colors.white,
-                child: Column(
-                  children: [
-                    _buildNavigationTile(
-                      icon: Icons.lock_outline,
-                      title: 'تغيير كلمة المرور',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const ChangePasswordPage()),
-                        );
-                      },
+                    // ── Danger Zone ─────────────────────────────────────────────
+                    Container(
+                      color: Colors.white,
+                      child: Column(
+                        children: [
+                          _buildNavigationTile(
+                            icon: Icons.delete_outline_rounded,
+                            title: 'حذف الحساب',
+                            titleColor: Colors.red,
+                            iconColor: Colors.red,
+                            hideChevron: true,
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) => const DeleteAccountStep1Page()),
+                              );
+                            },
+                          ),
+                          _buildDivider(),
+                          _buildNavigationTile(
+                            icon: Icons.logout_rounded,
+                            title: 'تسجيل الخروج',
+                            titleColor: Colors.red,
+                            iconColor: Colors.red,
+                            hideChevron: true,
+                            onTap: _handleLogout,
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(height: 32),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // ── App Settings (إعدادات التطبيق) ──────────────────────────
-              _buildSectionHeader('إعدادات التطبيق'),
-              Container(
-                color: Colors.white,
-                child: Column(
-                  children: [
-                    _buildNavigationTile(
-                      icon: Icons.language_outlined,
-                      title: 'اللغة',
-                      trailingText: 'العربية',
-                      onTap: () {},
-                    ),
-                    _buildDivider(),
-                    _buildNavigationTile(
-                      icon: Icons.monetization_on_outlined,
-                      title: 'العملة',
-                      trailingText: 'الريال السعودي',
-                      onTap: () {},
-                    ),
-                    _buildDivider(),
-                    _buildToggleTile(
-                      icon: Icons.notifications_none_outlined,
-                      title: 'الإشعارات',
-                      value: _notifications,
-                      onChanged: (val) {
-                        setState(() {
-                          _notifications = val;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ── Danger Zone ─────────────────────────────────────────────
-              Container(
-                color: Colors.white,
-                child: Column(
-                  children: [
-                    _buildNavigationTile(
-                      icon: Icons.delete_outline_rounded,
-                      title: 'حذف الحساب',
-                      titleColor: Colors.red,
-                      iconColor: Colors.red,
-                      hideChevron: true,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const DeleteAccountStep1Page()),
-                        );
-                      },
-                    ),
-                    _buildDivider(),
-                    _buildNavigationTile(
-                      icon: Icons.logout_rounded,
-                      title: 'تسجيل الخروج',
-                      titleColor: Colors.red,
-                      iconColor: Colors.red,
-                      hideChevron: true,
-                      onTap: _handleLogout,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
-            ],
-          ),
+              );
+            }
+            return ListView.builder(
+              itemCount: 8,
+              itemBuilder: (context, index) => const ListTileShimmer(),
+            );
+          },
         ),
       ),
     );
@@ -239,7 +268,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               ),
             if (trailingText != null) const SizedBox(width: 8),
             if (!hideChevron)
-              const Icon(Icons.arrow_back_ios_new, size: 16, color: Color(0xFFCCCCCC)),
+              const Icon(Icons.arrow_back_ios_new,
+                  size: 16, color: Color(0xFFCCCCCC)),
           ],
         ),
       ),
@@ -271,7 +301,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
           ),
         ],
       ),
@@ -279,6 +309,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   }
 
   Widget _buildDivider() {
-    return const Divider(height: 1, thickness: 0.5, color: Color(0xFFEEEEEE), indent: 50);
+    return const Divider(
+        height: 1, thickness: 0.5, color: Color(0xFFEEEEEE), indent: 50);
   }
 }

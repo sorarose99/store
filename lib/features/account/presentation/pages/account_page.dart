@@ -1,331 +1,496 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import '../../../../core/theme/theme_cubit.dart';
+import '../../../../core/theme/language_cubit.dart';
 import '../../../../core/constants/colors.dart';
-import '../../data/datasources/mock_account_data.dart';
+import '../../../../core/widgets/app_shimmer.dart';
+
+// Pages
 import '../pages/edit_profile_page.dart';
 import '../../../orders/presentation/pages/orders_list_page.dart';
-import '../pages/returns_page.dart';
 import '../../../wishlist/presentation/pages/wishlist_filled_page.dart';
-import '../pages/payment_cards_page.dart';
-import '../pages/reviews_detail_page.dart';
-import '../pages/terms_page.dart';
-import '../pages/about_us_page.dart';
-import '../pages/privacy_page.dart';
-import '../pages/faq_page.dart';
-import 'account_settings_page.dart';
-import 'wallet_balance_page.dart';
-import 'contact_info_page.dart';
 import '../pages/delivery_addresses_page.dart';
-import '../pages/coupons_page.dart';
-import '../pages/complaints_page.dart';
-import '../pages/ship_to_page.dart';
+import 'account_settings_page.dart';
 
-class AccountPage extends StatelessWidget {
+// Bloc
+import '../blocs/account_bloc.dart';
+import '../blocs/account_event.dart';
+import '../blocs/account_state.dart';
+
+// Wishlist
+import '../../../wishlist/presentation/blocs/wishlist_bloc.dart';
+import '../../../wishlist/presentation/blocs/wishlist_state.dart';
+
+
+
+class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final user = MockAccountDataSource.alternateUser; // Using Kamal from the mockup
+  State<AccountPage> createState() => _AccountPageState();
+}
 
+class _AccountPageState extends State<AccountPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch data if not already fetched
+    final state = context.read<AccountBloc>().state;
+    if (state is AccountInitial || state is AccountError) {
+      context.read<AccountBloc>().add(const AccountProfileRequested());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9F9F9), // Light background
+        backgroundColor: context.backgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: context.surfaceColor,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.black),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AccountSettingsPage()),
-            ),
-          ),
+          leading: const SizedBox(), // Placeholder if no back button needed
           centerTitle: true,
-          title: const Text(
-            'حسابي',
+          title: Text(
+            tr('settings'),
             style: TextStyle(
-              color: Colors.black,
+              color: context.textDark,
               fontSize: 18,
               fontWeight: FontWeight.w800,
             ),
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.menu, color: Colors.black),
-              onPressed: () {},
-            ),
-          ],
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Header Section (User Info Card) ─────────────────────────
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Top Row: Avatar & Greeting
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Color(0xFFF2F2F7),
-                              ),
-                              child: const Icon(Icons.person, color: AppColors.textGrey, size: 30),
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              'مرحباً بك، ${user.name}!',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1, thickness: 0.5, color: Color(0xFFEEEEEE)),
-                      // Bottom Row: Wallet & Points
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: InkWell(
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const WalletBalancePage()),
-                                ),
-                                child: Column(
-                                  children: [
-                                    const Text(
-                                      '140.00 ر.س',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    const Text(
-                                      'محفظة',
-                                      style: TextStyle(fontSize: 12, color: AppColors.textGrey),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 30,
-                              color: const Color(0xFFEEEEEE),
-                            ),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    '12',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    'نقاطك',
-                                    style: TextStyle(fontSize: 12, color: AppColors.textGrey),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // ── Group 1: Main Actions ──────────────────────────────────
-              Container(
-                color: Colors.white,
+        body: BlocBuilder<AccountBloc, AccountState>(
+          builder: (context, state) {
+            if (state is AccountLoading || state is AccountInitial) {
+              return const ProfileShimmer();
+            } else if (state is AccountError) {
+              return Center(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildProfileListTile(
-                      icon: Icons.person_outline,
-                      title: 'الملف الشخصي',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfilePage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.local_shipping_outlined,
-                      title: 'الشحن إلى',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ShipToPage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.inventory_2_outlined,
-                      title: 'طلباتي',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersListPage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.keyboard_return_outlined,
-                      title: 'الإرجاع',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReturnsPage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.account_balance_wallet_outlined,
-                      title: 'المحفظة',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletBalancePage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.location_on_outlined,
-                      title: 'عناوين التوصيل',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeliveryAddressesPage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.credit_card_outlined,
-                      title: 'بطاقات الدفع',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentCardsPage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.local_offer_outlined,
-                      title: 'كوبوناتي',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CouponsPage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.favorite_border_outlined,
-                      title: 'المفضلات',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WishlistFilledPage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.description_outlined,
-                      title: 'الشروط والأحكام',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsPage())),
+                    Text(state.message,
+                        style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context
+                          .read<AccountBloc>()
+                          .add(const AccountProfileRequested()),
+                      child: Text(tr('retry')),
                     ),
                   ],
                 ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // ── Group 2: Secondary Actions ─────────────────────────────
-              Container(
-                color: Colors.white,
-                child: Column(
-                  children: [
-                    _buildProfileListTile(
-                      icon: Icons.info_outline,
-                      title: 'من نحن',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutUsPage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.privacy_tip_outlined,
-                      title: 'سياسة الخصوصية والاستخدام',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.report_problem_outlined,
-                      title: 'الشكاوى والاقتراحات',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ComplaintsPage())),
-                    ),
-                    _buildDivider(),
-                    _buildProfileListTile(
-                      icon: Icons.help_outline,
-                      title: 'الأسئلة الشائعة',
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FaqPage())),
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 16),
-
-              // ── Logout ──────────────────────────────────────────────────
-              Container(
-                color: Colors.white,
-                child: _buildProfileListTile(
-                  icon: Icons.logout_rounded,
-                  title: 'تسجيل الخروج',
-                  titleColor: Colors.red,
-                  iconColor: Colors.red,
-                  hideChevron: true,
-                  onTap: () {
-                    // Navigate to settings which handles logout for now
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountSettingsPage()));
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // ── Contact Us Footer ───────────────────────────────────────
-              _buildContactFooter(),
-              const SizedBox(height: 40),
-            ],
-          ),
+              );
+            } else if (state is AccountLoaded) {
+              return _buildBody(context, state);
+            }
+            return const SizedBox();
+          },
         ),
       ),
     );
   }
 
-  Widget _buildProfileListTile({
-    required IconData icon,
+  Widget _buildBody(BuildContext context, AccountLoaded state) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<AccountBloc>().add(const AccountProfileRequested());
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildProfileHeader(state.user),
+            const SizedBox(height: 24),
+            _buildStatsCards(state.stats),
+            const SizedBox(height: 32),
+            _buildSettingsSections(context, state.stats),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(user) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                tr('welcome_back'),
+                style: const TextStyle(fontSize: 14, color: AppColors.textGrey),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                user.name,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: context.textDark,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                user.email ?? '',
+                style: TextStyle(fontSize: 14, color: context.textGrey),
+              ),
+            ],
+          ),
+        ),
+        CircleAvatar(
+          radius: 35,
+          backgroundColor: context.border,
+          backgroundImage: user.avatar != null && user.avatar!.isNotEmpty
+              ? NetworkImage(user.avatar!)
+              : null,
+          child: (user.avatar == null || user.avatar!.isEmpty)
+              ? Icon(Icons.person, size: 35, color: context.textGrey)
+              : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsCards(stats) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
+            tr('total_orders'),
+            stats.totalOrders.toString(),
+            Icons.inventory_2_outlined,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
+            tr('in_preparation'),
+            stats.processingOrders.toString(),
+            Icons.access_time, // Or hourglass_top
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
+            tr('completed_orders'),
+            stats.completedOrders.toString(),
+            Icons.check_circle_outline,
+            iconColor: context.primaryColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String title, String count, IconData icon,
+      {Color? iconColor}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.border),
+        boxShadow: [
+          BoxShadow(
+            color: context.textDark.withValues(alpha: 0.02),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: iconColor ?? context.textDark.withValues(alpha: 0.87), size: 26),
+          const SizedBox(height: 8),
+          Text(
+            count,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: context.textDark,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textGrey,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsSections(BuildContext context, stats) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(tr('content')),
+        _buildSectionBox([
+          _buildSettingsItem(
+            title: tr('profile'),
+            icon: Icons.person_outline,
+            onTap: () {
+              final accountBloc = context.read<AccountBloc>();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: accountBloc,
+                    child: const EditProfilePage(),
+                  ),
+                ),
+              );
+            },
+          ),
+          _buildDivider(),
+          _buildSettingsItem(
+            title: tr('change_password'),
+            icon: Icons.lock_outline,
+            onTap: () {
+              final accountBloc = context.read<AccountBloc>();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: accountBloc,
+                    child: const AccountSettingsPage(),
+                  ),
+                ),
+              );
+            },
+          ),
+          _buildDivider(),
+          _buildSettingsItem(
+            title: tr('my_orders'),
+            icon: Icons.inventory_2_outlined,
+            trailing: stats.totalOrders > 0
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: context.primaryColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      stats.totalOrders.toString(),
+                      style: TextStyle(color: context.backgroundColor, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  )
+                : null,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const OrdersListPage())),
+          ),
+          _buildDivider(),
+          _buildSettingsItem(
+            title: tr('shipping_addresses'),
+            icon: Icons.location_on_outlined,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const DeliveryAddressesPage())),
+          ),
+          _buildDivider(),
+          _buildSettingsItem(
+            title: tr('wishlist'),
+            icon: Icons.favorite_border_outlined,
+            trailing: BlocBuilder<WishlistBloc, WishlistState>(
+              builder: (context, state) {
+                if (state is WishlistLoaded && state.products.isNotEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: context.primaryColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${state.products.length}',
+                      style: TextStyle(color: context.backgroundColor, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  );
+                }
+                return const SizedBox();
+              },
+            ),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const WishlistFilledPage())),
+          ),
+        ]),
+        const SizedBox(height: 24),
+        _buildSectionTitle(tr('preferences_settings')),
+        _buildSectionBox([
+          _buildSettingsItem(
+            title: tr('language'),
+            icon: Icons.language,
+            trailing: BlocBuilder<LanguageCubit, Locale>(
+              builder: (context, locale) {
+                return Text(
+                  locale.languageCode == 'ar' ? 'العربية' : 'English',
+                  style: TextStyle(
+                    color: context.primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                );
+              },
+            ),
+            onTap: () {
+              final current = context.read<LanguageCubit>().state.languageCode;
+              if (current == 'ar') {
+                context.read<LanguageCubit>().setEnglish();
+                context.setLocale(const Locale('en'));
+              } else {
+                context.read<LanguageCubit>().setArabic();
+                context.setLocale(const Locale('ar'));
+              }
+            },
+          ),
+          _buildDivider(),
+          _buildSettingsItem(
+            title: tr('dark_mode'),
+            icon: Icons.dark_mode_outlined,
+            trailing: BlocBuilder<ThemeCubit, ThemeMode>(
+              builder: (context, themeMode) {
+                return CupertinoSwitch(
+                  value: themeMode == ThemeMode.dark,
+                  activeTrackColor: context.primaryColor,
+                  onChanged: (val) {
+                    if (val) {
+                      context.read<ThemeCubit>().setDark();
+                    } else {
+                      context.read<ThemeCubit>().setLight();
+                    }
+                  },
+                );
+              },
+            ),
+            onTap: () {},
+            hideChevron: true,
+          ),
+        ]),
+        const SizedBox(height: 24),
+        _buildSectionTitle(tr('general_settings')),
+        _buildSectionBox([
+          _buildSettingsItem(
+            title: tr('notifications'),
+            icon: Icons.notifications_none_outlined,
+            trailing: CupertinoSwitch(
+              value: true,
+              activeTrackColor: context.primaryColor,
+              onChanged: (val) {
+                // Notifications logic
+              },
+            ),
+            onTap: () {},
+            hideChevron: true,
+          ),
+          _buildDivider(),
+          _buildSettingsItem(
+            title: tr('delete_account'),
+            icon: Icons.delete_outline,
+            onTap: () {
+              // Delete account logic / dialog
+            },
+          ),
+          _buildDivider(),
+          _buildSettingsItem(
+            title: tr('logout'),
+            icon: Icons.power_settings_new,
+            titleColor: Colors.red,
+            iconColor: Colors.red,
+            hideChevron: true,
+            onTap: () {
+              // Proceed to account settings page which handles logout
+              final accountBloc = context.read<AccountBloc>();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: accountBloc,
+                    child: const AccountSettingsPage(),
+                  ),
+                ),
+              );
+            },
+          ),
+        ]),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          color: context.textGrey,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionBox(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.border),
+      ),
+      child: Column(
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildSettingsItem({
     required String title,
+    required IconData icon,
     required VoidCallback onTap,
+    Widget? trailing,
     Color? titleColor,
     Color? iconColor,
     bool hideChevron = false,
   }) {
     return InkWell(
       onTap: onTap,
+      borderRadius:
+          BorderRadius.circular(12), // Match container if it's the first/last
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: iconColor ?? AppColors.textGrey),
-            const SizedBox(width: 12),
+            Icon(icon, size: 22, color: iconColor ?? context.textDark.withValues(alpha: 0.87)),
+            const SizedBox(width: 14),
             Expanded(
               child: Text(
                 title,
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: titleColor ?? AppColors.textDark,
+                  fontWeight: FontWeight.w600,
+                  color: titleColor ?? context.textDark.withValues(alpha: 0.87),
                 ),
               ),
             ),
-            if (!hideChevron)
-              const Icon(Icons.arrow_back_ios_new, size: 16, color: Color(0xFFCCCCCC)),
+            if (trailing != null) trailing,
+            if (trailing == null && !hideChevron)
+              Icon(Icons.arrow_back_ios_new,
+                  size: 14, color: context.textGrey),
           ],
         ),
       ),
@@ -333,219 +498,7 @@ class AccountPage extends StatelessWidget {
   }
 
   Widget _buildDivider() {
-    return const Divider(height: 1, thickness: 0.5, color: Color(0xFFEEEEEE), indent: 50);
-  }
-
-  Widget _buildContactFooter() {
-    return Column(
-      children: [
-        const Text(
-          'تواصل معنا',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'لمتابعة مشترياتك ومعرفة المزيد من المعلومات\nيرجى التواصل معنا عبر القنوات التالية:',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12, color: AppColors.textGrey, height: 1.5),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildContactIcon(Icons.call_outlined),
-            const SizedBox(width: 16),
-            _buildContactIcon(Icons.email_outlined),
-            const SizedBox(width: 16),
-            _buildContactIcon(Icons.chat_bubble_outline),
-          ],
-        ),
-        const SizedBox(height: 32),
-        // ── بطاقات الدفع ──────────────────────────────────────────────
-        Row(
-          children: const [
-            Icon(Icons.chevron_left, size: 20, color: AppColors.textDark),
-            SizedBox(width: 4),
-            Text(
-              'بطاقات الدفع',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        // Row 1
-        Row(
-          children: [
-            Expanded(
-              child: _buildPaymentTile(
-                label: 'Apple Pay',
-                brandWidget: const Text(
-                  '\u{F8FF}Pay  Apple Pay',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildPaymentTile(
-                label: 'بطاقة مدى البنكية',
-                brandWidget: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1D6F37),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    'mada',
-                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        // Row 2
-        Row(
-          children: [
-            Expanded(
-              child: _buildPaymentTile(
-                label: 'تحويل بنكي',
-                brandWidget: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF4CAF50), width: 1.5),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.account_balance, size: 14, color: Color(0xFF4CAF50)),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildPaymentTile(
-                label: 'تابي',
-                brandWidget: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF3CFFD0),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'tabby',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        // Row 3
-        Row(
-          children: [
-            Expanded(
-              child: _buildPaymentTile(
-                label: 'تمارا',
-                brandWidget: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFD700),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'tamara',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildPaymentTile(
-                label: 'بطاقة إئتمانية',
-                brandWidget: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1F71),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    'VISA',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildContactIcon(IconData icon) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Icon(icon, size: 20, color: AppColors.textDark),
-    );
-  }
-
-  Widget _buildPaymentTile({required String label, required Widget brandWidget}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEEEEEE)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          brandWidget,
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textDark,
-                fontFamily: 'Tajawal',
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
+    return Divider(
+        height: 1, thickness: 0.5, color: context.border, indent: 50);
   }
 }

@@ -11,15 +11,21 @@ class ResetPasswordUseCase implements UseCase<Unit, ResetPasswordParams> {
   @override
   Future<Either<Failure, Unit>> call(ResetPasswordParams params) {
     return repository.resetPassword(
-      phoneNumber: params.phoneNumber,
+      email: params.email,
+      otpCode: params.otpCode,
       newPassword: params.newPassword,
     );
   }
 }
 
 class ResetPasswordParams {
-  final String phoneNumber;
+  final String email;
+  final String otpCode;
   final String newPassword;
 
-  ResetPasswordParams({required this.phoneNumber, required this.newPassword});
+  ResetPasswordParams({
+    required this.email,
+    required this.otpCode,
+    required this.newPassword,
+  });
 }

@@ -1,64 +1,32 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../home/domain/entities/product_entity.dart';
-import '../../../home/presentation/widgets/product_card.dart';
 
 class WishlistEmptyPage extends StatelessWidget {
   const WishlistEmptyPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Dummy products for recommendations
-    final List<ProductEntity> recommendations = [
-      const ProductEntity(
-        id: 'r1',
-        name: 'جاكيت شتوي طويل',
-        brand: 'KDX',
-        price: 26.8,
-        originalPrice: 30.8,
-        imageAsset: 'assets/images/cat_fashion.png',
-        isNew: false,
-        isSale: true,
-        isFreeDelivery: true,
-        rating: 4.8,
-        reviewCount: 150,
-        isWishlisted: true,
-        categoryId: 'c2',
-      ),
-      const ProductEntity(
-        id: 'r2',
-        name: 'هودي رجالي',
-        brand: 'Brand',
-        price: 26.8,
-        originalPrice: 30.8,
-        imageAsset: 'assets/images/cat_fashion.png',
-        isNew: true,
-        isSale: false,
-        isFreeDelivery: false,
-        rating: 4.9,
-        reviewCount: 95,
-        isWishlisted: false,
-        categoryId: 'c2',
-      ),
-    ];
+    // Removed dummy recommendations
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: context.surfaceColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: context.surfaceColor,
           elevation: 0,
           centerTitle: true,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark, size: 20),
+            icon: Icon(Icons.arrow_back_ios, color: context.textDark, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: const Text(
-            'المفضلة',
+          title: Text(
+            'wishlist'.tr(),
             style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 16,
+              color: context.textDark,
+              fontSize: 16.sp,
               fontWeight: FontWeight.bold,
               fontFamily: 'Tajawal',
             ),
@@ -67,8 +35,8 @@ class WishlistEmptyPage extends StatelessWidget {
         body: SingleChildScrollView(
           child: Column(
             children: [
-              const SizedBox(height: 50),
-              
+              SizedBox(height: 50.h),
+
               // Custom Illustration (browser window with X mark and heart icon overlay)
               Center(
                 child: Stack(
@@ -77,64 +45,65 @@ class WishlistEmptyPage extends StatelessWidget {
                   children: [
                     // Browser window outline
                     Container(
-                      width: 110,
-                      height: 110,
+                      width: 110.w,
+                      height: 110.h,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FB),
+                        color: context.primaryColor,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFE5E5EA), width: 1.5),
+                        border: Border.all(
+                            color: context.primaryColor, width: 1.5.w),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Browser header bar
                           Container(
-                            height: 18,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFF0F1F5),
-                              borderRadius: BorderRadius.only(
+                            height: 18.h,
+                            decoration: BoxDecoration(
+                              color: context.primaryColor,
+                              borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(14),
                                 topRight: Radius.circular(14),
                               ),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            padding: EdgeInsets.symmetric(horizontal: 8.w),
                             child: Row(
                               children: [
                                 Container(
-                                  width: 5,
-                                  height: 5,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFC7C7CC),
+                                  width: 5.w,
+                                  height: 5.h,
+                                  decoration: BoxDecoration(
+                                    color: context.primaryColor,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4.w),
                                 Container(
-                                  width: 5,
-                                  height: 5,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFC7C7CC),
+                                  width: 5.w,
+                                  height: 5.h,
+                                  decoration: BoxDecoration(
+                                    color: context.primaryColor,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4.w),
                                 Container(
-                                  width: 5,
-                                  height: 5,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFC7C7CC),
+                                  width: 5.w,
+                                  height: 5.h,
+                                  decoration: BoxDecoration(
+                                    color: context.primaryColor,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const Expanded(
+                          Expanded(
                             child: Center(
                               child: Icon(
                                 Icons.favorite_border_rounded,
                                 size: 40,
-                                color: Color(0xFFD1D1D6),
+                                color: context.primaryColor,
                               ),
                             ),
                           ),
@@ -146,22 +115,22 @@ class WishlistEmptyPage extends StatelessWidget {
                       top: -10,
                       right: -10,
                       child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        width: 32.w,
+                        height: 32.h,
+                        decoration: BoxDecoration(
+                          color: context.backgroundColor,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black12,
+                              color: context.textDark.withValues(alpha: 0.12),
                               blurRadius: 4,
-                              offset: Offset(0, 2),
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.favorite,
-                          color: Color(0xFFE53935),
+                          color: context.primaryColor,
                           size: 16,
                         ),
                       ),
@@ -171,22 +140,22 @@ class WishlistEmptyPage extends StatelessWidget {
                       bottom: -10,
                       left: -10,
                       child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        width: 32.w,
+                        height: 32.h,
+                        decoration: BoxDecoration(
+                          color: context.backgroundColor,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black12,
+                              color: context.textDark.withValues(alpha: 0.12),
                               blurRadius: 4,
-                              offset: Offset(0, 2),
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.close_rounded,
-                          color: AppColors.textGrey,
+                          color: context.textGrey,
                           size: 16,
                         ),
                       ),
@@ -194,86 +163,50 @@ class WishlistEmptyPage extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 36),
-              
+              SizedBox(height: 36.h),
+
               // Empty State Text
-              const Text(
-                'عذراً، لم يتم العثور على مفضلة',
+              Text(
+                'sorry_no_favorites_were'.tr(),
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: context.textDark,
                   fontFamily: 'Tajawal',
                 ),
               ),
-              const SizedBox(height: 24),
-              
+              SizedBox(height: 24.h),
+
               // Go Shopping Button
               SizedBox(
-                width: 140, // Match mockup button width
+                width: 140.w, // Match mockup button width
                 child: ElevatedButton(
                   onPressed: () {
                     // Navigate back to home shell
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    backgroundColor: context.primaryColor,
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'اذهب للتسوق',
+                  child: Text(
+                    'go_shopping'.tr(),
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 13.sp,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: context.backgroundColor,
                       fontFamily: 'Tajawal',
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 48),
-              
-              // Recommendations Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'توصيات لك',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Style horizontal side-by-side recommendation cards
-                    SizedBox(
-                      height: 270,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: recommendations.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          return SizedBox(
-                            width: (MediaQuery.of(context).size.width - 44) / 2, // Perfect side-by-side fit
-                            child: ProductCard(
-                              product: recommendations[index],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
+              SizedBox(height: 48.h),
+
+              SizedBox(height: 48.h),
             ],
           ),
         ),

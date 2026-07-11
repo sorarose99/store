@@ -1,4 +1,6 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 
 class CustomTextField extends StatefulWidget {
@@ -8,7 +10,7 @@ class CustomTextField extends StatefulWidget {
   final bool isPassword;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
-  final TextDirection? textDirection;
+  final ui.TextDirection? textDirection;
 
   const CustomTextField({
     super.key,
@@ -30,25 +32,25 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final isRtl = widget.textDirection != TextDirection.ltr;
+    final isRtl = widget.textDirection != ui.TextDirection.ltr;
 
     return TextFormField(
       controller: widget.controller,
       obscureText: widget.isPassword ? _obscureText : false,
       keyboardType: widget.keyboardType,
       validator: widget.validator,
-      textDirection: widget.textDirection ?? TextDirection.rtl,
+      textDirection: widget.textDirection ?? ui.TextDirection.rtl,
       textAlign: isRtl ? TextAlign.right : TextAlign.left,
-      style: const TextStyle(
-        fontSize: 14,
-        color: AppColors.textDark,
+      style: TextStyle(
+        fontSize: 14.sp,
+        color: context.textDark,
         fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
         prefixIcon: widget.prefixIcon != null
-            ? Icon(widget.prefixIcon, color: AppColors.textGrey, size: 20)
+            ? Icon(widget.prefixIcon, color: context.textGrey, size: 20)
             : null,
         suffixIcon: widget.isPassword
             ? IconButton(
@@ -56,7 +58,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                   _obscureText
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: AppColors.textGrey,
+                  color: context.textGrey,
                   size: 20,
                 ),
                 onPressed: () => setState(() => _obscureText = !_obscureText),

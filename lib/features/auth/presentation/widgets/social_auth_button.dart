@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 
 /// Renders Apple Pay (black) or Google (white bordered) social auth buttons
@@ -7,26 +8,26 @@ class SocialAuthButton extends StatelessWidget {
   final bool isApple;
   final VoidCallback onTap;
 
-  const SocialAuthButton({super.key, required this.isApple, required this.onTap});
+  const SocialAuthButton(
+      {super.key, required this.isApple, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 50,
+        height: 50.h,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: isApple ? AppColors.appleBlack : Colors.white,
+          color: isApple ? context.primaryColor : context.backgroundColor,
           borderRadius: BorderRadius.circular(12),
-          border: isApple
-              ? null
-              : Border.all(color: AppColors.border, width: 1),
+          border:
+              isApple ? null : Border.all(color: context.border, width: 1.w),
           boxShadow: isApple
               ? null
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: context.textDark.withValues(alpha: 0.04),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   )
@@ -34,34 +35,34 @@ class SocialAuthButton extends StatelessWidget {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: isApple ? _appleContent() : _googleContent(),
+          children: isApple ? _appleContent(context) : _googleContent(context),
         ),
       ),
     );
   }
 
-  List<Widget> _appleContent() => [
-        const Icon(Icons.apple, color: Colors.white, size: 22),
-        const SizedBox(width: 8),
-        const Text(
+  List<Widget> _appleContent(BuildContext context) => [
+        Icon(Icons.apple, color: context.backgroundColor, size: 22),
+        SizedBox(width: 8.w),
+        Text(
           'Apple',
           style: TextStyle(
-            color: Colors.white,
-            fontSize: 15,
+            color: context.backgroundColor,
+            fontSize: 15.sp,
             fontWeight: FontWeight.w600,
           ),
         ),
       ];
 
-  List<Widget> _googleContent() => [
+  List<Widget> _googleContent(BuildContext context) => [
         // Inline SVG-style Google "G" drawn with a custom painter
-        const _GoogleGLogo(),
-        const SizedBox(width: 10),
-        const Text(
+        _GoogleGLogo(context),
+        SizedBox(width: 10.w),
+        Text(
           'Google',
           style: TextStyle(
-            color: AppColors.textDark,
-            fontSize: 15,
+            color: context.textDark,
+            fontSize: 15.sp,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -70,18 +71,21 @@ class SocialAuthButton extends StatelessWidget {
 
 /// Draws the Google "G" multicolor logo inline — no network dependency.
 class _GoogleGLogo extends StatelessWidget {
-  const _GoogleGLogo();
+  final BuildContext parentContext;
+  const _GoogleGLogo(this.parentContext);
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       size: const Size(20, 20),
-      painter: _GoogleLogoPainter(),
+      painter: _GoogleLogoPainter(parentContext),
     );
   }
 }
 
 class _GoogleLogoPainter extends CustomPainter {
+  final BuildContext context;
+  _GoogleLogoPainter(this.context);
   @override
   void paint(Canvas canvas, Size size) {
     final c = Offset(size.width / 2, size.height / 2);
@@ -90,10 +94,11 @@ class _GoogleLogoPainter extends CustomPainter {
     // Blue arc (top-right to bottom-right)
     canvas.drawArc(
       Rect.fromCircle(center: c, radius: r),
-      -1.57, 3.14,
+      -1.57,
+      3.14,
       false,
       Paint()
-        ..color = const Color(0xFF4285F4)
+        ..color = context.primaryColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = size.width * 0.25,
     );
@@ -101,10 +106,11 @@ class _GoogleLogoPainter extends CustomPainter {
     // Red arc (top)
     canvas.drawArc(
       Rect.fromCircle(center: c, radius: r),
-      -1.57, -1.2,
+      -1.57,
+      -1.2,
       false,
       Paint()
-        ..color = const Color(0xFFEA4335)
+        ..color = context.primaryColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = size.width * 0.25,
     );
@@ -112,10 +118,11 @@ class _GoogleLogoPainter extends CustomPainter {
     // Yellow arc (bottom)
     canvas.drawArc(
       Rect.fromCircle(center: c, radius: r),
-      1.57, 1.2,
+      1.57,
+      1.2,
       false,
       Paint()
-        ..color = const Color(0xFFFBBC05)
+        ..color = context.primaryColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = size.width * 0.25,
     );
@@ -123,19 +130,20 @@ class _GoogleLogoPainter extends CustomPainter {
     // Green arc (bottom-right)
     canvas.drawArc(
       Rect.fromCircle(center: c, radius: r),
-      -0.37, 0.37,
+      -0.37,
+      0.37,
       false,
       Paint()
-        ..color = const Color(0xFF34A853)
+        ..color = context.primaryColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = size.width * 0.25,
     );
 
     // White horizontal bar (the crossbar of the G)
     canvas.drawRect(
-      Rect.fromLTWH(c.dx, c.dy - size.height * 0.12,
-          size.width * 0.5, size.height * 0.24),
-      Paint()..color = const Color(0xFF4285F4),
+      Rect.fromLTWH(c.dx, c.dy - size.height * 0.12, size.width * 0.5,
+          size.height * 0.24),
+      Paint()..color = context.primaryColor,
     );
   }
 

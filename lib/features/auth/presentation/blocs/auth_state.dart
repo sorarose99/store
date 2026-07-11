@@ -3,7 +3,7 @@ import '../../domain/entities/user.dart';
 
 abstract class AuthState extends Equatable {
   const AuthState();
-  
+
   @override
   List<Object?> get props => [];
 }
@@ -20,6 +20,14 @@ class LoginSuccess extends AuthState {
   List<Object?> get props => [user];
 }
 
+class SocialLoginSuccess extends AuthState {
+  final User user;
+  const SocialLoginSuccess(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}
+
 class RegisterSuccess extends AuthState {
   final User user;
   const RegisterSuccess(this.user);
@@ -27,6 +35,8 @@ class RegisterSuccess extends AuthState {
   @override
   List<Object?> get props => [user];
 }
+
+class RegisterOtpSendSuccess extends AuthState {}
 
 class ForgotPasswordSuccess extends AuthState {}
 

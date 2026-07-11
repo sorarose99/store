@@ -1,4 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../shell/presentation/pages/main_shell.dart';
 
@@ -10,22 +12,22 @@ class SuccessViewModel {
   final String subtitle;
   final String buttonLabel;
 
-  const SuccessViewModel({
+  SuccessViewModel({
     required this.title,
     required this.subtitle,
     required this.buttonLabel,
   });
 
-  static const registration = SuccessViewModel(
-    title: 'تم التحقق',
+  static final registration = SuccessViewModel(
+    title: 'verified'.tr(),
     subtitle: 'تم التحقق من حسابك بنجاح\nيمكنك الآن تسجيل الدخول والتسوق',
-    buttonLabel: 'الذهاب للرئيسية',
+    buttonLabel: 'go_to_the_main'.tr(),
   );
 
-  static const passwordReset = SuccessViewModel(
-    title: 'تم التحقق',
-    subtitle: 'تمت إعادة تعيين كلمة المرور بنجاح',
-    buttonLabel: 'تسجيل الدخول',
+  static final passwordReset = SuccessViewModel(
+    title: 'verified'.tr(),
+    subtitle: 'the_password_has_been'.tr(),
+    buttonLabel: 'login'.tr(),
   );
 }
 
@@ -84,7 +86,7 @@ class _SuccessPageState extends State<SuccessPage>
         ? SuccessViewModel.passwordReset
         : SuccessViewModel.registration;
 
-    if (vm.buttonLabel == 'الذهاب للرئيسية') {
+    if (vm.buttonLabel == 'go_to_the_main'.tr()) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainShell()),
         (route) => false,
@@ -102,22 +104,22 @@ class _SuccessPageState extends State<SuccessPage>
 
     return Scaffold(
       // Light grey background matches mockup device frame
-      backgroundColor: const Color(0xFFEEEEF3),
+      backgroundColor: context.primaryColor,
       body: Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            padding: EdgeInsets.symmetric(horizontal: 32.0.w),
             child: FadeTransition(
               opacity: _fadeAnim,
               child: Container(
                 padding: const EdgeInsets.fromLTRB(28, 40, 28, 32),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.backgroundColor,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(18),
+                      color: context.textDark.withAlpha(18),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -130,70 +132,70 @@ class _SuccessPageState extends State<SuccessPage>
                     ScaleTransition(
                       scale: _scaleAnim,
                       child: Container(
-                        width: 96,
-                        height: 96,
+                        width: 96.w,
+                        height: 96.h,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.primary.withAlpha(20),
+                          color: context.primaryColor.withAlpha(20),
                           border: Border.all(
-                            color: AppColors.primary,
-                            width: 2.5,
+                            color: context.primaryColor,
+                            width: 2.5.w,
                           ),
                         ),
                         child: FadeTransition(
                           opacity: _checkFadeAnim,
-                          child: const Icon(
+                          child: Icon(
                             Icons.check_rounded,
-                            color: AppColors.primary,
+                            color: context.primaryColor,
                             size: 50,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28.h),
 
                     // ── Title ──────────────────────────────────────────────
                     Text(
                       vm.title,
-                      style: const TextStyle(
-                        fontSize: 22,
+                      style: TextStyle(
+                        fontSize: 22.sp,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
+                        color: context.textDark,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10.h),
 
                     // ── Subtitle ────────────────────────────────────────────
                     Text(
                       vm.subtitle,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textGrey,
-                        height: 1.6,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: context.textGrey,
+                        height: 1.6.h,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32.h),
 
                     // ── Done Button ─────────────────────────────────────────
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 50.h,
                       child: ElevatedButton(
                         onPressed: _onDone,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: context.primaryColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: Text(
                           vm.buttonLabel,
-                          style: const TextStyle(
-                            fontSize: 16,
+                          style: TextStyle(
+                            fontSize: 16.sp,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: context.backgroundColor,
                           ),
                         ),
                       ),

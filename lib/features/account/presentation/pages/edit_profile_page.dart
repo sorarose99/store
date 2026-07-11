@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/colors.dart';
 import 'edit_profile_gender_page.dart';
 import 'edit_profile_dob_page.dart';
-import '../../data/datasources/mock_account_data.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import '../blocs/account_bloc.dart';
+import '../blocs/account_state.dart';
+import '../blocs/account_event.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -24,12 +28,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    final user = MockAccountDataSource.currentUser;
-    _nameController = TextEditingController(text: user.name);
-    _emailController = TextEditingController(text: user.email);
-    _phoneController = TextEditingController(text: user.phone);
-    _selectedGender = user.gender;
-    _selectedDob = '${user.dateOfBirth.day}-${user.dateOfBirth.month}-${user.dateOfBirth.year}';
+    final state = context.read<AccountBloc>().state;
+    if (state is AccountLoaded) {
+      final user = state.user;
+      _nameController = TextEditingController(text: user.name);
+      _emailController = TextEditingController(text: user.email);
+      _phoneController = TextEditingController(text: user.phone);
+      _selectedGender = user.gender == 'male' ? tr('male') : (user.gender == 'female' ? tr('female') : user.gender);
+      _selectedDob = '${user.dateOfBirth.day}-${user.dateOfBirth.month}-${user.dateOfBirth.year}';
+    } else {
+      _nameController = TextEditingController();
+      _emailController = TextEditingController();
+      _phoneController = TextEditingController();
+      _selectedGender = tr('male');
+      _selectedDob = '1-1-1990';
+    }
   }
 
   @override
@@ -45,7 +58,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       PageRouteBuilder(
         opaque: false,
         barrierDismissible: true,
-        barrierColor: Colors.black.withOpacity(0.5),
+        barrierColor: Colors.black.withValues(alpha: 0.5),
         pageBuilder: (context, _, __) => EditProfileGenderPage(selectedGender: _selectedGender),
       ),
     );
@@ -61,7 +74,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       PageRouteBuilder(
         opaque: false,
         barrierDismissible: true,
-        barrierColor: Colors.black.withOpacity(0.5),
+        barrierColor: Colors.black.withValues(alpha: 0.5),
         pageBuilder: (context, _, __) => EditProfileDobPage(currentDob: _selectedDob),
       ),
     );
@@ -89,9 +102,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             children: [
               ListTile(
                 leading: const Icon(Icons.camera_alt_outlined, color: AppColors.textDark),
-                title: const Text(
-                  'التقاط صورة',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 14),
+                title: Text(
+                  tr('take_photo'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 14),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -100,9 +113,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
               const Divider(color: Color(0xFFF0F0F0)),
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined, color: AppColors.textDark),
-                title: const Text(
-                  'اختيار صورة من الجهاز',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 14),
+                title: Text(
+                  tr('choose_from_gallery'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark, fontSize: 14),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -118,7 +131,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -129,9 +142,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
             onPressed: () => Navigator.pop(context),
           ),
           centerTitle: true,
-          title: const Text(
-            'تعديل الملف الشخصي',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textDark),
+          title: Text(
+            tr('edit_profile'),
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textDark),
           ),
         ),
         body: Column(
@@ -153,9 +166,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               Container(
                                 width: 100,
                                 height: 100,
-                                decoration: BoxDecoration(
+                                decoration: const BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: const Color(0xFFF2F2F7),
+                                  color: Color(0xFFF2F2F7),
                                 ),
                                 child: const Center(
                                   child: Icon(Icons.person, size: 50, color: AppColors.textGrey),
@@ -171,7 +184,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
+                                        color: Colors.black.withValues(alpha: 0.1),
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
                                       ),
@@ -187,39 +200,39 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       const SizedBox(height: 40),
 
                       // Name Field
-                      _buildFieldLabel('الاسم'),
+                      _buildFieldLabel(tr('name')),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _nameController,
-                        decoration: _buildInputDecoration('أدخل الاسم'),
-                        validator: (value) => value == null || value.isEmpty ? 'هذا الحقل مطلوب' : null,
+                        decoration: _buildInputDecoration(tr('name')),
+                        validator: (value) => value == null || value.isEmpty ? tr('field_required') : null,
                       ),
                       const SizedBox(height: 20),
 
                       // Email Field
-                      _buildFieldLabel('الايميل'),
+                      _buildFieldLabel(tr('email')),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: _buildInputDecoration('أدخل الايميل'),
-                        validator: (value) => value == null || !value.contains('@') ? 'صيغة الايميل غير صحيحة' : null,
+                        decoration: _buildInputDecoration(tr('email')),
+                        validator: (value) => value == null || !value.contains('@') ? tr('invalid_email') : null,
                       ),
                       const SizedBox(height: 20),
 
                       // Phone Field
-                      _buildFieldLabel('الموبايل'),
+                      _buildFieldLabel(tr('mobile')),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         decoration: _buildInputDecoration('05XXXXXXXX', textDirection: TextDirection.ltr),
-                        validator: (value) => value == null || value.length < 10 ? 'رقم جوال غير صحيح' : null,
+                        validator: (value) => value == null || value.length < 10 ? tr('invalid_phone') : null,
                       ),
                       const SizedBox(height: 20),
 
                       // Date of Birth Field
-                      _buildFieldLabel('تاريخ الميلاد'),
+                      _buildFieldLabel(tr('date_of_birth')),
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: _navigateToDobSelection,
@@ -244,7 +257,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       const SizedBox(height: 20),
 
                       // Gender Field
-                      _buildFieldLabel('الجنس'),
+                      _buildFieldLabel(tr('gender')),
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: _navigateToGenderSelection,
@@ -275,28 +288,59 @@ class _EditProfilePageState extends State<EditProfilePage> {
             // Fixed Save Button at the bottom
             Padding(
               padding: const EdgeInsets.all(24),
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
+              child: BlocConsumer<AccountBloc, AccountState>(
+                listener: (context, state) {
+                  if (state is AccountLoaded) {
+                    // It was successful
                     Navigator.pop(context);
+                  } else if (state is AccountError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(state.message)),
+                    );
                   }
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'حفظ',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+                builder: (context, state) {
+                  final isLoading = state is AccountLoading;
+                  return ElevatedButton(
+                    onPressed: isLoading
+                        ? null
+                        : () {
+                            if (_formKey.currentState!.validate()) {
+                              context.read<AccountBloc>().add(AccountUpdateProfileRequested({
+                                  'first_name': _nameController.text.split(' ').first,
+                                  'last_name': _nameController.text.split(' ').skip(1).join(' '),
+                                  'email': _emailController.text,
+                                  'phone': _phoneController.text,
+                                  'gender': _selectedGender == tr('male') ? 'male' : 'female',
+                                  // Map DOB back to API format (YYYY-MM-DD) if needed
+                                },
+                              ));
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : Text(
+                            tr('save'),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                  );
+                },
               ),
             ),
           ],

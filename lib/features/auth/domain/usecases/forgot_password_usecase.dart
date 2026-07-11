@@ -10,14 +10,14 @@ class ForgotPasswordUseCase implements UseCase<Unit, ForgotPasswordParams> {
 
   @override
   Future<Either<Failure, Unit>> call(ForgotPasswordParams params) {
-    return repository.forgotPassword(
-      phoneNumber: params.phoneNumber,
+    return repository.sendForgotOtp(
+      email: params.email,
     );
   }
 }
 
 class ForgotPasswordParams {
-  final String phoneNumber;
+  final String email;
 
-  ForgotPasswordParams({required this.phoneNumber});
+  ForgotPasswordParams({required this.email});
 }

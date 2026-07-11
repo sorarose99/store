@@ -140,7 +140,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                 _buildLabel('نوع الطلب'),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textGrey),
                   decoration: _buildInputDecoration(''),
                   items: const [

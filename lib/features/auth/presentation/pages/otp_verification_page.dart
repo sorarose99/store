@@ -1,11 +1,15 @@
+import 'dart:ui' as ui;
 import 'dart:async';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/colors.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../blocs/auth_bloc.dart';
 import '../blocs/auth_event.dart';
 import '../blocs/auth_state.dart';
+import 'register_page.dart';
 import 'reset_password_page.dart';
 import 'success_page.dart';
 
@@ -13,10 +17,10 @@ import 'success_page.dart';
 // Model
 // ─────────────────────────────────────────────────────────────────────────────
 class OtpVerificationData {
-  final String phoneNumber;
+  final String email;
   final bool isPasswordReset;
-  const OtpVerificationData({
-    required this.phoneNumber,
+  OtpVerificationData({
+    required this.email,
     required this.isPasswordReset,
   });
 }
@@ -25,13 +29,15 @@ class OtpVerificationData {
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 class OtpVerificationPage extends StatefulWidget {
-  final String phoneNumber;
+  final String email;
   final bool isPasswordReset;
+  final RegisterFormData? registerData;
 
   const OtpVerificationPage({
     super.key,
-    required this.phoneNumber,
+    required this.email,
     this.isPasswordReset = false,
+    this.registerData,
   });
 
   @override
@@ -39,7 +45,7 @@ class OtpVerificationPage extends StatefulWidget {
 }
 
 class _OtpVerificationPageState extends State<OtpVerificationPage> {
-  static const int _otpLength = 4;
+  static const int _otpLength = 6;
   static const int _timerDuration = 60;
 
   String _otpCode = '';
@@ -56,6 +62,18 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
   void initState() {
     super.initState();
     _startTimer();
+    for (int i = 0; i < _otpLength; i++) {
+      _focusNodes[i].onKeyEvent = (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.backspace &&
+            _controllers[i].text.isEmpty &&
+            i > 0) {
+          _focusNodes[i - 1].requestFocus();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      };
+    }
   }
 
   @override
@@ -95,41 +113,53 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       c.clear();
     }
     _focusNodes.first.requestFocus();
-    context.read<AuthBloc>().add(
-          ForgotPasswordSubmitted(phoneNumber: widget.phoneNumber),
-        );
+    if (widget.isPasswordReset) {
+      context.read<AuthBloc>().add(
+            ForgotPasswordSubmitted(email: widget.email),
+          );
+    } else {
+      context.read<AuthBloc>().add(
+            RegisterOtpRequested(email: widget.email),
+          );
+    }
     _startTimer();
   }
 
   void _onSubmit() {
     if (_otpCode.length < _otpLength) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى إدخال الرمز كاملاً'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showAuthSnackBar(context, tr('error_enter_full_otp'));
       return;
     }
-    context.read<AuthBloc>().add(
-          VerifyOtpSubmitted(
-            phoneNumber: widget.phoneNumber,
-            otpCode: _otpCode,
-          ),
-        );
+    if (widget.isPasswordReset || widget.registerData == null) {
+      context.read<AuthBloc>().add(
+            VerifyOtpSubmitted(
+              email: widget.email,
+              otpCode: _otpCode,
+            ),
+          );
+    } else {
+      context.read<AuthBloc>().add(
+            RegisterSubmitted(
+              name: widget.registerData!.name,
+              email: widget.registerData!.email,
+              password: widget.registerData!.password,
+              otpCode: _otpCode,
+            ),
+          );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textDark, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: Theme.of(context).colorScheme.onSurface, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -141,7 +171,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      ResetPasswordPage(phoneNumber: widget.phoneNumber),
+                      ResetPasswordPage(email: widget.email, otpCode: _otpCode),
                 ),
               );
             } else {
@@ -150,82 +180,84 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                 MaterialPageRoute(builder: (_) => const SuccessPage()),
               );
             }
-          } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-              ),
+          } else if (state is RegisterSuccess) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const SuccessPage()),
             );
+          } else if (state is AuthError) {
+            showAuthSnackBar(context, getLocalizedAuthError(state.message));
           }
         },
         builder: (context, state) {
           return Directionality(
-            textDirection: TextDirection.rtl,
+            textDirection: Directionality.of(context),
             child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: 24.0.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.h),
 
-                    // ── Phone Icon ──────────────────────────────────────────
+                    // ── Email Icon ──────────────────────────────────────────
                     Center(
                       child: Container(
-                        width: 72,
-                        height: 72,
+                        width: 72.w,
+                        height: 72.h,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withAlpha(25),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withAlpha(25),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
-                          Icons.sms_outlined,
-                          color: AppColors.primary,
+                        child: Icon(
+                          Icons.email_outlined,
+                          color: Theme.of(context).colorScheme.primary,
                           size: 34,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
 
                     // ── Title ───────────────────────────────────────────────
-                    const Center(
+                    Center(
                       child: Text(
-                        'التحقق من رقم الهاتف',
+                        'email_verification'.tr(),
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: 20.sp,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.textDark,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
 
                     // ── Subtitle ────────────────────────────────────────────
                     Center(
                       child: Text(
-                        'تم إرسال رمز التحقق إلى\n${widget.phoneNumber}',
+                        'تم إرسال رمز التحقق إلى\n${widget.email}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textGrey,
-                          height: 1.6,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.6.h,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40.h),
 
                     // ── OTP Boxes ───────────────────────────────────────────
                     _OtpInputRow(
                       length: _otpLength,
                       controllers: _controllers,
                       focusNodes: _focusNodes,
-                      onCompleted: (code) {
+                      onChanged: (code) {
                         _otpCode = code;
                       },
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: 28.h),
 
                     // ── Countdown / Resend ──────────────────────────────────
                     _ResendRow(
@@ -233,18 +265,18 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                       canResend: _canResend,
                       onResend: _onResendOtp,
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40.h),
 
                     // ── Submit Button ───────────────────────────────────────
                     if (state is AuthLoading)
-                      const Center(
+                      Center(
                         child: CircularProgressIndicator(
-                            color: AppColors.primary),
+                            color: Theme.of(context).colorScheme.primary),
                       )
                     else
                       ElevatedButton(
                         onPressed: _onSubmit,
-                        child: const Text('تأكيد الرمز'),
+                        child: Text('confirm_the_code'.tr()),
                       ),
                   ],
                 ),
@@ -264,13 +296,13 @@ class _OtpInputRow extends StatelessWidget {
   final int length;
   final List<TextEditingController> controllers;
   final List<FocusNode> focusNodes;
-  final ValueChanged<String> onCompleted;
+  final ValueChanged<String> onChanged;
 
   const _OtpInputRow({
     required this.length,
     required this.controllers,
     required this.focusNodes,
-    required this.onCompleted,
+    required this.onChanged,
   });
 
   void _onChanged(String value, int index) {
@@ -278,64 +310,65 @@ class _OtpInputRow extends StatelessWidget {
       focusNodes[index + 1].requestFocus();
     }
     final code = controllers.map((c) => c.text).join();
+    onChanged(code);
     if (code.length == length) {
       focusNodes[index].unfocus();
-      onCompleted(code);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: List.generate(length, (index) {
-          return SizedBox(
-            width: 62,
-            height: 62,
-            child: KeyboardListener(
-              focusNode: FocusNode(),
-              onKeyEvent: (event) {
-                if (event is KeyDownEvent &&
-                    event.logicalKey == LogicalKeyboardKey.backspace &&
-                    controllers[index].text.isEmpty &&
-                    index > 0) {
-                  focusNodes[index - 1].requestFocus();
-                }
-              },
-              child: TextFormField(
-                controller: controllers[index],
-                focusNode: focusNodes[index],
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                maxLength: 1,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(1),
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
-                ),
-                decoration: InputDecoration(
-                  counterText: '',
-                  filled: true,
-                  fillColor: const Color(0xFFF8F8F8),
-                  contentPadding: EdgeInsets.zero,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: AppColors.border, width: 1.2),
+          return Flexible(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.0.w),
+              child: AspectRatio(
+                aspectRatio: 1.0,
+                child: TextFormField(
+                  controller: controllers[index],
+                  focusNode: focusNodes[index],
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  maxLength: 1,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(1),
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: AppColors.primary, width: 2),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    filled: true,
+                    fillColor: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest
+                        .withValues(alpha: 0.5),
+                    contentPadding: EdgeInsets.zero,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withValues(alpha: 0.4),
+                          width: 1.2.w),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2.w),
+                    ),
                   ),
+                  onChanged: (value) => _onChanged(value, index),
                 ),
-                onChanged: (value) => _onChanged(value, index),
               ),
             ),
           );
@@ -361,34 +394,35 @@ class _ResendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pad = secondsRemaining < 10
-        ? '0$secondsRemaining'
-        : '$secondsRemaining';
+    final pad =
+        secondsRemaining < 10 ? '0$secondsRemaining' : '$secondsRemaining';
 
     return Center(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            'لم تستلم الرمز؟ ',
-            style: TextStyle(color: AppColors.textGrey, fontSize: 13),
+          Text(
+            'didnt_receive_the_code'.tr(),
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 13.sp),
           ),
           GestureDetector(
             onTap: canResend ? onResend : null,
             child: canResend
-                ? const Text(
-                    'إعادة الإرسال',
+                ? Text(
+                    'rebroadcast'.tr(),
                     style: TextStyle(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w700,
-                      fontSize: 13,
+                      fontSize: 13.sp,
                     ),
                   )
                 : Text(
                     'إعادة الإرسال (0:$pad)',
-                    style: const TextStyle(
-                      color: AppColors.textGrey,
-                      fontSize: 13,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 13.sp,
                     ),
                   ),
           ),

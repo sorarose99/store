@@ -1,275 +1,429 @@
+import 'dart:ui' as ui;
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/colors.dart';
+import 'package:flutter/services.dart';
+import '../../../../core/utils/ui_helpers.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../home/domain/entities/product_entity.dart';
 import '../../../cart/presentation/pages/cart_filled_page.dart';
+import '../../../cart/presentation/blocs/cart_bloc.dart';
+import '../../../cart/presentation/blocs/cart_event.dart';
+import '../../../cart/presentation/blocs/cart_state.dart';
+import '../../../product/presentation/pages/product_details_page.dart';
+import '../blocs/wishlist_bloc.dart';
+import '../blocs/wishlist_event.dart';
+import '../blocs/wishlist_state.dart';
 import 'wishlist_empty_page.dart';
+import '../../../../core/widgets/app_shimmer.dart';
 
-class WishlistFilledPage extends StatefulWidget {
+class WishlistFilledPage extends StatelessWidget {
   const WishlistFilledPage({super.key});
 
   @override
-  State<WishlistFilledPage> createState() => _WishlistFilledPageState();
+  Widget build(BuildContext context) {
+    return const _WishlistContentView();
+  }
 }
 
-class _WishlistFilledPageState extends State<WishlistFilledPage> {
-  // Mock Wishlist Items (made mutable)
-  late List<ProductEntity> _wishlistItems;
+class _WishlistContentView extends StatefulWidget {
+  const _WishlistContentView();
+
+  @override
+  State<_WishlistContentView> createState() => _WishlistContentViewState();
+}
+
+class _WishlistContentViewState extends State<_WishlistContentView> {
   bool _isGridView = true;
+  String _searchQuery = '';
+  bool _isSearchFocused = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _wishlistItems = List.generate(
-      6,
-      (index) => ProductEntity(
-        id: 'w$index',
-        name: index % 2 == 0 ? 'جاكيت شتوي كاجوال أنيق' : 'فستان سهرة كلاسيك ذو تفاصيل دقيقة',
-        brand: 'KDX أوريجينالز',
-        price: 180.0 + (index * 15),
-        originalPrice: 240.0 + (index * 20),
-        imageAsset: 'assets/images/cat_fashion.png',
-        isNew: index % 2 == 0,
-        isSale: index % 3 == 0,
-        isFreeDelivery: true,
-        rating: 4.5 + (index * 0.1 > 0.5 ? 0.4 : index * 0.1),
-        reviewCount: 120 + (index * 12),
-        isWishlisted: true,
-        categoryId: 'c2',
-      ),
-    );
+    _searchFocusNode.addListener(() {
+      setState(() => _isSearchFocused = _searchFocusNode.hasFocus);
+    });
   }
 
-  void _removeItem(String id) {
-    setState(() {
-      _wishlistItems.removeWhere((item) => item.id == id);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'تمت إزالة المنتج من المفضلة',
-          style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
-        ),
-        duration: Duration(seconds: 1),
-      ),
-    );
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _removeItem(BuildContext context, String id) {
+    HapticFeedback.mediumImpact();
+    context
+        .read<WishlistBloc>()
+        .add(WishlistToggleItemRequested(productId: id));
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_wishlistItems.isEmpty) {
-      return const WishlistEmptyPage();
-    }
-
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          centerTitle: true,
-          title: const Text(
-            'المفضلة',
-            style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Tajawal',
+    return BlocBuilder<WishlistBloc, WishlistState>(
+      builder: (context, state) {
+        if (state is WishlistLoading || state is WishlistInitial) {
+          return Scaffold(
+            backgroundColor: context.surfaceColor,
+            body: ListView.builder(
+              padding: EdgeInsets.all(16.w),
+              itemCount: 5,
+              itemBuilder: (context, index) => Padding(
+                padding: EdgeInsets.only(bottom: 16.0.h),
+                child: AppShimmer(
+                    width: double.infinity, height: 100.h, borderRadius: 12),
+              ),
             ),
-          ),
-        ),
-        body: Column(
-          children: [
-            // Search & Action Row Below AppBar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
+          );
+        } else if (state is WishlistError) {
+          return Scaffold(
+            backgroundColor: context.surfaceColor,
+            body: Center(child: Text(state.message)),
+          );
+        } else if (state is WishlistLoaded) {
+          final allItems = state.products;
+          final wishlistItems = _searchQuery.isEmpty 
+              ? allItems 
+              : allItems.where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+
+          if (allItems.isEmpty) {
+            return const WishlistEmptyPage();
+          }
+
+          return Directionality(
+            textDirection: Directionality.of(context),
+            child: Scaffold(
+              backgroundColor: context.surfaceColor,
+              appBar: AppBar(
+                backgroundColor: context.surfaceColor.withValues(alpha: 0.8),
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                flexibleSpace: ClipRect(
+                  child: BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(color: Colors.transparent),
+                  ),
+                ),
+                leading: IconButton(
+                  icon: Icon(Icons.arrow_back_ios,
+                      color: context.textDark, size: 20),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                centerTitle: true,
+                title: Text(
+                  'wishlist'.tr(),
+                  style: TextStyle(
+                    color: context.textDark,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ),
+              body: Column(
                 children: [
-                  // Grid/List toggle button
-                  GestureDetector(
-                    onTap: () => setState(() => _isGridView = !_isGridView),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF2F3F8),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
-                        color: AppColors.textDark,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  
-                  // Search Input "ابحث..." with search icon
-                  Expanded(
-                    child: Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF2F3F8),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.search, color: AppColors.textGrey, size: 18),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'ابحث...',
-                                hintStyle: TextStyle(
-                                  color: AppColors.textGrey,
-                                  fontSize: 13,
-                                  fontFamily: 'Tajawal',
-                                ),
-                                border: InputBorder.none,
-                                isDense: true,
-                              ),
-                              style: TextStyle(
-                                color: AppColors.textDark,
-                                fontSize: 13,
-                                fontFamily: 'Tajawal',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  
-                  // Filter Button
-                  GestureDetector(
-                    onTap: () {
-                      // Filter action
-                    },
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF2F3F8),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.tune_rounded,
-                        color: AppColors.textDark,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  
-                  // Shopping Bag Badge
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const CartFilledPage()),
-                      );
-                    },
-                    child: Stack(
-                      clipBehavior: Clip.none,
+                  // Search & Action Row Below AppBar
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 16.0.w, vertical: 8.0.h),
+                    child: Row(
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF2F3F8),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.shopping_bag_outlined,
-                            color: AppColors.textDark,
-                            size: 20,
+                        // Grid/List toggle button
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            setState(() => _isGridView = !_isGridView);
+                          },
+                          child: Container(
+                            width: 40.w,
+                            height: 40.h,
+                            decoration: BoxDecoration(
+                              color: context.cardBackground,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: context.border, width: 0.8.w),
+                            ),
+                            child: Icon(
+                              _isGridView
+                                  ? Icons.view_list_rounded
+                                  : Icons.grid_view_rounded,
+                              color: context.textDark,
+                              size: 20,
+                            ),
                           ),
                         ),
-                        Positioned(
-                          top: -4,
-                          right: -4,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppColors.accent,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Text(
-                              '2',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
+                        SizedBox(width: 8.w),
+
+                        // Search Input with glow-on-focus
+                        Expanded(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            height: 40.h,
+                            decoration: BoxDecoration(
+                              color: context.cardBackground,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: _isSearchFocused
+                                    ? context.primaryColor
+                                    : context.border,
+                                width: _isSearchFocused ? 1.5.w : 0.8.w,
                               ),
+                              boxShadow: _isSearchFocused
+                                  ? [
+                                      BoxShadow(
+                                        color: context.primaryColor
+                                            .withValues(alpha: 0.25),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      )
+                                    ]
+                                  : [],
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.search,
+                                  color: _isSearchFocused
+                                      ? context.primaryColor
+                                      : context.textGrey,
+                                  size: 18,
+                                ),
+                                SizedBox(width: 8.w),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _searchController,
+                                    focusNode: _searchFocusNode,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _searchQuery = value;
+                                      });
+                                    },
+                                    decoration: InputDecoration(
+                                      hintText: 'search'.tr(),
+                                      hintStyle: TextStyle(
+                                        color: context.textGrey,
+                                        fontSize: 13.sp,
+                                        fontFamily: 'Tajawal',
+                                      ),
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.zero,
+                                    ),
+                                    style: TextStyle(
+                                      color: context.textDark,
+                                      fontSize: 13.sp,
+                                      fontFamily: 'Tajawal',
+                                    ),
+                                  ),
+                                ),
+                                if (_searchQuery.isNotEmpty)
+                                  GestureDetector(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      setState(() {
+                                        _searchQuery = '';
+                                        _searchController.clear();
+                                      });
+                                    },
+                                    child: Icon(Icons.close_rounded,
+                                        color: context.textGrey, size: 18),
+                                  ),
+                              ],
                             ),
                           ),
+                        ),
+                        SizedBox(width: 8.w),
+
+                        // Filter Button
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            // Filter action
+                          },
+                          child: Container(
+                            width: 40.w,
+                            height: 40.h,
+                            decoration: BoxDecoration(
+                              color: context.cardBackground,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: context.border, width: 0.8.w),
+                            ),
+                            child: Icon(
+                              Icons.tune_rounded,
+                              color: context.textDark,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+
+                        // Shopping Bag Badge
+                        BlocBuilder<CartBloc, CartState>(
+                          builder: (context, cartState) {
+                            int cartCount = 0;
+                            if (cartState is CartLoaded) {
+                              cartCount = cartState.items.length;
+                            }
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                      builder: (_) => const CartFilledPage()),
+                                );
+                              },
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Container(
+                                    width: 40.w,
+                                    height: 40.h,
+                                    decoration: BoxDecoration(
+                                      color: context.primaryColor,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      Icons.shopping_bag_outlined,
+                                      color: context.textDark,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  if (cartCount > 0)
+                                    Positioned(
+                                      top: -4,
+                                      right: -4,
+                                      child: Container(
+                                        padding: EdgeInsets.all(4.w),
+                                        decoration: BoxDecoration(
+                                          color: context.accentColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          cartCount.toString(),
+                                          style: TextStyle(
+                                            color: context.backgroundColor,
+                                            fontSize: 9.sp,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                       ],
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+
+                  // Grid or List
+                  Expanded(
+                    child: RefreshIndicator(
+                      color: context.primaryColor,
+                      onRefresh: () async {
+                        context
+                            .read<WishlistBloc>()
+                            .add(const WishlistRequested());
+                      },
+                      child: _isGridView
+                          ? _buildGridView(context, wishlistItems)
+                          : _buildListView(context, wishlistItems),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
-            
-            // Grid or List
-            Expanded(
-              child: _isGridView ? _buildGridView() : _buildListView(),
-            ),
-          ],
-        ),
-      ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 
-  Widget _buildGridView() {
+  Widget _buildGridView(
+      BuildContext context, List<ProductEntity> wishlistItems) {
     return GridView.builder(
-      padding: const EdgeInsets.all(12),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.all(12.w),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         childAspectRatio: 0.48, // Compact layout for 3 columns
         crossAxisSpacing: 8,
         mainAxisSpacing: 12,
       ),
-      itemCount: _wishlistItems.length,
+      itemCount: wishlistItems.length,
       itemBuilder: (context, index) {
-        final product = _wishlistItems[index];
+        final product = wishlistItems[index];
         return CompactWishlistCard(
           product: product,
-          onWishlistTap: () => _removeItem(product.id),
+          onWishlistTap: () => _removeItem(context, product.id),
           onTap: () {
-            // Product detail view action
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ProductDetailsPage(slug: product.slug),
+              ),
+            );
           },
         );
       },
     );
   }
 
-  Widget _buildListView() {
+  Widget _buildListView(
+      BuildContext context, List<ProductEntity> wishlistItems) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: _wishlistItems.length,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.all(16.w),
+      itemCount: wishlistItems.length,
       itemBuilder: (context, index) {
-        final product = _wishlistItems[index];
-        return _HorizontalWishlistItemCard(
-          product: product,
-          onDelete: () => _removeItem(product.id),
-          onAddToCart: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'تمت إضافة المنتج إلى السلة',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
-                ),
-                duration: Duration(seconds: 1),
-              ),
-            );
+        final product = wishlistItems[index];
+        return Dismissible(
+          key: Key('wishlist_item_${product.id}'),
+          direction: DismissDirection.endToStart,
+          onDismissed: (_) {
+            _removeItem(context, product.id);
           },
+          background: Container(
+            margin: EdgeInsets.only(bottom: 16.h),
+            decoration: BoxDecoration(
+              color: Colors.red[400],
+              borderRadius: BorderRadius.circular(14),
+            ),
+            alignment: Alignment.centerLeft,
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: const Icon(
+              Icons.delete_outline_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ProductDetailsPage(slug: product.slug),
+                ),
+              );
+            },
+            child: _HorizontalWishlistItemCard(
+              product: product,
+              onDelete: () => _removeItem(context, product.id),
+              onAddToCart: () {
+                context.read<CartBloc>().add(CartItemAdded(
+                      productId: product.id,
+                      quantity: 1,
+                    ));
+                KdxToast.showSuccess(context, 'تمت إضافة المنتج إلى السلة');
+              },
+            ),
+          ),
         );
       },
     );
@@ -297,16 +451,16 @@ class CompactWishlistCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.backgroundColor,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: context.textDark.withValues(alpha: 0.03),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
-          border: Border.all(color: AppColors.border, width: 0.8),
+          border: Border.all(color: context.border, width: 0.8.w),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,45 +469,71 @@ class CompactWishlistCard extends StatelessWidget {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(10)),
                   child: AspectRatio(
                     aspectRatio: 0.76,
-                    child: Image.asset(
-                      product.imageAsset,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: const Color(0xFFF2F3F8),
-                        child: const Icon(
-                          Icons.image_outlined,
-                          color: AppColors.textGrey,
-                          size: 24,
-                        ),
-                      ),
+                    child: Hero(
+                      tag: 'product_image_${product.id}',
+                      child: product.imageAsset.isNotEmpty
+                          ? product.imageAsset.startsWith('http')
+                              ? CachedNetworkImage(
+                                  imageUrl: product.imageAsset,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, __, ___) => Container(
+                                    color: context.primaryColor,
+                                    child: Icon(
+                                      Icons.image_outlined,
+                                      color: context.textGrey,
+                                      size: 24,
+                                    ),
+                                  ),
+                                )
+                              : Image.asset(
+                                  product.imageAsset,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: context.primaryColor,
+                                    child: Icon(
+                                      Icons.image_outlined,
+                                      color: context.textGrey,
+                                      size: 24,
+                                    ),
+                                  ),
+                                )
+                          : Container(
+                              color: context.primaryColor,
+                              child: Icon(
+                                Icons.image_outlined,
+                                color: context.textGrey,
+                                size: 24,
+                              ),
+                            ),
                     ),
                   ),
                 ),
                 Positioned(
-                  top: 6,
-                  left: 6,
+                  top: 6.h,
+                  left: 6.w,
                   child: GestureDetector(
                     onTap: onWishlistTap,
                     child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      width: 24.w,
+                      height: 24.h,
+                      decoration: BoxDecoration(
+                        color: context.backgroundColor,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black12,
+                            color: context.textDark.withValues(alpha: 0.12),
                             blurRadius: 4,
-                            offset: Offset(0, 1),
+                            offset: const Offset(0, 1),
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.favorite,
-                        color: Color(0xFFE53935),
+                        color: context.primaryColor,
                         size: 13,
                       ),
                     ),
@@ -361,11 +541,12 @@ class CompactWishlistCard extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             // Product info details
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 6.0),
+                padding:
+                    EdgeInsets.symmetric(horizontal: 6.0.w, vertical: 6.0.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -373,57 +554,57 @@ class CompactWishlistCard extends StatelessWidget {
                     // Title
                     Text(
                       product.name,
-                      style: const TextStyle(
-                        fontSize: 10,
+                      style: TextStyle(
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+                        color: context.textDark,
                         fontFamily: 'Tajawal',
-                        height: 1.2,
+                        height: 1.2.h,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    
+
                     // Rating
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.star_rounded,
-                          color: Color(0xFFFFB300),
+                          color: context.primaryColor,
                           size: 11,
                         ),
-                        const SizedBox(width: 2),
+                        SizedBox(width: 2.w),
                         Text(
                           product.rating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 9,
-                            color: AppColors.textGrey,
+                          style: TextStyle(
+                            fontSize: 9.sp,
+                            color: context.textGrey,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Tajawal',
                           ),
                         ),
                       ],
                     ),
-                    
+
                     // Price Tag
                     Row(
                       children: [
                         Text(
                           '${product.price.toInt()} ر.س',
-                          style: const TextStyle(
-                            fontSize: 10.5,
+                          style: TextStyle(
+                            fontSize: 10.5.sp,
                             fontWeight: FontWeight.w900,
-                            color: AppColors.primary,
+                            color: context.primaryColor,
                             fontFamily: 'Tajawal',
                           ),
                         ),
                         if (hasDiscount) ...[
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4.w),
                           Text(
                             '${product.originalPrice!.toInt()}',
-                            style: const TextStyle(
-                              fontSize: 8.5,
-                              color: AppColors.textGrey,
+                            style: TextStyle(
+                              fontSize: 8.5.sp,
+                              color: context.textGrey,
                               decoration: TextDecoration.lineThrough,
                               fontFamily: 'Tajawal',
                             ),
@@ -460,12 +641,12 @@ class _HorizontalWishlistItemCard extends StatelessWidget {
     final discountPct = product.discountPercent;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.backgroundColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: AppColors.cardShadow,
-        border: Border.all(color: AppColors.border, width: 1),
+        border: Border.all(color: context.border, width: 1.w),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,34 +659,61 @@ class _HorizontalWishlistItemCard extends StatelessWidget {
                   topRight: Radius.circular(14),
                   bottomRight: Radius.circular(14),
                 ),
-                child: Image.asset(
-                  product.imageAsset,
-                  width: 90,
-                  height: 124,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 90,
-                    height: 124,
-                    color: AppColors.cardBackground,
-                    child: const Icon(Icons.image_outlined, color: AppColors.textGreyLight),
-                  ),
+                child: Hero(
+                  tag: 'product_image_${product.id}',
+                  child: product.imageAsset.isNotEmpty
+                      ? product.imageAsset.startsWith('http')
+                          ? CachedNetworkImage(
+                              imageUrl: product.imageAsset,
+                              width: 90.w,
+                              height: 124.h,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, __, ___) => Container(
+                                width: 90.w,
+                                height: 124.h,
+                                color: context.cardBackground,
+                                child: Icon(Icons.image_outlined,
+                                    color: context.textGreyLight),
+                              ),
+                            )
+                          : Image.asset(
+                              product.imageAsset,
+                              width: 90.w,
+                              height: 124.h,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 90.w,
+                                height: 124.h,
+                                color: context.cardBackground,
+                                child: Icon(Icons.image_outlined,
+                                    color: context.textGreyLight),
+                              ),
+                            )
+                      : Container(
+                          width: 90.w,
+                          height: 124.h,
+                          color: context.cardBackground,
+                          child: Icon(Icons.image_outlined,
+                              color: context.textGreyLight),
+                        ),
                 ),
               ),
               if (hasDiscount && discountPct != null)
                 Positioned(
-                  top: 8,
-                  right: 8,
+                  top: 8.h,
+                  right: 8.w,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
                     decoration: BoxDecoration(
-                      color: AppColors.accent,
+                      color: context.accentColor,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       '$discountPct%−',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
+                      style: TextStyle(
+                        color: context.backgroundColor,
+                        fontSize: 9.sp,
                         fontWeight: FontWeight.w800,
                         fontFamily: 'Tajawal',
                       ),
@@ -514,66 +722,67 @@ class _HorizontalWishlistItemCard extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(width: 14),
+          SizedBox(width: 14.w),
 
           // Details Section
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              padding: EdgeInsets.symmetric(vertical: 10.0.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Brand Name
                   Text(
                     product.brand,
-                    style: const TextStyle(
-                      fontSize: 10,
+                    style: TextStyle(
+                      fontSize: 10.sp,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
+                      color: context.primaryColor,
                       letterSpacing: 0.5,
                       fontFamily: 'Tajawal',
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  SizedBox(height: 3.h),
                   // Name
                   Text(
                     product.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style: TextStyle(
+                      fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textDark,
+                      color: context.textDark,
                       fontFamily: 'Tajawal',
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   // Rating Row
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded, color: Color(0xFFFFB300), size: 14),
-                      const SizedBox(width: 2),
+                      Icon(Icons.star_rounded,
+                          color: context.primaryColor, size: 14),
+                      SizedBox(width: 2.w),
                       Text(
                         product.rating.toStringAsFixed(1),
-                        style: const TextStyle(
-                          fontSize: 11,
+                        style: TextStyle(
+                          fontSize: 11.sp,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
+                          color: context.textDark,
                           fontFamily: 'Tajawal',
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4.w),
                       Text(
                         '(${product.reviewCount})',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textGrey,
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: context.textGrey,
                           fontFamily: 'Tajawal',
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10.h),
                   // Price and Add to Cart Row
                   Row(
                     children: [
@@ -583,9 +792,9 @@ class _HorizontalWishlistItemCard extends StatelessWidget {
                           if (hasDiscount)
                             Text(
                               '${product.originalPrice!.toInt()} ر.س',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: AppColors.textGrey,
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                color: context.textGrey,
                                 decoration: TextDecoration.lineThrough,
                                 fontFamily: 'Tajawal',
                               ),
@@ -593,9 +802,11 @@ class _HorizontalWishlistItemCard extends StatelessWidget {
                           Text(
                             '${product.price.toInt()} ر.س',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w900,
-                              color: hasDiscount ? AppColors.accent : AppColors.textDark,
+                              color: hasDiscount
+                                  ? context.accentColor
+                                  : context.textDark,
                               fontFamily: 'Tajawal',
                             ),
                           ),
@@ -605,24 +816,28 @@ class _HorizontalWishlistItemCard extends StatelessWidget {
                       // Add to Cart Button (teal chip button)
                       ElevatedButton.icon(
                         onPressed: onAddToCart,
-                        icon: const Icon(Icons.shopping_bag_outlined, size: 12, color: Colors.white),
-                        label: const Text(
-                          'أضف للسلة',
+                        icon: Icon(Icons.shopping_bag_outlined,
+                            size: 12, color: context.backgroundColor),
+                        label: Text(
+                          'add_to_cart'.tr(),
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 10.sp,
                             fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                            color: context.backgroundColor,
                             fontFamily: 'Tajawal',
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor: context.primaryColor,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          minimumSize: Size.zero,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 10.w, vertical: 6.h),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8.w),
                     ],
                   ),
                 ],
@@ -632,9 +847,9 @@ class _HorizontalWishlistItemCard extends StatelessWidget {
 
           // Delete Action Floater
           IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppColors.textGrey, size: 18),
+            icon: Icon(Icons.delete_outline, color: context.textGrey, size: 18),
             onPressed: onDelete,
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.w),
           ),
         ],
       ),

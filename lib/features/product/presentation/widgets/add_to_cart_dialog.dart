@@ -1,6 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../cart/presentation/pages/cart_filled_page.dart';
+
 class AddToCartDialog extends StatelessWidget {
   const AddToCartDialog({super.key});
 
@@ -10,70 +13,70 @@ class AddToCartDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: context.surfaceColor,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+        padding: EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 32.0.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Green Checkmark Circle
             Container(
-              width: 80,
-              height: 80,
-              decoration: const BoxDecoration(
-                color: Color(0xFF8DC63F), // Green brand color
+              width: 80.w,
+              height: 80.h,
+              decoration: BoxDecoration(
+                color: context.primaryColor, // Green brand color
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check,
-                color: Colors.white,
+                color: context.backgroundColor,
                 size: 48,
               ),
             ),
-            const SizedBox(height: 24),
-            
+            SizedBox(height: 24.h),
+
             // Text Message
-            const Text(
-              'تمت إضافة المنتج إلى سلة التسوق',
+            Text(
+              'the_product_has_been_1'.tr(),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                color: context.textDark,
               ),
             ),
-            const SizedBox(height: 32),
-            
+            SizedBox(height: 32.h),
+
             // Continue Shopping Button
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 48.h,
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Close dialog
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: context.primaryColor,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  'مواصلة التسوق',
+                child: Text(
+                  'continue_shopping'.tr(),
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            
+            SizedBox(height: 12.h),
+
             // Go To Cart Button
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 48.h,
               child: OutlinedButton(
                 onPressed: () {
                   Navigator.of(context).pop(); // Close dialog
@@ -83,17 +86,16 @@ class AddToCartDialog extends StatelessWidget {
                   );
                 },
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFEEEEEE)),
-                  backgroundColor: const Color(0xFFF9F9F9),
+                  side: BorderSide(color: context.primaryColor),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  'اذهب إلى السلة',
+                child: Text(
+                  'go_to_basket'.tr(),
                   style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textDark,
+                    fontSize: 14.sp,
+                    color: context.textDark,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

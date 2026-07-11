@@ -135,15 +135,15 @@ class _BusinessProfileStep2PageState extends State<BusinessProfileStep2Page> {
                       color: const Color(0xFFF9F9F9),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                         style: BorderStyle.solid,
                       ),
                     ),
-                    child: Column(
+                    child: const Column(
                       children: [
                         Icon(Icons.cloud_upload_outlined, size: 40, color: AppColors.primary),
-                        const SizedBox(height: 8),
-                        const Text(
+                        SizedBox(height: 8),
+                        Text(
                           'اضغط هنا لرفع الملفات',
                           style: TextStyle(
                             fontSize: 13,
@@ -151,8 +151,8 @@ class _BusinessProfileStep2PageState extends State<BusinessProfileStep2Page> {
                             color: AppColors.textDark,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
+                        SizedBox(height: 4),
+                        Text(
                           'الحجم الأقصى للملف 5 ميجابايت (PDF, JPG, PNG)',
                           style: TextStyle(fontSize: 10, color: AppColors.textGrey),
                         ),

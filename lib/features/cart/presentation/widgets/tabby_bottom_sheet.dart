@@ -1,4 +1,7 @@
+import 'dart:ui' as ui;
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 
 class TabbyBottomSheet extends StatelessWidget {
@@ -12,12 +15,12 @@ class TabbyBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: ui.TextDirection.rtl,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+        decoration: BoxDecoration(
+          color: context.backgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -26,137 +29,145 @@ class TabbyBottomSheet extends StatelessWidget {
             // Drag handle at top center
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 40.w,
+                height: 4.h,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5E5EA),
+                  color: context.primaryColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            
+            SizedBox(height: 20.h),
+
             // Tabby Logo Header
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Custom Tabby logo representation (mint green circle with letter T)
                 Container(
-                  width: 26,
-                  height: 26,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF3DF2B6), // Tabby mint green
+                  width: 26.w,
+                  height: 26.h,
+                  decoration: BoxDecoration(
+                    color: context.primaryColor, // Tabby mint green
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: const Text(
+                  child: Text(
                     't',
                     style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 14,
+                      color: context.textDark,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.w900,
                       fontFamily: 'Tajawal',
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Text(
-                  'تابي',
+                SizedBox(width: 8.w),
+                Text(
+                  'tabby'.tr(),
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 20.sp,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.textDark,
+                    color: context.textDark,
                     fontFamily: 'Tajawal',
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            
+            SizedBox(height: 16.h),
+
             // Title Header
             Text(
               'قسم فاتورتك على 4 دفعات\nبقيمة $installmentAmount SAR بدون فوائد',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
+              style: TextStyle(
+                fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                color: context.textDark,
                 fontFamily: 'Tajawal',
-                height: 1.4,
+                height: 1.4.h,
               ),
             ),
-            const SizedBox(height: 24),
-            
+            SizedBox(height: 24.h),
+
             // Steps vertical timeline
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              padding: EdgeInsets.symmetric(horizontal: 8.0.w),
               child: Column(
                 children: [
                   _buildTimelineStep(
+                    context,
                     icon: Icons.add_shopping_cart_rounded,
-                    text: 'تسوق واقترب من الدفع',
+                    text: 'shop_and_approach_checkout'.tr(),
                     isFirst: true,
                   ),
                   _buildTimelineStep(
+                    context,
                     icon: Icons.check_circle_outline_rounded,
-                    text: 'اختر تابي عند الدفع',
+                    text: 'choose_tabby_at_checkout'.tr(),
                   ),
                   _buildTimelineStep(
+                    context,
                     icon: Icons.link_rounded,
-                    text: 'قم بربط بطاقتك البنكية',
+                    text: 'link_your_bank_card'.tr(),
                   ),
                   _buildTimelineStep(
+                    context,
                     icon: Icons.payments_outlined,
-                    text: 'ادفع الدفعة الأولى والباقي لاحقاً',
+                    text: 'pay_the_down_payment'.tr(),
                     isLast: true,
                   ),
                 ],
               ),
             ),
-            
-            const SizedBox(height: 16),
-            const Text(
+
+            SizedBox(height: 16.h),
+            Text(
               'أكمل دفعاتك المتبقية خلال 3 أشهر | بدون رسوم إضافية',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textGrey,
+                fontSize: 11.sp,
+                color: context.textGrey,
                 fontFamily: 'Tajawal',
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const Divider(color: AppColors.border, height: 40, thickness: 1),
-            
+            Divider(color: context.border, height: 40.h, thickness: 1),
+
             // Benefits list title
-            const Text(
-              'لماذا الدفع عبر تابي؟',
+            Text(
+              'why_pay_via_tabby'.tr(),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                color: context.textDark,
                 fontFamily: 'Tajawal',
               ),
             ),
-            const SizedBox(height: 16),
-            
+            SizedBox(height: 16.h),
+
             // Row of Benefits (Horizontal)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildBenefitItem(Icons.star_border_rounded, 'بدون فوائد'),
-                _buildBenefitItem(Icons.verified_outlined, 'متوافقة للشريعة'),
-                _buildBenefitItem(Icons.flash_on_outlined, 'سهلة وسريعة'),
+                _buildBenefitItem(context, Icons.star_border_rounded,
+                    'without_interest'.tr()),
+                _buildBenefitItem(
+                    context, Icons.verified_outlined, 'sharia_compliant'.tr()),
+                _buildBenefitItem(
+                    context, Icons.flash_on_outlined, 'easy_and_fast'.tr()),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTimelineStep({
+  Widget _buildTimelineStep(
+    BuildContext context, {
     required IconData icon,
     required String text,
     bool isFirst = false,
@@ -170,39 +181,39 @@ class TabbyBottomSheet extends StatelessWidget {
           Column(
             children: [
               Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE8FAF4), // Light mint background
+                width: 32.w,
+                height: 32.h,
+                decoration: BoxDecoration(
+                  color: context.primaryColor, // Light mint background
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
                   size: 16,
-                  color: const Color(0xFF1BE39A), // Tabby green
+                  color: context.primaryColor, // Tabby green
                 ),
               ),
               if (!isLast)
                 Expanded(
                   child: Container(
-                    width: 1.5,
-                    color: const Color(0xFF1BE39A).withValues(alpha: 0.3),
-                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    width: 1.5.w,
+                    color: context.primaryColor.withValues(alpha: 0.3),
+                    margin: EdgeInsets.symmetric(vertical: 4.h),
                   ),
                 ),
             ],
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           // Step Description
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(top: 8.0, bottom: 20.0),
+              padding: EdgeInsets.only(top: 8.0.h, bottom: 20.0.h),
               child: Text(
                 text,
-                style: const TextStyle(
-                  fontSize: 13,
+                style: TextStyle(
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: context.textDark,
                   fontFamily: 'Tajawal',
                 ),
               ),
@@ -213,17 +224,17 @@ class TabbyBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildBenefitItem(IconData icon, String label) {
+  Widget _buildBenefitItem(BuildContext context, IconData icon, String label) {
     return Column(
       children: [
-        Icon(icon, size: 24, color: AppColors.textDark),
-        const SizedBox(height: 6),
+        Icon(icon, size: 24, color: context.textDark),
+        SizedBox(height: 6.h),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
+          style: TextStyle(
+            fontSize: 11.sp,
             fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
+            color: context.textDark,
             fontFamily: 'Tajawal',
           ),
         ),

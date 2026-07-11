@@ -1,5 +1,8 @@
+import 'package:kdx/core/constants/colors.dart';
+import 'dart:ui' as ui;
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/constants/colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class BnplPromoPage extends StatelessWidget {
   final String provider; // 'tabby' or 'tamara'
@@ -12,52 +15,53 @@ class BnplPromoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTabby = provider.toLowerCase() == 'tabby';
-    final brandColor = isTabby ? const Color(0xFF3DF2B6) : const Color(0xFFFFA670);
-    final brandText = isTabby ? 'تابي' : 'تمارا';
+    final brandColor = isTabby ? context.primaryColor : context.primaryColor;
+    final brandText = isTabby ? 'tabby'.tr() : 'tamara'.tr();
     final accentText = isTabby ? 't' : 'T';
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: ui.TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: context.backgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: context.backgroundColor,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark, size: 20),
+            icon: Icon(Icons.arrow_back_ios, color: context.textDark, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
           centerTitle: true,
           title: Text(
             'الدفع عبر $brandText',
-            style: const TextStyle(
-              color: AppColors.textDark,
-              fontSize: 16,
+            style: TextStyle(
+              color: context.textDark,
+              fontSize: 16.sp,
               fontWeight: FontWeight.bold,
               fontFamily: 'Tajawal',
             ),
           ),
         ),
         body: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          padding: EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 16.0.h),
           physics: const BouncingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Premium Hero Section
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
+                padding: EdgeInsets.symmetric(vertical: 36.h, horizontal: 16.w),
                 decoration: BoxDecoration(
                   color: brandColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: brandColor.withValues(alpha: 0.2), width: 1),
+                  border: Border.all(
+                      color: brandColor.withValues(alpha: 0.2), width: 1.w),
                 ),
                 child: Column(
                   children: [
                     // Brand Logo circle
                     Container(
-                      width: 72,
-                      height: 72,
+                      width: 72.w,
+                      height: 72.h,
                       decoration: BoxDecoration(
                         color: brandColor,
                         shape: BoxShape.circle,
@@ -73,120 +77,128 @@ class BnplPromoPage extends StatelessWidget {
                       child: Text(
                         accentText,
                         style: TextStyle(
-                          color: isTabby ? Colors.black : Colors.white,
-                          fontSize: 32,
+                          color: isTabby
+                              ? context.textDark
+                              : context.backgroundColor,
+                          fontSize: 32.sp,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
                     Text(
                       'تسوق الآن، وادفع لاحقاً مع $brandText',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+                        color: context.textDark,
                         fontFamily: 'Tajawal',
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10.h),
                     Text(
                       isTabby
-                          ? 'قسم فاتورتك على 4 دفعات ميسرة بدون أي فوائد أو رسوم خفية!'
-                          : 'قسم فاتورتك على 3 دفعات ميسرة بدون أي فوائد أو رسوم إضافية!',
+                          ? 'split_your_bill_into'.tr()
+                          : 'divide_your_bill_into'.tr(),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textGrey,
-                        height: 1.4,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: context.textGrey,
+                        height: 1.4.h,
                         fontFamily: 'Tajawal',
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32.h),
 
               // Benefits grid title
               Text(
                 'لماذا تختار الدفع عبر $brandText؟',
-                style: const TextStyle(
-                  fontSize: 15,
+                style: TextStyle(
+                  fontSize: 15.sp,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: context.textDark,
                   fontFamily: 'Tajawal',
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16.h),
 
               // Reusable Advantage cards
               _buildAdvantageCard(
+                context,
                 icon: Icons.percent_rounded,
-                title: '0% فوائد، 0% رسوم إضافية',
-                description: 'لن تدفع أي ريال إضافي على قيمة طلبك طالما التزمت بالدفع في الموعد المحدد.',
+                title: '0_interest_0_additional'.tr(),
+                description: 'you_will_not_pay'.tr(),
                 brandColor: brandColor,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               _buildAdvantageCard(
+                context,
                 icon: Icons.flash_on_rounded,
-                title: 'موافقة فورية وسهلة',
-                description: 'كل ما تحتاجه هو رقم الهوية ورقم الجوال والبطاقة البنكية لإكمال العملية في ثوانٍ.',
+                title: 'instant_and_easy_approval'.tr(),
+                description: 'all_you_need_is'.tr(),
                 brandColor: brandColor,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12.h),
               _buildAdvantageCard(
+                context,
                 icon: Icons.verified_user_outlined,
-                title: 'آمن وموثوق تماماً',
-                description: 'عمليات دفع آمنة 100% ومشفرة بالكامل لحماية بياناتك الشخصية والبنكية.',
+                title: 'completely_safe_and_reliable'.tr(),
+                description: 'payments_are_100_secure'.tr(),
                 brandColor: brandColor,
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32.h),
 
               // How it works timeline title
-              const Text(
-                'طريقة الدفع في خطوات بسيطة:',
+              Text(
+                'payment_method_in_simple'.tr(),
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 15.sp,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: context.textDark,
                   fontFamily: 'Tajawal',
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
 
               // Vertical Step rows
-              _buildStepRow('1', 'أضف منتجاتك المفضلة إلى السلة واذهب لصفحة الدفع.'),
-              _buildStepRow('2', 'اختر $brandText كطريقة الدفع المفضلة لديك.'),
-              _buildStepRow('3', 'أدخل بياناتك الأساسية (رقم الجوال ورقم الهوية).'),
-              _buildStepRow('4', isTabby ? 'ادفع ربع القيمة كدفعة أولى وسدد الباقي على 3 أشهر.' : 'ادفع ثلث القيمة كدفعة أولى وسدد الباقي على شهرين.'),
+              _buildStepRow(
+                  context, "1".tr(), 'add_your_favorite_products'.tr()),
+              _buildStepRow(context, '2'.tr(),
+                  'اختر $brandText كطريقة الدفع المفضلة لديك.'),
+              _buildStepRow(context, '3'.tr(), 'enter_your_basic_data'.tr()),
+              _buildStepRow(context, '4'.tr(),
+                  isTabby ? 'pay_a_quarter_of'.tr() : 'pay_a_third_of'.tr()),
 
-              const SizedBox(height: 48),
-              
+              SizedBox(height: 48.h),
+
               // CTA Button
               SizedBox(
-                height: 48,
+                height: 48.h,
                 child: ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: context.primaryColor,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    'العودة للتسوق',
+                  child: Text(
+                    'back_to_shopping'.tr(),
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 14.sp,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: context.backgroundColor,
                       fontFamily: 'Tajawal',
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.h),
             ],
           ),
         ),
@@ -194,51 +206,52 @@ class BnplPromoPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAdvantageCard({
+  Widget _buildAdvantageCard(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String description,
     required Color brandColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FC),
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFECEEF5), width: 0.8),
+        border: Border.all(color: context.primaryColor, width: 0.8.w),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(8.w),
             decoration: BoxDecoration(
               color: brandColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: brandColor, size: 20),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 13,
+                  style: TextStyle(
+                    fontSize: 13.sp,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+                    color: context.textDark,
                     fontFamily: 'Tajawal',
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.h),
                 Text(
                   description,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textGrey,
-                    height: 1.4,
+                  style: TextStyle(
+                    fontSize: 11.sp,
+                    color: context.textGrey,
+                    height: 1.4.h,
                     fontFamily: 'Tajawal',
                   ),
                 ),
@@ -250,37 +263,38 @@ class BnplPromoPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStepRow(String stepNumber, String instruction) {
+  Widget _buildStepRow(
+      BuildContext context, String stepNumber, String instruction) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
+      padding: EdgeInsets.only(bottom: 16.0.h),
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
-            decoration: const BoxDecoration(
-              color: AppColors.textDark,
+            width: 28.w,
+            height: 28.h,
+            decoration: BoxDecoration(
+              color: context.textDark,
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
             child: Text(
               stepNumber,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
+              style: TextStyle(
+                color: context.backgroundColor,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Tajawal',
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           Expanded(
             child: Text(
               instruction,
-              style: const TextStyle(
-                fontSize: 12.5,
+              style: TextStyle(
+                fontSize: 12.5.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                color: context.textDark,
                 fontFamily: 'Tajawal',
               ),
             ),

@@ -1,4 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8,52 +10,45 @@ class TermsSection {
   final String title;
   final String body;
 
-  const TermsSection({required this.title, required this.body});
+  TermsSection({required this.title, required this.body});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mock data (replace with API call later)
 // ─────────────────────────────────────────────────────────────────────────────
 final List<TermsSection> _termsSections = [
-  const TermsSection(
-    title: '١. قبول الشروط',
-    body:
-        'بتسجيلك أو استخدامك لهذا التطبيق، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق على أي جزء منها، يُرجى عدم استخدام الخدمة.',
+  TermsSection(
+    title: '1_accept_the_terms'.tr(),
+    body: 'by_registering_or_using'.tr(),
   ),
-  const TermsSection(
-    title: '٢. استخدام الحساب',
-    body:
-        'أنت مسؤول عن الحفاظ على سرية بيانات حسابك وكلمة المرور الخاصة بك. يُحظر نقل حسابك أو السماح لأي طرف ثالث باستخدامه.',
+  TermsSection(
+    title: '2_use_the_account'.tr(),
+    body: 'you_are_responsible_for'.tr(),
   ),
-  const TermsSection(
-    title: '٣. السياسات التجارية',
-    body:
-        'تخضع جميع عمليات البيع والشراء لسياسة الاسترجاع والاستبدال المعتمدة لدينا. يتعهد المستخدم بعدم نشر محتوى مضلل أو مخالف للآداب العامة.',
+  TermsSection(
+    title: '3_trade_policies'.tr(),
+    body: 'all_purchases_and_sales'.tr(),
   ),
-  const TermsSection(
-    title: '٤. الملكية الفكرية',
-    body:
-        'جميع المحتويات والشعارات والتصاميم المنشورة على المنصة هي ملكية حصرية للشركة ومحمية بموجب قوانين الملكية الفكرية المعمول بها.',
+  TermsSection(
+    title: '4_intellectual_property'.tr(),
+    body: 'all_content_logos_and'.tr(),
   ),
-  const TermsSection(
-    title: '٥. تحديد المسؤولية',
-    body:
-        'لا تتحمل الشركة أي مسؤولية عن الأضرار غير المباشرة أو التبعية الناجمة عن استخدام الخدمة أو عدم القدرة على استخدامها.',
+  TermsSection(
+    title: '5_limitation_of_liability'.tr(),
+    body: 'the_company_does_not'.tr(),
   ),
-  const TermsSection(
-    title: '٦. التعديلات',
-    body:
-        'تحتفظ الشركة بالحق في تعديل هذه الشروط في أي وقت. سيتم إخطارك بأي تغييرات جوهرية عبر البريد الإلكتروني أو إشعار داخل التطبيق.',
+  TermsSection(
+    title: '6_modifications'.tr(),
+    body: 'the_company_reserves_the'.tr(),
   ),
-  const TermsSection(
-    title: '٧. القانون الحاكم',
-    body:
-        'تخضع هذه الشروط لأحكام النظام السعودي وتختص المحاكم السعودية بالفصل في أي نزاعات تنشأ عنها.',
+  TermsSection(
+    title: '7_governing_law'.tr(),
+    body: 'these_terms_are_subject'.tr(),
   ),
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Page — shown as full-screen when user taps "الشروط والأحكام" in register
+// Page — shown as full-screen when user taps 'terms_conditions'.tr() in register
 // ─────────────────────────────────────────────────────────────────────────────
 class TermsAcceptancePage extends StatefulWidget {
   const TermsAcceptancePage({super.key});
@@ -91,28 +86,28 @@ class _TermsAcceptancePageState extends State<TermsAcceptancePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.surfaceColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.surfaceColor,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
-        title: const Text(
-          'الشروط والأحكام',
+        title: Text(
+          'terms_conditions'.tr(),
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 17.sp,
             fontWeight: FontWeight.w700,
-            color: AppColors.textDark,
+            color: context.textDark,
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textDark, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: context.textDark, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Directionality(
-        textDirection: TextDirection.rtl,
+        textDirection: Directionality.of(context),
         child: Column(
           children: [
             // ── Scrollable Terms Body ────────────────────────────────────────
@@ -126,30 +121,30 @@ class _TermsAcceptancePageState extends State<TermsAcceptancePage> {
                     // Intro banner
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(14),
+                      padding: EdgeInsets.all(14.w),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withAlpha(20),
+                        color: context.primaryColor.withAlpha(20),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                            color: AppColors.primary.withAlpha(60)),
+                            color: context.primaryColor.withAlpha(60)),
                       ),
-                      child: const Text(
-                        'يُرجى قراءة الشروط والأحكام بعناية قبل الموافقة. تُشكّل هذه الشروط اتفاقية ملزمة بينك وبين المنصة.',
+                      child: Text(
+                        'please_read_the_terms'.tr(),
                         style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.primary,
-                          height: 1.6,
+                          fontSize: 13.sp,
+                          color: context.primaryColor,
+                          height: 1.6.h,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20.h),
 
                     // Terms sections
                     ..._termsSections.map(
                       (section) => _TermsSectionWidget(section: section),
                     ),
 
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8.h),
                   ],
                 ),
               ),
@@ -158,20 +153,19 @@ class _TermsAcceptancePageState extends State<TermsAcceptancePage> {
             // ── Bottom Agreement Panel ────────────────────────────────────────
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.backgroundColor,
                 border: Border(
-                  top: BorderSide(color: AppColors.border.withAlpha(180)),
+                  top: BorderSide(color: context.border.withAlpha(180)),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha(12),
+                    color: context.textDark.withAlpha(12),
                     blurRadius: 12,
                     offset: const Offset(0, -4),
                   ),
                 ],
               ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -181,26 +175,26 @@ class _TermsAcceptancePageState extends State<TermsAcceptancePage> {
                     child: Row(
                       children: [
                         SizedBox(
-                          width: 22,
-                          height: 22,
+                          width: 22.w,
+                          height: 22.h,
                           child: Checkbox(
                             value: _agreed,
-                            activeColor: AppColors.primary,
+                            activeColor: context.primaryColor,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4)),
-                            side: const BorderSide(
-                                color: AppColors.border, width: 1.5),
+                            side:
+                                BorderSide(color: context.border, width: 1.5.w),
                             onChanged: (v) =>
                                 setState(() => _agreed = v ?? false),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        const Expanded(
+                        SizedBox(width: 10.w),
+                        Expanded(
                           child: Text(
-                            'لقد قرأت وأوافق على جميع الشروط والأحكام',
+                            'i_have_read_and'.tr(),
                             style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textDark,
+                              fontSize: 13.sp,
+                              color: context.textDark,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -208,30 +202,30 @@ class _TermsAcceptancePageState extends State<TermsAcceptancePage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14.h),
 
                   // Accept button
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 50.h,
                     child: ElevatedButton(
-                      onPressed: _agreed
-                          ? () => Navigator.pop(context, true)
-                          : null,
+                      onPressed:
+                          _agreed ? () => Navigator.pop(context, true) : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _agreed
-                            ? AppColors.primary
-                            : AppColors.border,
-                        disabledBackgroundColor: AppColors.border,
+                        backgroundColor:
+                            _agreed ? context.primaryColor : context.border,
+                        disabledBackgroundColor: context.border,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
                       child: Text(
-                        'أوافق وأكمل التسجيل',
+                        'i_agree_and_complete'.tr(),
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 15.sp,
                           fontWeight: FontWeight.w700,
-                          color: _agreed ? Colors.white : AppColors.textGrey,
+                          color: _agreed
+                              ? context.backgroundColor
+                              : context.textGrey,
                         ),
                       ),
                     ),
@@ -256,47 +250,47 @@ class _TermsSectionWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.only(bottom: 20.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section title
           Text(
             section.title,
-            style: const TextStyle(
-              fontSize: 15,
+            style: TextStyle(
+              fontSize: 15.sp,
               fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
-              height: 1.3,
+              color: context.textDark,
+              height: 1.3.h,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           // Teal left bar + body text
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 3,
-                height: 80,
-                margin: const EdgeInsets.only(left: 10),
+                width: 3.w,
+                height: 80.h,
+                margin: EdgeInsets.only(left: 10.w),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: context.primaryColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               Expanded(
                 child: Text(
                   section.body,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textGrey,
-                    height: 1.7,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: context.textGrey,
+                    height: 1.7.h,
                   ),
                 ),
               ),
             ],
           ),
-          const Divider(color: AppColors.border, height: 1),
+          Divider(color: context.border, height: 1.h),
         ],
       ),
     );

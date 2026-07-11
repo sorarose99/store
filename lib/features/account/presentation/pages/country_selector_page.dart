@@ -82,7 +82,7 @@ class _CountrySelectorPageState extends State<CountrySelectorPage> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _currentLanguage,
+                initialValue: _currentLanguage,
                 icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
                 decoration: InputDecoration(
                   hintText: 'اختر اللغة',

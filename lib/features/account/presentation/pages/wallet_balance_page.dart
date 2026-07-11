@@ -100,30 +100,30 @@ class WalletBalancePage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               ),
                             ],
                           ),
-                          child: Column(
+                          child: const Column(
                             children: [
-                              const Text(
+                              Text(
                                 'مجموع نقاطك',
                                 style: TextStyle(
                                   color: AppColors.textGrey,
                                   fontSize: 12,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.stars, color: Colors.orange, size: 16),
-                                  const SizedBox(width: 4),
+                                  Icon(Icons.stars, color: Colors.orange, size: 16),
+                                  SizedBox(width: 4),
                                   Text(
                                     '12 نقطة',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: AppColors.textDark,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -145,7 +145,7 @@ class WalletBalancePage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               ),
@@ -228,7 +228,7 @@ class WalletBalancePage extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, -2),
                     ),
@@ -245,8 +245,8 @@ class WalletBalancePage extends StatelessWidget {
                       leading: Container(
                         width: 40,
                         height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF2F2F7),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF2F2F7),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(

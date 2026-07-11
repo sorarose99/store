@@ -1,4 +1,7 @@
+import 'dart:ui' as ui;
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 
 class TamaraBottomSheet extends StatelessWidget {
@@ -12,12 +15,12 @@ class TamaraBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: ui.TextDirection.rtl,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+        decoration: BoxDecoration(
+          color: context.backgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -26,149 +29,157 @@ class TamaraBottomSheet extends StatelessWidget {
             // Drag handle at top center
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 40.w,
+                height: 4.h,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE5E5EA),
+                  color: context.primaryColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            
+            SizedBox(height: 20.h),
+
             // Tamara Logo Header
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Custom Tamara logo representation (orange circle with two dots)
                 Container(
-                  width: 24,
-                  height: 24,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFA670), // Tamara orange
+                  width: 24.w,
+                  height: 24.h,
+                  decoration: BoxDecoration(
+                    color: context.primaryColor, // Tamara orange
                     shape: BoxShape.circle,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 4,
-                        height: 4,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        width: 4.w,
+                        height: 4.h,
+                        decoration: BoxDecoration(
+                          color: context.backgroundColor,
                           shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(width: 3),
+                      SizedBox(width: 3.w),
                       Container(
-                        width: 4,
-                        height: 4,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        width: 4.w,
+                        height: 4.h,
+                        decoration: BoxDecoration(
+                          color: context.backgroundColor,
                           shape: BoxShape.circle,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Text(
-                  'تمارا',
+                SizedBox(width: 8.w),
+                Text(
+                  'tamara'.tr(),
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 20.sp,
                     fontWeight: FontWeight.w900,
-                    color: AppColors.textDark,
+                    color: context.textDark,
                     fontFamily: 'Tajawal',
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            
+            SizedBox(height: 16.h),
+
             // Title Header
             Text(
               'قسم فاتورتك على 3 دفعات\nبقيمة $installmentAmount SAR بدون فوائد',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
+              style: TextStyle(
+                fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                color: context.textDark,
                 fontFamily: 'Tajawal',
-                height: 1.4,
+                height: 1.4.h,
               ),
             ),
-            const SizedBox(height: 24),
-            
+            SizedBox(height: 24.h),
+
             // Steps vertical timeline (RTL: circles on the right, connecting line)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              padding: EdgeInsets.symmetric(horizontal: 8.0.w),
               child: Column(
                 children: [
                   _buildTimelineStep(
+                    context,
                     icon: Icons.shopping_cart_outlined,
-                    text: 'أضف المنتجات الى سلة التسوق',
+                    text: 'add_products_to_your'.tr(),
                     isFirst: true,
                   ),
                   _buildTimelineStep(
+                    context,
                     icon: Icons.credit_card_rounded,
-                    text: 'إختر تمارا عند الدفع',
+                    text: 'choose_tamara_at_checkout'.tr(),
                   ),
                   _buildTimelineStep(
+                    context,
                     icon: Icons.badge_outlined,
-                    text: 'أضف بياناتك',
+                    text: 'add_your_data'.tr(),
                   ),
                   _buildTimelineStep(
+                    context,
                     icon: Icons.account_balance_wallet_outlined,
-                    text: 'أكمل دفعتك الأولى',
+                    text: 'complete_your_first_payment'.tr(),
                     isLast: true,
                   ),
                 ],
               ),
             ),
-            
-            const SizedBox(height: 16),
-            const Text(
+
+            SizedBox(height: 16.h),
+            Text(
               'أكمل دفعاتك المتبقية خلال شهرين | وفقاً لطريقة الدفع التي اخترتها',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textGrey,
+                fontSize: 11.sp,
+                color: context.textGrey,
                 fontFamily: 'Tajawal',
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const Divider(color: AppColors.border, height: 40, thickness: 1),
-            
+            Divider(color: context.border, height: 40.h, thickness: 1),
+
             // Benefits list title
-            const Text(
-              'لماذا اختيار تمارا كوسيلة دفع؟',
+            Text(
+              'why_choose_tamara_as'.tr(),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                color: context.textDark,
                 fontFamily: 'Tajawal',
               ),
             ),
-            const SizedBox(height: 16),
-            
+            SizedBox(height: 16.h),
+
             // Row of Benefits (Horizontal)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildBenefitItem(Icons.card_giftcard_rounded, 'بدون فوائد'),
-                _buildBenefitItem(Icons.money_off_rounded, 'بدون رسوم'),
-                _buildBenefitItem(Icons.offline_bolt_outlined, 'سهلة وسريعة'),
+                _buildBenefitItem(context, Icons.card_giftcard_rounded,
+                    'without_interest'.tr()),
+                _buildBenefitItem(
+                    context, Icons.money_off_rounded, 'no_fees'.tr()),
+                _buildBenefitItem(
+                    context, Icons.offline_bolt_outlined, 'easy_and_fast'.tr()),
               ],
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTimelineStep({
+  Widget _buildTimelineStep(
+    BuildContext context, {
     required IconData icon,
     required String text,
     bool isFirst = false,
@@ -183,40 +194,40 @@ class TamaraBottomSheet extends StatelessWidget {
             children: [
               // Circle avatar representing step
               Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFF2EB), // Light peach background
+                width: 32.w,
+                height: 32.h,
+                decoration: BoxDecoration(
+                  color: context.primaryColor, // Light peach background
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
                   size: 16,
-                  color: const Color(0xFFFFA670), // Tamara orange color
+                  color: context.primaryColor, // Tamara orange color
                 ),
               ),
               // Connecting line
               if (!isLast)
                 Expanded(
                   child: Container(
-                    width: 1.5,
-                    color: const Color(0xFFFFA670).withValues(alpha: 0.3),
-                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    width: 1.5.w,
+                    color: context.primaryColor.withValues(alpha: 0.3),
+                    margin: EdgeInsets.symmetric(vertical: 4.h),
                   ),
                 ),
             ],
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.w),
           // Step Text Description (Left side)
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(top: 8.0, bottom: 20.0),
+              padding: EdgeInsets.only(top: 8.0.h, bottom: 20.0.h),
               child: Text(
                 text,
-                style: const TextStyle(
-                  fontSize: 13,
+                style: TextStyle(
+                  fontSize: 13.sp,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: context.textDark,
                   fontFamily: 'Tajawal',
                 ),
               ),
@@ -227,17 +238,17 @@ class TamaraBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildBenefitItem(IconData icon, String label) {
+  Widget _buildBenefitItem(BuildContext context, IconData icon, String label) {
     return Column(
       children: [
-        Icon(icon, size: 24, color: AppColors.textDark),
-        const SizedBox(height: 6),
+        Icon(icon, size: 24, color: context.textDark),
+        SizedBox(height: 6.h),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
+          style: TextStyle(
+            fontSize: 11.sp,
             fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
+            color: context.textDark,
             fontFamily: 'Tajawal',
           ),
         ),

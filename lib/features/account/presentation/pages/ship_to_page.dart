@@ -197,7 +197,7 @@ class _ShipToPageState extends State<ShipToPage> with SingleTickerProviderStateM
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
@@ -575,7 +575,7 @@ class _ShipToPageState extends State<ShipToPage> with SingleTickerProviderStateM
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: bg.withOpacity(0.15),
+            color: bg.withValues(alpha: 0.15),
             blurRadius: 6,
             offset: const Offset(0, 3),
           )

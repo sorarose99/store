@@ -1,12 +1,13 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../category/presentation/pages/category_navigation_page.dart';
 import '../../domain/entities/banner_entity.dart';
 import '../../../../core/constants/colors.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Namshe-style Hero Banner Slider
-// Rounded cards (16px), teal CTA button, smooth dot indicators
-// ─────────────────────────────────────────────────────────────────────────────
 class HomeBannerSlider extends StatefulWidget {
   final List<BannerEntity> banners;
 
@@ -20,18 +21,51 @@ class _HomeBannerSliderState extends State<HomeBannerSlider> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
   Timer? _autoPlayTimer;
+  late List<dynamic> _mixedBanners;
 
   @override
   void initState() {
     super.initState();
+    _mixedBanners = _buildMixedBanners();
     _startAutoPlay();
+  }
+
+  @override
+  void didUpdateWidget(HomeBannerSlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.banners != widget.banners) {
+      _mixedBanners = _buildMixedBanners();
+    }
+  }
+
+  List<dynamic> _buildMixedBanners() {
+    List<dynamic> mixed = [];
+    
+    // API Banners
+    if (widget.banners.isNotEmpty) {
+      mixed.addAll(widget.banners);
+    }
+    
+    // Static Banners Fallback / Mixed
+    mixed.addAll([
+      'assets/images/home_banner_new.png',
+      'assets/images/banner_1.png',
+      'assets/images/banner_2.png',
+      'assets/images/banner_3.png',
+      'assets/images/banner_4.png',
+      'assets/images/banner_5.png',
+      'assets/images/banner_6.png',
+      'assets/images/banner_7.png',
+    ]);
+    
+    return mixed;
   }
 
   void _startAutoPlay() {
     _autoPlayTimer?.cancel();
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted || widget.banners.isEmpty) return;
-      final next = (_currentIndex + 1) % widget.banners.length;
+      if (!mounted || _mixedBanners.isEmpty) return;
+      final next = (_currentIndex + 1) % _mixedBanners.length;
       _pageController.animateToPage(
         next,
         duration: const Duration(milliseconds: 700),
@@ -47,187 +81,100 @@ class _HomeBannerSliderState extends State<HomeBannerSlider> {
     super.dispose();
   }
 
+  Widget _buildIndicators() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(_mixedBanners.length, (index) {
+        final isSelected = _currentIndex == index;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 350),
+          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 12.h),
+          width: isSelected ? 20.w : 6.w,
+          height: 6.h,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(3),
+            color: isSelected
+                ? context.primaryColor
+                : context.primaryColor.withValues(alpha: 0.2),
+          ),
+        );
+      }),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (widget.banners.isEmpty) return const SizedBox.shrink();
+    if (_mixedBanners.isEmpty) return const SizedBox.shrink();
 
     return Column(
       children: [
-        // ── Banner Pages ──────────────────────────────────────────────────
-        SizedBox(
-          height: 240,
+        AspectRatio(
+          aspectRatio: 16 / 9,
           child: PageView.builder(
             controller: _pageController,
-            itemCount: widget.banners.length,
+            itemCount: _mixedBanners.length,
             onPageChanged: (i) => setState(() => _currentIndex = i),
             itemBuilder: (ctx, i) {
+              final item = _mixedBanners[i];
               return Padding(
-                // Namshe: banners are NOT full-bleed — they have 16px side margin
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _NamsheBannerCard(banner: widget.banners[i]),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: _MixedBannerCard(item: item),
               );
             },
           ),
         ),
-
-        const SizedBox(height: 12),
-
-        // ── Dot Indicators ────────────────────────────────────────────────
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.banners.length, (i) {
-            final isActive = i == _currentIndex;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: isActive ? 20 : 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: isActive ? AppColors.primary : AppColors.border,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            );
-          }),
-        ),
+        _buildIndicators(),
       ],
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Individual Banner Card
-// ─────────────────────────────────────────────────────────────────────────────
-class _NamsheBannerCard extends StatelessWidget {
-  final BannerEntity banner;
-  const _NamsheBannerCard({required this.banner});
+class _MixedBannerCard extends StatelessWidget {
+  final dynamic item;
+
+  const _MixedBannerCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
+    final bool isApiBanner = item is BannerEntity;
+    final BannerEntity? banner = isApiBanner ? item as BannerEntity : null;
+    final String staticPath = isApiBanner ? '' : item as String;
+
     return GestureDetector(
-      onTap: () {},
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        Navigator.of(context).push(
+          CupertinoPageRoute(
+            builder: (_) => const CategoryNavigationPage(initialCategoryId: 'cat_all'),
+          ),
+        );
+      },
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          color: context.primaryColor,
+          boxShadow: [
+            BoxShadow(
+              color: context.textDark.withValues(alpha: 0.10),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Background image
-            Image.asset(
-              banner.imageAsset,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryDark],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
+            isApiBanner && banner!.image.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: banner.image,
+                    fit: BoxFit.fill,
+                    errorWidget: (_, __, ___) =>
+                        Image.asset('assets/images/banner_1.png', fit: BoxFit.fill),
+                  )
+                : Image.asset(
+                    staticPath.isNotEmpty ? staticPath : 'assets/images/banner_1.png',
+                    fit: BoxFit.fill,
                   ),
-                ),
-              ),
-            ),
-
-            // Gradient overlay — right to left for RTL text readability
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerRight,
-                  end: Alignment.centerLeft,
-                  colors: [
-                    Color(0xCC000000),
-                    Color(0x44000000),
-                    Colors.transparent,
-                  ],
-                  stops: [0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-
-            // Text content — RTL aligned to the right
-            Positioned(
-              right: 18,
-              top: 0,
-              bottom: 0,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  // Eyebrow label (optional)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withAlpha(200),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'جديد الموسم',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Title
-                  Text(
-                    banner.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      height: 1.2,
-                      letterSpacing: -0.5,
-                      shadows: [
-                        Shadow(blurRadius: 12, color: Colors.black54),
-                      ],
-                    ),
-                    textDirection: TextDirection.rtl,
-                  ),
-                  const SizedBox(height: 4),
-
-                  // Subtitle
-                  Text(
-                    banner.subtitle,
-                    style: const TextStyle(
-                      color: Color(0xCCFFFFFF),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textDirection: TextDirection.rtl,
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Namshe CTA — teal filled pill (not white)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 18, vertical: 9),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.primaryDark],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withAlpha(100),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      banner.ctaLabel,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),

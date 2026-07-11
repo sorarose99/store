@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../blocs/cart_bloc.dart';
+import '../blocs/cart_event.dart';
+import '../blocs/cart_state.dart';
 import '../../../../core/constants/colors.dart';
 import '../../domain/entities/cart_item_entity.dart';
 import '../widgets/cart_item_card.dart';
 import '../widgets/tamara_bottom_sheet.dart';
 import '../widgets/tabby_bottom_sheet.dart';
 import '../widgets/coupon_confirmation_sheet.dart';
-import 'send_gift_page.dart';
 import 'bnpl_promo_page.dart';
-import '../../../checkout/presentation/pages/checkout_address_page.dart';
+import '../../../checkout/presentation/pages/checkout_saved_address_page.dart';
+import '../../../delivery_options/presentation/widgets/delivery_options_widget.dart';
 
 class CartFilledPage extends StatefulWidget {
   const CartFilledPage({super.key});
@@ -17,66 +22,31 @@ class CartFilledPage extends StatefulWidget {
 }
 
 class _CartFilledPageState extends State<CartFilledPage> {
-  late List<CartItemEntity> _cartItems;
   final TextEditingController _couponController = TextEditingController();
-  
-  // Coupon State
-  String? _appliedCouponCode;
-  double _couponDiscount = 0.0;
 
   // Gift State
   Map<String, dynamic>? _giftDetails;
 
-  // Shipping State
-  int _selectedShippingModel = 0; // 0 = Standard, 1 = Express
-  static const List<Map<String, dynamic>> _shippingModels = [
-    {
-      'title': 'شحن عادي',
-      'subtitle': 'خلال 4–8 أيام عمل',
-      'fee': 0.0,
-      'feeLabel': 'مجاني',
-      'icon': Icons.local_shipping_outlined,
-      'color': 0xFF34C759,
-      'carrier': 'KDX ستاندرد',
-    },
-    {
-      'title': 'شحن سريع',
-      'subtitle': 'خلال 24–48 ساعة',
-      'fee': 25.0,
-      'feeLabel': '25.0 ر.س',
-      'icon': Icons.rocket_launch_outlined,
-      'color': 0xFF007AFF,
-      'carrier': 'KDX إكسبريس',
-    },
-  ];
+  CartLoaded? get _cartLoadedState {
+    final state = context.read<CartBloc>().state;
+    if (state is CartLoaded) return state;
+    return null;
+  }
+
+  List<CartItemEntity> get _cartItems => _cartLoadedState?.items ?? [];
+  String? get _appliedCouponCode => _cartLoadedState?.appliedCouponCode;
+  double get _couponDiscount => _cartLoadedState?.couponDiscount ?? 0.0;
+
+  double get _subtotal => _cartLoadedState?.subtotal ?? 0.0;
+  double get _discount => _couponDiscount;
+  double get _giftWrapFee => (_giftDetails?['wrap'] ?? false) ? 15.0 : 0.0;
+  double get _shippingFee => _cartLoadedState?.shippingCost ?? 0.0;
+  double get _total => (_subtotal + _giftWrapFee + _shippingFee - _discount).clamp(0.0, double.infinity);
 
   @override
   void initState() {
     super.initState();
-    _cartItems = [
-      const CartItemEntity(
-        id: '1',
-        productId: 'p1',
-        name: 'جاكيت رجالي',
-        size: 'M',
-        color: 'أسود',
-        price: 26.8,
-        quantity: 1,
-        imageUrl: 'assets/images/cat_fashion.png',
-        isAvailable: true,
-      ),
-      const CartItemEntity(
-        id: '2',
-        productId: 'p2',
-        name: 'جاكيت رجالي',
-        size: 'M',
-        color: 'أسود',
-        price: 26.8,
-        quantity: 1,
-        imageUrl: 'assets/images/cat_fashion.png',
-        isAvailable: false,
-      ),
-    ];
+    context.read<CartBloc>().add(const CartRequested());
   }
 
   @override
@@ -114,9 +84,9 @@ class _CartFilledPageState extends State<CartFilledPage> {
         textDirection: TextDirection.rtl,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: context.surfaceColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -127,7 +97,7 @@ class _CartFilledPageState extends State<CartFilledPage> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5E5EA),
+                    color: context.borderColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -136,19 +106,25 @@ class _CartFilledPageState extends State<CartFilledPage> {
               Text(
                 'خيارات الدفع عبر $name',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: context.textDark,
                   fontFamily: 'Tajawal',
                 ),
               ),
               const SizedBox(height: 24),
               ListTile(
-                leading: Icon(Icons.info_outline_rounded, color: isTabby ? const Color(0xFF1BE39A) : const Color(0xFFFFA670)),
+                leading: Icon(Icons.info_outline_rounded,
+                    color: isTabby
+                        ? const Color(0xFF1BE39A)
+                        : const Color(0xFFFFA670)),
                 title: const Text(
                   'كيف يعمل الدفع بالتقسيط؟ (نافذة سريعة)',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Tajawal'),
                 ),
                 onTap: () {
                   Navigator.of(context).pop();
@@ -161,10 +137,16 @@ class _CartFilledPageState extends State<CartFilledPage> {
               ),
               const Divider(height: 1),
               ListTile(
-                leading: Icon(Icons.explore_outlined, color: isTabby ? const Color(0xFF1BE39A) : const Color(0xFFFFA670)),
+                leading: Icon(Icons.explore_outlined,
+                    color: isTabby
+                        ? const Color(0xFF1BE39A)
+                        : const Color(0xFFFFA670)),
                 title: Text(
                   'عرض دليل الخدمة الكامل ($name)',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Tajawal'),
                 ),
                 onTap: () {
                   Navigator.of(context).pop();
@@ -183,74 +165,80 @@ class _CartFilledPageState extends State<CartFilledPage> {
     );
   }
 
-  double get _subtotal {
-    return _cartItems
-        .where((item) => item.isAvailable)
-        .fold(0.0, (sum, item) => sum + (item.price * item.quantity));
+  void _increaseQuantity(CartItemEntity item, String? sizeName) {
+    if (sizeName == null) {
+      final newQty = item.quantity + 1;
+      // If there's a single-entry breakdown, scale its qty to match the new total.
+      // This keeps checkout validation happy (breakdown total must == item quantity).
+      List<Map<String, dynamic>> newBreakdown = item.breakdown;
+      if (item.breakdown.length == 1) {
+        newBreakdown = [{
+          ...item.breakdown.first,
+          'qty': newQty,
+        }];
+      }
+      context.read<CartBloc>().add(CartItemUpdated(
+            productId: item.id,
+            quantity: newQty,
+            breakdown: newBreakdown,
+          ));
+    } else {
+      final newBreakdown = item.breakdown.map((b) {
+        final map = Map<String, dynamic>.from(b);
+        if (map['size_name'] == sizeName) {
+          map['qty'] = (map['qty'] as int) + 1;
+        }
+        return map;
+      }).toList();
+      context.read<CartBloc>().add(CartItemUpdated(
+            productId: item.id,
+            quantity: item.quantity + 1,
+            breakdown: newBreakdown,
+          ));
+    }
   }
 
-  double get _discount {
-    return _couponDiscount;
+  void _decreaseQuantity(CartItemEntity item, String? sizeName) {
+    if (sizeName == null) {
+      if (item.quantity <= 1) return;
+      final newQty = item.quantity - 1;
+      // If there's a single-entry breakdown, scale its qty to match the new total.
+      List<Map<String, dynamic>> newBreakdown = item.breakdown;
+      if (item.breakdown.length == 1) {
+        newBreakdown = [{
+          ...item.breakdown.first,
+          'qty': newQty,
+        }];
+      }
+      context.read<CartBloc>().add(CartItemUpdated(
+            productId: item.id,
+            quantity: newQty,
+            breakdown: newBreakdown,
+          ));
+    } else {
+      final newBreakdown = item.breakdown.map((b) {
+        final map = Map<String, dynamic>.from(b);
+        if (map['size_name'] == sizeName) {
+          map['qty'] = (map['qty'] as int) - 1;
+        }
+        return map;
+      }).where((element) => (element['qty'] as int) > 0).toList();
+      context.read<CartBloc>().add(CartItemUpdated(
+            productId: item.id,
+            quantity: item.quantity - 1,
+            breakdown: newBreakdown,
+          ));
+    }
   }
 
-  double get _giftWrapFee {
-    return (_giftDetails?['wrap'] ?? false) ? 15.0 : 0.0;
-  }
-
-  double get _shippingFee {
-    return (_shippingModels[_selectedShippingModel]['fee'] as double);
-  }
-
-  double get _total {
-    return (_subtotal + _giftWrapFee + _shippingFee - _discount).clamp(0.0, double.infinity);
-  }
-
-  void _increaseQuantity(int index) {
-    setState(() {
-      final item = _cartItems[index];
-      _cartItems[index] = CartItemEntity(
-        id: item.id,
-        productId: item.productId,
-        name: item.name,
-        size: item.size,
-        color: item.color,
-        price: item.price,
-        quantity: item.quantity + 1,
-        imageUrl: item.imageUrl,
-        isAvailable: item.isAvailable,
-      );
-    });
-  }
-
-  void _decreaseQuantity(int index) {
-    if (_cartItems[index].quantity <= 1) return;
-    setState(() {
-      final item = _cartItems[index];
-      _cartItems[index] = CartItemEntity(
-        id: item.id,
-        productId: item.productId,
-        name: item.name,
-        size: item.size,
-        color: item.color,
-        price: item.price,
-        quantity: item.quantity - 1,
-        imageUrl: item.imageUrl,
-        isAvailable: item.isAvailable,
-      );
-    });
-  }
-
-  void _deleteItem(String id) {
-    setState(() {
-      _cartItems.removeWhere((item) => item.id == id);
-    });
+  void _deleteItem(String cartItemId) {
+    context.read<CartBloc>().add(CartItemRemoved(productId: cartItemId));
   }
 
   void _applyCoupon() {
     final code = _couponController.text.trim();
     if (code.isEmpty) return;
 
-    // Standard 10% discount dynamic calculation
     final calculatedDiscount = _subtotal * 0.10;
 
     showModalBottomSheet(
@@ -260,28 +248,18 @@ class _CartFilledPageState extends State<CartFilledPage> {
         couponCode: code,
         discountAmount: calculatedDiscount,
         onAccept: () {
-          setState(() {
-            _appliedCouponCode = code;
-            _couponDiscount = calculatedDiscount;
-          });
+          context.read<CartBloc>().add(CartCouponApplied(code: code));
         },
         onCancel: () {
-          setState(() {
-            _couponController.clear();
-            _appliedCouponCode = null;
-            _couponDiscount = 0.0;
-          });
+          _couponController.clear();
         },
       ),
     );
   }
 
   void _removeCoupon() {
-    setState(() {
-      _couponController.clear();
-      _appliedCouponCode = null;
-      _couponDiscount = 0.0;
-    });
+    context.read<CartBloc>().add(const CartCouponRemoved());
+    _couponController.clear();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
@@ -293,88 +271,175 @@ class _CartFilledPageState extends State<CartFilledPage> {
     );
   }
 
-  Future<void> _navigateToGiftPage() async {
-    final result = await Navigator.of(context).push<Map<String, dynamic>>(
-      MaterialPageRoute(
-        builder: (_) => SendGiftPage(initialGiftDetails: _giftDetails),
-      ),
-    );
-    if (result != null) {
-      setState(() {
-        _giftDetails = result;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark, size: 20),
-            onPressed: () {
-              if (Navigator.of(context).canPop()) {
-                Navigator.of(context).pop();
-              }
-            },
-          ),
-          centerTitle: true,
-          title: const Text(
-            'السلة',
-            style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Tajawal',
+    return BlocBuilder<CartBloc, CartState>(
+      builder: (context, state) {
+        if (state is CartLoading) {
+          return Scaffold(
+            backgroundColor: context.surfaceColor,
+            body: Center(
+              child: CircularProgressIndicator(color: context.primaryColor),
             ),
-          ),
-        ),
-        body: _cartItems.isEmpty
-            ? _buildEmptyState()
-            : Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Cart Items List
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: _cartItems.length,
-                            itemBuilder: (context, index) {
-                              final item = _cartItems[index];
-                              return CartItemCard(
-                                item: item,
-                                onQuantityIncrease: () => _increaseQuantity(index),
-                                onQuantityDecrease: () => _decreaseQuantity(index),
-                                onDelete: () => _deleteItem(item.id),
-                                onShare: () {},
-                              );
-                            },
-                          ),
+          );
+        }
+        if (state is CartError) {
+          return Scaffold(
+            backgroundColor: context.surfaceColor,
+            body: Center(
+              child: Text(
+                state.message,
+                style: TextStyle(fontFamily: 'Tajawal', color: context.textDark),
+              ),
+            ),
+          );
+        }
+
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            backgroundColor: context.surfaceColor,
+            appBar: AppBar(
+              backgroundColor: context.surfaceColor,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back_ios,
+                    color: context.textDark, size: 20),
+                onPressed: () {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+              centerTitle: true,
+              title: Text(
+                'cart'.tr(),
+                style: TextStyle(
+                  color: context.textDark,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+            ),
+            body: _cartItems.isEmpty
+                ? _buildEmptyState()
+                : Column(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Item count summary header
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '${_cartItems.length} ${'item_in_cart'.tr()}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: context.textGrey,
+                                      fontFamily: 'Tajawal',
+                                    ),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (dialogContext) => Directionality(
+                                          textDirection: TextDirection.rtl,
+                                          child: AlertDialog(
+                                            title: const Text('تفريغ السلة', style: TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold)),
+                                            content: const Text('هل أنت متأكد من رغبتك في حذف جميع المنتجات من السلة؟', style: TextStyle(fontFamily: 'Tajawal')),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.of(dialogContext).pop(),
+                                                child: Text('إلغاء', style: TextStyle(color: context.textGrey, fontFamily: 'Tajawal')),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(dialogContext).pop();
+                                                  context.read<CartBloc>().add(const CartCleared());
+                                                },
+                                                child: Text('تفريغ', style: TextStyle(color: context.errorColor, fontFamily: 'Tajawal', fontWeight: FontWeight.bold)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    icon: Icon(Icons.delete_sweep_outlined, size: 18, color: context.errorColor),
+                                    label: Text(
+                                      'حذف الكل',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: context.errorColor,
+                                        fontFamily: 'Tajawal',
+                                      ),
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              // Cart Items List
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _cartItems.length,
+                                itemBuilder: (context, index) {
+                                  final item = _cartItems[index];
+                                  return Dismissible(
+                                    key: Key('cart_item_${item.id}_$index'),
+                                    direction: DismissDirection.endToStart,
+                                    background: Container(
+                                      alignment: Alignment.centerRight,
+                                      padding: const EdgeInsets.only(right: 20),
+                                      margin: EdgeInsets.only(bottom: 16),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.error,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(Icons.delete_outline, color: Colors.white),
+                                    ),
+                                    onDismissed: (_) => _deleteItem(item.id),
+                                    child: CartItemCard(
+                                      item: item,
+                                      onQuantityIncrease: (sizeName) =>
+                                          _increaseQuantity(item, sizeName),
+                                      onQuantityDecrease: (sizeName) =>
+                                          _decreaseQuantity(item, sizeName),
+                                      onDelete: () => _deleteItem(item.id),
+                                      onShare: () {},
+                                    ),
+                                  );
+                                },
+                              ),
                           const SizedBox(height: 16),
-                          
+
                           // Coupon input header
-                          const Text(
+                          Text(
                             'كوبون الخصم',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
+                              color: context.textDark,
                               fontFamily: 'Tajawal',
                             ),
                           ),
                           const SizedBox(height: 10),
-                          
+
                           // Coupon Section
                           _appliedCouponCode == null
                               ? Row(
@@ -383,22 +448,29 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                       child: Container(
                                         height: 44,
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF2F3F8),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: const Color(0xFFE5E5EA), width: 0.5),
+                                          color: context.cardBackground,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border: Border.all(
+                                              color: context.borderColor,
+                                              width: 0.5),
                                         ),
-                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12),
                                         alignment: Alignment.centerRight,
                                         child: TextField(
                                           controller: _couponController,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 13,
-                                            color: AppColors.textDark,
+                                            color: context.textDark,
                                             fontFamily: 'Tajawal',
                                           ),
-                                          decoration: const InputDecoration(
+                                          decoration:  InputDecoration(
                                             hintText: 'أدخل كوبون الخصم',
-                                            hintStyle: TextStyle(fontSize: 12, color: AppColors.textGrey, fontFamily: 'Tajawal'),
+                                            hintStyle: TextStyle(
+                                                fontSize: 12,
+                                                color: context.textGrey,
+                                                fontFamily: 'Tajawal'),
                                             border: InputBorder.none,
                                             contentPadding: EdgeInsets.zero,
                                           ),
@@ -412,17 +484,18 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                       child: ElevatedButton(
                                         onPressed: _applyCoupon,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.primary,
+                                          backgroundColor: context.primaryColor,
                                           elevation: 0,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                         ),
-                                        child: const Text(
+                                        child: Text(
                                           'تطبيق',
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.white,
+                                            color: context.surfaceColor,
                                             fontSize: 13,
                                             fontFamily: 'Tajawal',
                                           ),
@@ -432,34 +505,40 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                   ],
                                 )
                               : Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 12),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFE8FAF4), // Light mint green
+                                    color: const Color(
+                                        0xFFE8FAF4), // Light mint green
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: const Color(0xFFB2DFDB), width: 0.8),
+                                    border: Border.all(
+                                        color: context.primaryLight,
+                                        width: 0.8),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 20),
+                                      Icon(Icons.check_circle_rounded,
+                                          color: context.primaryColor, size: 20),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               'كوبون الخصم فعال: $_appliedCouponCode',
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 12.5,
                                                 fontWeight: FontWeight.bold,
-                                                color: AppColors.textDark,
+                                                color: context.textDark,
                                                 fontFamily: 'Tajawal',
                                               ),
                                             ),
                                             Text(
                                               'لقد وفرت ${_couponDiscount.toStringAsFixed(1)} ر.س',
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 11,
-                                                color: AppColors.primary,
+                                                color: context.primaryColor,
                                                 fontWeight: FontWeight.bold,
                                                 fontFamily: 'Tajawal',
                                               ),
@@ -468,22 +547,25 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                         ),
                                       ),
                                       IconButton(
-                                        icon: const Icon(Icons.cancel_outlined, color: AppColors.textGrey, size: 20),
+                                        icon: Icon(Icons.cancel_outlined,
+                                            color: context.textGrey,
+                                            size: 20),
                                         onPressed: _removeCoupon,
                                       ),
                                     ],
                                   ),
                                 ),
                           const SizedBox(height: 16),
-                          
-                          // Send as gift option
+
+                          /* 
+// Send as gift option
                           _giftDetails == null
                               ? Container(
                                   height: 44,
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: context.surfaceColor,
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.textDark, width: 1),
+                                    border: Border.all(color: context.textDark, width: 1),
                                   ),
                                   child: OutlinedButton(
                                     onPressed: _navigateToGiftPage,
@@ -498,13 +580,13 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                         Text(
                                           'أرسلها كهدية',
                                           style: TextStyle(
-                                            color: AppColors.textDark,
+                                            color: context.textDark,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 13,
                                             fontFamily: 'Tajawal',
                                           ),
                                         ),
-                                        Icon(Icons.edit_note_rounded, color: AppColors.textDark, size: 20),
+                                        Icon(Icons.edit_note_rounded, color: context.textDark, size: 20),
                                       ],
                                     ),
                                   ),
@@ -512,9 +594,9 @@ class _CartFilledPageState extends State<CartFilledPage> {
                               : Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: context.surfaceColor,
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFB2DFDB), width: 1.2),
+                                    border: Border.all(color: context.primaryLight, width: 1.2),
                                     boxShadow: [
                                       BoxShadow(
                                         color: Colors.black.withValues(alpha: 0.03),
@@ -528,14 +610,14 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                     children: [
                                       Row(
                                         children: [
-                                          const Icon(Icons.card_giftcard_rounded, color: AppColors.primary, size: 18),
+                                          Icon(Icons.card_giftcard_rounded, color: context.primaryColor, size: 18),
                                           const SizedBox(width: 8),
-                                          const Text(
+                                          Text(
                                             'الطلب مجهز كهدية 🎁',
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.bold,
-                                              color: AppColors.textDark,
+                                              color: context.textDark,
                                               fontFamily: 'Tajawal',
                                             ),
                                           ),
@@ -543,12 +625,12 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                           TextButton(
                                             onPressed: _navigateToGiftPage,
                                             style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
-                                            child: const Text(
+                                            child: Text(
                                               'تعديل',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.bold,
-                                                color: AppColors.primary,
+                                                color: context.primaryColor,
                                                 fontFamily: 'Tajawal',
                                               ),
                                             ),
@@ -572,18 +654,18 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                       const Divider(height: 18),
                                       Text(
                                         'المستلم: ${_giftDetails!['recipientName']}',
-                                        style: const TextStyle(fontSize: 12, color: AppColors.textDark, fontFamily: 'Tajawal', fontWeight: FontWeight.bold),
+                                        style: TextStyle(fontSize: 12, color: context.textDark, fontFamily: 'Tajawal', fontWeight: FontWeight.bold),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         'رقم الجوال: ${_giftDetails!['recipientPhone']}',
-                                        style: const TextStyle(fontSize: 11, color: AppColors.textGrey, fontFamily: 'Tajawal'),
+                                        style: TextStyle(fontSize: 11, color: context.textGrey, fontFamily: 'Tajawal'),
                                       ),
                                       if (_giftDetails!['message'].isNotEmpty) ...[
                                         const SizedBox(height: 6),
                                         Text(
                                           'الرسالة: "${_giftDetails!['message']}"',
-                                          style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textDark, fontFamily: 'Tajawal'),
+                                          style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: context.textDark, fontFamily: 'Tajawal'),
                                         ),
                                       ],
                                       if (_giftDetails!['wrap']) ...[
@@ -605,52 +687,62 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                 ),
                           const SizedBox(height: 24),
 
-                          // Price breakdowns
-                          _buildSummaryRow('المجموع الفرعي', '${_subtotal.toStringAsFixed(1)} ر.س'),
+                          */
+// Price breakdowns
+                          _buildSummaryRow('subtotal'.tr(),
+                              '${_subtotal.toStringAsFixed(1)} ر.س'),
                           if (_couponDiscount > 0) ...[
                             const SizedBox(height: 10),
                             _buildSummaryRow(
-                              'تخفيض الكوبون ($_appliedCouponCode)',
+                              'coupon_discount_applied'
+                                  .tr(args: [_appliedCouponCode ?? '']),
                               '−${_couponDiscount.toStringAsFixed(1)} ر.س',
                               isDiscount: true,
                             ),
                           ],
                           if (_giftWrapFee > 0) ...[
                             const SizedBox(height: 10),
-                            _buildSummaryRow('تغليف الهدية', '+15.0 ر.س'),
+                            _buildSummaryRow('gift_wrap'.tr(), '+15.0 ر.س'),
                           ],
                           const SizedBox(height: 10),
-                          // ── Dual Shipping Model Picker (Task 3) ─────────────
-                          _buildShippingModelPicker(),
-                          const SizedBox(height: 10),
                           
+                          // Delivery Options
+                          const DeliveryOptionsWidget(),
+                          const SizedBox(height: 10),
+
                           // Distinct Grand Total row in order summary
-                          const Divider(color: AppColors.border, height: 32, thickness: 1),
+                          const Divider(
+                              color: AppColors.border,
+                              height: 32,
+                              thickness: 1),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 'المجموع الإجمالي',
                                 style: TextStyle(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.textDark,
+                                  color: context.textDark,
                                   fontFamily: 'Tajawal',
                                 ),
                               ),
                               Text(
                                 '${_total.toStringAsFixed(1)} ر.س',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
-                                  color: AppColors.primary,
+                                  color: context.primaryColor,
                                   fontFamily: 'Tajawal',
                                 ),
                               ),
                             ],
                           ),
-                          const Divider(color: AppColors.border, height: 32, thickness: 1),
-                          
+                          const Divider(
+                              color: AppColors.border,
+                              height: 32,
+                              thickness: 1),
+
                           // Split installment payment banners (Stacked Tamara & Tabby)
                           _buildTamaraBanner(),
                           const SizedBox(height: 10),
@@ -658,12 +750,12 @@ class _CartFilledPageState extends State<CartFilledPage> {
                           const SizedBox(height: 24),
 
                           // Trust banner "تسوق بأمان واستدامة"
-                          const Text(
+                          Text(
                             'تسوق بأمان واستدامة',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
+                              color: context.textDark,
                               fontFamily: 'Tajawal',
                             ),
                           ),
@@ -674,14 +766,15 @@ class _CartFilledPageState extends State<CartFilledPage> {
                       ),
                     ),
                   ),
-                  
-                  // Sticky bottom bar
+
                   _buildStickyBottomBar(),
                 ],
               ),
-      ),
-    );
-  }
+            ),
+          );
+        },
+      );
+    }
 
   Widget _buildTamaraBanner() {
     return GestureDetector(
@@ -689,9 +782,15 @@ class _CartFilledPageState extends State<CartFilledPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF7F2),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? context.accentColor.withValues(alpha: 0.1)
+              : const Color(0xFFFFF7F2),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFFFE0CC), width: 0.8),
+          border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFFFFA670).withValues(alpha: 0.3)
+                  : const Color(0xFFFFE0CC),
+              width: 0.8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -707,10 +806,10 @@ class _CartFilledPageState extends State<CartFilledPage> {
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child: const Text(
+                    child: Text(
                       'T',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.surfaceColor,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -719,10 +818,10 @@ class _CartFilledPageState extends State<CartFilledPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'قسم فاتورتك على 3 دفعات بقيمة ${(_total / 3).toStringAsFixed(2)} SAR بدون فوائد. عرض المزيد',
-                      style: const TextStyle(
+                      '${'split_in_3'.tr()} ${(_total / 3).toStringAsFixed(2)} ${'sar'.tr()}',
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textDark,
+                        color: context.textDark,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Tajawal',
                       ),
@@ -733,7 +832,10 @@ class _CartFilledPageState extends State<CartFilledPage> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_back_ios, size: 12, color: AppColors.textGrey, textDirection: TextDirection.ltr),
+            Icon(Icons.arrow_back_ios,
+                size: 12,
+                color: context.textGrey,
+                textDirection: TextDirection.ltr),
           ],
         ),
       ),
@@ -746,9 +848,15 @@ class _CartFilledPageState extends State<CartFilledPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFE8FAF4), // Light mint green
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1BE39A).withValues(alpha: 0.1)
+              : const Color(0xFFE8FAF4),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFB2DFDB), width: 0.8),
+          border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF1BE39A).withValues(alpha: 0.3)
+                  : context.primaryLight,
+              width: 0.8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -776,10 +884,10 @@ class _CartFilledPageState extends State<CartFilledPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'قسم فاتورتك على 4 دفعات بقيمة ${(_total / 4).toStringAsFixed(2)} SAR بدون فوائد. عرض المزيد',
-                      style: const TextStyle(
+                      '${'split_in_4'.tr()} ${(_total / 4).toStringAsFixed(2)} ${'sar'.tr()}',
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textDark,
+                        color: context.textDark,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Tajawal',
                       ),
@@ -790,7 +898,10 @@ class _CartFilledPageState extends State<CartFilledPage> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_back_ios, size: 12, color: AppColors.textGrey, textDirection: TextDirection.ltr),
+            Icon(Icons.arrow_back_ios,
+                size: 12,
+                color: context.textGrey,
+                textDirection: TextDirection.ltr),
           ],
         ),
       ),
@@ -798,124 +909,6 @@ class _CartFilledPageState extends State<CartFilledPage> {
   }
 
   // ── Task 3: Dual Shipping Model Picker ──────────────────────────────────────
-  Widget _buildShippingModelPicker() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'وسيلة الشحن',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textDark,
-            fontFamily: 'Tajawal',
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: List.generate(_shippingModels.length, (index) {
-            final model = _shippingModels[index];
-            final isSelected = _selectedShippingModel == index;
-            final brandColor = Color(model['color'] as int);
-            return Expanded(
-              child: GestureDetector(
-                onTap: () => setState(() => _selectedShippingModel = index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  margin: EdgeInsets.only(left: index == 0 ? 8 : 0),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? brandColor.withValues(alpha: 0.07)
-                        : const Color(0xFFF8F9FC),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: isSelected ? brandColor : AppColors.border,
-                      width: isSelected ? 2 : 1,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: brandColor.withValues(alpha: 0.15),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            )
-                          ]
-                        : null,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            model['icon'] as IconData,
-                            color: isSelected ? brandColor : AppColors.textGrey,
-                            size: 20,
-                          ),
-                          const Spacer(),
-                          if (isSelected)
-                            Container(
-                              width: 18,
-                              height: 18,
-                              decoration: BoxDecoration(
-                                color: brandColor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                color: Colors.white,
-                                size: 11,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        model['title'] as String,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
-                          color: isSelected ? AppColors.textDark : AppColors.textMid,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        model['subtitle'] as String,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textGrey,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: brandColor.withValues(alpha: isSelected ? 0.12 : 0.06),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          model['feeLabel'] as String,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            color: brandColor,
-                            fontFamily: 'Tajawal',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
 
   Widget _buildSummaryRow(String title, String value,
       {bool isDiscount = false, bool isFreeShipping = false}) {
@@ -925,14 +918,15 @@ class _CartFilledPageState extends State<CartFilledPage> {
         Row(
           children: [
             if (isDiscount) ...[
-              const Icon(Icons.local_offer_outlined, color: AppColors.primary, size: 16),
+              Icon(Icons.local_offer_outlined,
+                  color: context.primaryColor, size: 16),
               const SizedBox(width: 6),
             ],
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
-                color: AppColors.textDark,
+                color: context.textDark,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Tajawal',
               ),
@@ -945,10 +939,10 @@ class _CartFilledPageState extends State<CartFilledPage> {
             fontSize: 13,
             fontWeight: FontWeight.w900,
             color: isDiscount
-                ? const Color(0xFFE53935)
+                ? context.errorColor
                 : isFreeShipping
-                    ? AppColors.primary
-                    : AppColors.textDark,
+                    ? context.primaryColor
+                    : context.textDark,
             fontFamily: 'Tajawal',
           ),
         ),
@@ -976,21 +970,21 @@ class _CartFilledPageState extends State<CartFilledPage> {
   Widget _buildTrustBox(IconData icon, String label) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FC),
+        color: context.backgroundColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFECEEF5), width: 0.5),
+        border: Border.all(color: context.borderColor, width: 0.5),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 20, color: AppColors.textDark),
+          Icon(icon, size: 20, color: context.textDark),
           const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
+              color: context.textDark,
               fontFamily: 'Tajawal',
             ),
           ),
@@ -1002,70 +996,163 @@ class _CartFilledPageState extends State<CartFilledPage> {
   Widget _buildStickyBottomBar() {
     // If there is any out-of-stock items, we disable purchase
     final hasUnavailable = _cartItems.any((item) => !item.isAvailable);
+    final unavailableCount = _cartItems.where((item) => !item.isAvailable).length;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        border: const Border(top: BorderSide(color: AppColors.border, width: 1)),
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'المجموع الإجمالي',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textGrey,
-                    fontFamily: 'Tajawal',
-                    fontWeight: FontWeight.bold,
-                  ),
+            // Out-of-stock warning banner
+            if (hasUnavailable) ...[              
+              Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: context.errorColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: context.errorColor.withValues(alpha: 0.3), width: 1),
                 ),
-                Text(
-                  '${_total.toStringAsFixed(1)} ر.س',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.textDark,
-                    fontFamily: 'Tajawal',
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, size: 16, color: context.errorColor),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        unavailableCount == 1
+                            ? 'يوجد منتج غير متوفر. أزله لإتمام الطلب.'
+                            : 'يوجد $unavailableCount منتجات غير متوفرة. أزلها لإتمام الطلب.',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: context.errorColor,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            // Faint subtotal + shipping summary
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'المجموع الفرعي: ${_subtotal.toStringAsFixed(1)} ر.س',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.textGrey,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                  if (_shippingFee > 0)
+                    Text(
+                      'شحن: ${_shippingFee.toStringAsFixed(1)} ر.س',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.textGrey,
+                        fontFamily: 'Tajawal',
+                      ),
+                    )
+                  else
+                    Text(
+                      'شحن مجاني',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            // Total + Checkout row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'المجموع الإجمالي',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.textGrey,
+                        fontFamily: 'Tajawal',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${_total.toStringAsFixed(1)} ر.س',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: context.textDark,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 44,
+                  width: 150,
+                  child: ElevatedButton(
+                    onPressed: hasUnavailable
+                        ? null
+                        : () {
+                            // Only validate breakdown distribution when an item has
+                            // multiple size options AND user hasn't assigned quantities.
+                            // Single-size products (watches, accessories, etc.) skip this.
+                            for (final item in _cartItems) {
+                              if (item.productSizes.length > 1 && item.breakdown.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('يرجى توزيع الكميات على المقاسات لمنتج ${item.name}', style: const TextStyle(fontFamily: 'Tajawal')),
+                                    backgroundColor: context.errorColor,
+                                  ),
+                                );
+                                return;
+                              }
+                            }
+
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => const CheckoutSavedAddressPage()),
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.primaryColor,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      disabledBackgroundColor: context.textGreyLight,
+                    ),
+                    child: Text(
+                      'إتمام الدفع',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: context.surfaceColor,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-            SizedBox(
-              height: 44,
-              width: 150,
-              child: ElevatedButton(
-                onPressed: hasUnavailable
-                    ? null
-                    : () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const CheckoutAddressPage()),
-                        );
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  disabledBackgroundColor: const Color(0xFFC7C7D9),
-                ),
-                child: const Text(
-                  'إتمام الدفع',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ),
-            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -1075,62 +1162,81 @@ class _CartFilledPageState extends State<CartFilledPage> {
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF2F3F8),
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                color: context.cardBackground,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.shopping_bag_outlined, color: AppColors.textGrey, size: 40),
+              child: Icon(Icons.shopping_bag_outlined,
+                  color: context.primaryColor, size: 52),
             ),
-            const SizedBox(height: 24),
-            const Text(
+            const SizedBox(height: 28),
+            Text(
               'سلتك فارغة',
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: context.textDark,
                 fontFamily: 'Tajawal',
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'أضف منتجات إلى السلة لبدء التسوق!',
+            Text(
+              'ابدأ التسوق وأضف منتجاتك المفضلة إلى السلة!',
               style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textGrey,
+                fontSize: 13,
+                color: context.textGrey,
                 fontFamily: 'Tajawal',
+                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             SizedBox(
-              width: 140,
-              height: 44,
-              child: ElevatedButton(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
                 onPressed: () {
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
+                  // Pop all the way back to the root (shell/home)
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text(
-                  'اذهب للتسوق',
+                icon: const Icon(Icons.explore_outlined, size: 20),
+                label: Text(
+                  'تصفح المنتجات',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: context.surfaceColor,
                     fontFamily: 'Tajawal',
                   ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.primaryColor,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextButton(
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Text(
+                'رجوع',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: context.textGrey,
+                  fontFamily: 'Tajawal',
                 ),
               ),
             ),

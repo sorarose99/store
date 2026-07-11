@@ -1,5 +1,7 @@
+import 'package:kdx/core/constants/colors.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import '../../../../core/constants/colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../orders/presentation/pages/order_detail_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -23,9 +25,9 @@ class OrderSuccessDialog extends StatelessWidget {
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.backgroundColor,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
@@ -33,77 +35,82 @@ class OrderSuccessDialog extends StatelessWidget {
           children: [
             // Green success circle with check
             Container(
-              width: 80,
-              height: 80,
-              decoration: const BoxDecoration(
-                color: Color(0xFF8DC63F),
+              width: 80.w,
+              height: 80.h,
+              decoration: BoxDecoration(
+                color: context.primaryColor,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check_rounded, color: Colors.white, size: 48),
+              child: Icon(Icons.check_rounded,
+                  color: context.backgroundColor, size: 48),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
 
-            const Text(
-              'تم إتمام طلبك!',
+            Text(
+              'your_order_has_been'.tr(),
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                color: context.textDark,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.h),
             Text(
               'رقم الطلب: $orderNumber',
-              style: const TextStyle(
-                fontSize: 13,
-                color: AppColors.textGrey,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: context.textGrey,
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.h),
 
             // Summary details
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
-                color: const Color(0xFFF9F9F9),
+                color: context.primaryColor,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
                 children: [
-                  _summaryRow('عدد المنتجات', '$itemCount منتج'),
-                  const SizedBox(height: 8),
-                  _summaryRow('الإجمالي', '$total ر.س', isHighlight: true),
+                  _summaryRow(
+                      context, 'number_of_products'.tr(), '$itemCount منتج'),
+                  SizedBox(height: 8.h),
+                  _summaryRow(context, 'total_1'.tr(), '$total ر.س',
+                      isHighlight: true),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.h),
 
             // Continue shopping button
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 48.h,
               child: ElevatedButton(
                 onPressed: () {
                   // Pop dialog + all checkout pages back to main shell
                   Navigator.of(context).popUntil((r) => r.isFirst);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: context.primaryColor,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text(
-                  'مواصلة التسوق',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                child: Text(
+                  'continue_shopping'.tr(),
+                  style:
+                      TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
 
             // View order button
             SizedBox(
               width: double.infinity,
-              height: 48,
+              height: 48.h,
               child: OutlinedButton(
                 onPressed: () {
                   Navigator.of(context).popUntil((r) => r.isFirst);
@@ -114,12 +121,16 @@ class OrderSuccessDialog extends StatelessWidget {
                   );
                 },
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFFEEEEEE)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  side: BorderSide(color: context.primaryColor),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text(
-                  'عرض الطلب',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                child: Text(
+                  'view_the_order'.tr(),
+                  style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: context.textDark),
                 ),
               ),
             ),
@@ -129,17 +140,19 @@ class OrderSuccessDialog extends StatelessWidget {
     );
   }
 
-  Widget _summaryRow(String label, String value, {bool isHighlight = false}) {
+  Widget _summaryRow(BuildContext context, String label, String value,
+      {bool isHighlight = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textGrey)),
+        Text(label,
+            style: TextStyle(fontSize: 13.sp, color: AppColors.textGrey)),
         Text(
           value,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 13.sp,
             fontWeight: FontWeight.bold,
-            color: isHighlight ? AppColors.primary : AppColors.textDark,
+            color: isHighlight ? context.primaryColor : context.textDark,
           ),
         ),
       ],

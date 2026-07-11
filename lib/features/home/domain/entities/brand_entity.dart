@@ -4,7 +4,7 @@ class BrandEntity extends Equatable {
   final String id;
   final String name;
   final String imageAsset;
-  final String discountLabel; // e.g. "40%"
+  final String discountLabel; // e.g. '40'.tr()
 
   const BrandEntity({
     required this.id,

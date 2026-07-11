@@ -53,7 +53,7 @@ class ContactInfoPage extends StatelessWidget {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.headset_mic_outlined, color: Colors.white, size: 32),
@@ -233,7 +233,7 @@ class ContactInfoPage extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -366,7 +366,7 @@ class ContactInfoPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

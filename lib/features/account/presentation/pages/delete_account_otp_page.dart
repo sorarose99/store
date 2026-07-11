@@ -119,7 +119,7 @@ class _DeleteAccountOtpPageState extends State<DeleteAccountOtpPage> {
                       Center(
                         child: _secondsLeft > 0
                             ? Text(
-                                '${_secondsLeft} ثانية',
+                                '$_secondsLeft ثانية',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: AppColors.textGrey,
@@ -160,7 +160,7 @@ class _DeleteAccountOtpPageState extends State<DeleteAccountOtpPage> {
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
+                      disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),

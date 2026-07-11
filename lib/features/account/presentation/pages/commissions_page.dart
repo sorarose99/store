@@ -60,7 +60,7 @@ class CommissionsPage extends StatelessWidget {
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFEEEEEE))),
                 child: Column(
                   children: [
-                    CircleAvatar(radius: 36, backgroundColor: AppColors.primary.withOpacity(0.12), child: const Text('ر', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primary))),
+                    CircleAvatar(radius: 36, backgroundColor: AppColors.primary.withValues(alpha: 0.12), child: const Text('ر', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primary))),
                     const SizedBox(height: 12),
                     const Text('ريا العربي', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                     const SizedBox(height: 4),
@@ -175,7 +175,7 @@ class _SocialBtn extends StatelessWidget {
           label: Text(label),
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary,
-            side: BorderSide(color: AppColors.primary.withOpacity(0.4)),
+            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),

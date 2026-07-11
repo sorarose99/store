@@ -16,7 +16,7 @@ class SavedAddressEntity {
   final String zipCode;
   final bool isDefault;
 
-  const SavedAddressEntity({
+  SavedAddressEntity({
     required this.id,
     required this.recipientName,
     required this.phone,
@@ -28,6 +28,21 @@ class SavedAddressEntity {
     required this.zipCode,
     this.isDefault = false,
   });
+
+  factory SavedAddressEntity.fromJson(Map<String, dynamic> json) {
+    return SavedAddressEntity(
+      id: json['id']?.toString() ?? '',
+      recipientName: json['recipientName']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      city: json['city']?.toString() ?? '',
+      district: json['district']?.toString() ?? '',
+      street: json['street']?.toString() ?? '',
+      buildingNo: json['buildingNo']?.toString() ?? '',
+      floor: json['floor']?.toString() ?? '',
+      zipCode: json['zipCode']?.toString() ?? '',
+      isDefault: json['isDefault'] == true,
+    );
+  }
 
   String get fullAddress => '$street، $district، $city';
 }

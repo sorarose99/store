@@ -50,7 +50,7 @@ class CouponsPage extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFEEEEEE)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -130,10 +130,10 @@ class CouponsPage extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
+                                color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: AppColors.primary.withOpacity(0.3),
+                                  color: AppColors.primary.withValues(alpha: 0.3),
                                   style: BorderStyle.solid,
                                 ),
                               ),

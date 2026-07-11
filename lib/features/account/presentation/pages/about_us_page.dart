@@ -34,10 +34,10 @@ class AboutUsPage extends StatelessWidget {
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color: AppColors.primary.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: Center(
+                  child: const Center(
                     child: Icon(
                       Icons.storefront,
                       size: 48,

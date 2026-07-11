@@ -29,16 +29,16 @@ class EarningsPage extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [AppColors.primary, AppColors.primary.withOpacity(0.7)], begin: Alignment.topRight, end: Alignment.bottomLeft),
+                  gradient: LinearGradient(colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)], begin: Alignment.topRight, end: Alignment.bottomLeft),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Column(
+                child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('إجمالي المكسبات', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    const Text('1,000.00 ر.س', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 20),
+                    Text('إجمالي المكسبات', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    SizedBox(height: 8),
+                    Text('1,000.00 ر.س', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -118,8 +118,8 @@ class _EarningRow extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(Icons.attach_money_rounded, color: AppColors.primary, size: 20),
+            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), shape: BoxShape.circle),
+            child: const Icon(Icons.attach_money_rounded, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -140,7 +140,7 @@ class _EarningRow extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: (isComplete ? const Color(0xFF34C759) : const Color(0xFFFF9500)).withOpacity(0.12),
+                  color: (isComplete ? const Color(0xFF34C759) : const Color(0xFFFF9500)).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(status, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isComplete ? const Color(0xFF34C759) : const Color(0xFFFF9500))),

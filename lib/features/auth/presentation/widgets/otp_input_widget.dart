@@ -1,4 +1,6 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/constants/colors.dart';
 
@@ -30,7 +32,7 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
       }
       return TextEditingController(text: char);
     });
-    
+
     // If we have an initial value completed, trigger the callback
     if (widget.initialValue != null && widget.initialValue!.length == 4) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -58,7 +60,7 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
         _focusNodes[index].unfocus();
       }
     }
-    
+
     final code = _controllers.map((c) => c.text).join();
     if (code.length == 4) {
       widget.onCompleted(code);
@@ -68,17 +70,17 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(4, (index) {
           return SizedBox(
-            width: 60,
-            height: 50,
-            child: RawKeyboardListener(
+            width: 60.w,
+            height: 50.h,
+            child: KeyboardListener(
               focusNode: FocusNode(),
-              onKey: (event) {
-                if (event is RawKeyDownEvent && 
+              onKeyEvent: (event) {
+                if (event is KeyDownEvent &&
                     event.logicalKey == LogicalKeyboardKey.backspace &&
                     _controllers[index].text.isEmpty &&
                     index > 0) {
@@ -90,10 +92,10 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
                 focusNode: _focusNodes[index],
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: TextStyle(
+                  fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: context.textDark,
                 ),
                 inputFormatters: [
                   LengthLimitingTextInputFormatter(1),
@@ -102,15 +104,16 @@ class _OtpInputWidgetState extends State<OtpInputWidget> {
                 decoration: InputDecoration(
                   counterText: "",
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: context.backgroundColor,
                   contentPadding: EdgeInsets.zero,
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: context.border),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                    borderSide:
+                        BorderSide(color: context.primaryColor, width: 1.5.w),
                   ),
                 ),
                 onChanged: (value) => _onChanged(value, index),

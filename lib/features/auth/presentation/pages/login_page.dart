@@ -1,27 +1,30 @@
+import 'dart:ui' as ui;
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/colors.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../blocs/auth_bloc.dart';
 import '../blocs/auth_event.dart';
 import '../blocs/auth_state.dart';
 import '../widgets/auth_text_field.dart';
-import '../widgets/social_auth_button.dart';
 import 'forgot_password_page.dart';
 import 'register_page.dart';
 import '../../../shell/presentation/pages/main_shell.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Model
+// Request Model
 // ─────────────────────────────────────────────────────────────────────────────
-class LoginCredentials {
-  final String identifier; // email or phone
+class LoginRequest {
+  final String identifier; // email
   final String password;
   final bool rememberMe;
 
-  const LoginCredentials({
+  LoginRequest({
     required this.identifier,
     required this.password,
-    required this.rememberMe,
+    this.rememberMe = true,
   });
 }
 
@@ -37,14 +40,13 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _identifierController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _rememberMe = true;
-  bool _isGoogleLoading = false;
 
   @override
   void dispose() {
-    _identifierController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -53,7 +55,7 @@ class _LoginPageState extends State<LoginPage> {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(
             LoginSubmitted(
-              phoneNumber: _identifierController.text.trim(),
+              email: _emailController.text.trim(),
               password: _passwordController.text,
             ),
           );
@@ -62,99 +64,95 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is LoginSuccess) {
+          if (state is LoginSuccess || state is SocialLoginSuccess) {
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const MainShell()),
               (route) => false,
             );
           } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            showAuthSnackBar(context, getLocalizedAuthError(state.message));
           }
         },
         builder: (context, state) {
           return Directionality(
-            textDirection: TextDirection.rtl,
+            textDirection: Directionality.of(context),
             child: SafeArea(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding: EdgeInsets.symmetric(horizontal: 24.0.w),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32.h),
 
                       // ── App Logo ───────────────────────────────────────────
                       const _AppLogo(),
-                      const SizedBox(height: 28),
+                      SizedBox(height: 28.h),
 
                       // ── Title ──────────────────────────────────────────────
-                      const Center(
+                      Center(
                         child: Text(
-                          'تسجيل الدخول',
+                          tr('login'),
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 20.sp,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.textDark,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      const Center(
+                      SizedBox(height: 6.h),
+                      Center(
                         child: Text(
-                          'يرجى تسجيل الدخول للمتابعة',
+                          'please_log_in_to'.tr(),
                           style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textGrey,
+                            fontSize: 13.sp,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      SizedBox(height: 28.h),
 
                       // ── Email ──────────────────────────────────────
-                      const _FieldLabel(text: 'البريد الإلكتروني'),
-                      const SizedBox(height: 6),
+                      _FieldLabel(text: tr('email')),
+                      SizedBox(height: 6.h),
                       AuthTextField(
-                        controller: _identifierController,
+                        controller: _emailController,
                         hintText: 'example@email.com',
                         prefixIcon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
-                        textDirection: TextDirection.ltr,
+                        textDirection: ui.TextDirection.ltr,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty) {
-                            return 'يرجى إدخال البريد الإلكتروني';
+                            return tr('validation_email_required');
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
 
                       // ── Password ───────────────────────────────────────────
-                      const _FieldLabel(text: 'كلمة المرور'),
-                      const SizedBox(height: 6),
+                      _FieldLabel(text: tr('password')),
+                      SizedBox(height: 6.h),
                       AuthTextField(
                         controller: _passwordController,
-                        hintText: 'أدخل كلمة المرور',
+                        hintText: tr('password'),
                         prefixIcon: Icons.lock_outline_rounded,
                         isPassword: true,
                         validator: (v) {
                           if (v == null || v.isEmpty) {
-                            return 'يرجى إدخال كلمة المرور';
+                            return tr('validation_password_required');
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.h),
 
                       // ── Remember Me & Forgot Password ──────────────────────
                       _RememberForgotRow(
@@ -167,61 +165,88 @@ class _LoginPageState extends State<LoginPage> {
                               builder: (_) => const ForgotPasswordPage()),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24.h),
 
                       // ── Login Button ──────────────────────────────────────
                       if (state is AuthLoading)
-                        const Center(
+                        Center(
                           child: CircularProgressIndicator(
-                              color: AppColors.primary),
+                              color: colorScheme.primary),
                         )
                       else
                         ElevatedButton(
                           onPressed: _onLoginPressed,
-                          child: const Text('تسجيل الدخول'),
+                          child: Text(tr('login')),
                         ),
-                      const SizedBox(height: 24),
-
-                      // ── Divider ────────────────────────────────────────────
-                      const _OrDivider(label: 'أو تسجيل عبر'),
-                      const SizedBox(height: 20),
-
-                      // ── Social Auth ────────────────────────────────────────
-                      _isGoogleLoading
-                          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                          : SocialAuthButton(
-                              isApple: false,
-                              onTap: () async {
-                                setState(() => _isGoogleLoading = true);
-                                await Future.delayed(const Duration(milliseconds: 1500));
-                                if (!mounted) return;
-                                setState(() => _isGoogleLoading = false);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('تم تسجيل الدخول بنجاح عبر جوجل 🎉'),
-                                    backgroundColor: Colors.green,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                                Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(builder: (_) => const MainShell()),
-                                  (route) => false,
-                                );
-                              },
-                            ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 24.h),
 
                       // ── Register Link ──────────────────────────────────────
                       _AuthFooterLink(
-                        question: 'ليس لديك حساب؟ ',
-                        actionLabel: 'إنشاء حساب',
+                        question: 'dont_have_an_account'.tr(),
+                        actionLabel: tr('register'),
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => const RegisterPage()),
+                          MaterialPageRoute(builder: (_) => const RegisterPage()),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24.h),
+
+                      // ── Social Login ───────────────────────────────────────
+                      Row(
+                        children: [
+                          Expanded(
+                              child:
+                                  Divider(color: colorScheme.outlineVariant)),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.w),
+                            child: Text(
+                              'or_login_using'.tr(),
+                              style: TextStyle(
+                                fontSize: 13.sp,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                              child:
+                                  Divider(color: colorScheme.outlineVariant)),
+                        ],
+                      ),
+                      SizedBox(height: 24.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _SocialLoginButton(
+                            onTap: state is AuthLoading
+                                ? () {}
+                                : () {
+                                    context
+                                        .read<AuthBloc>()
+                                        .add(const GoogleSignInSubmitted());
+                                  },
+                            child: Image.asset(
+                              'assets/images/google_logo.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          SizedBox(width: 16.w),
+                          _SocialLoginButton(
+                            onTap: state is AuthLoading
+                                ? () {}
+                                : () {
+                                    context
+                                        .read<AuthBloc>()
+                                        .add(const AppleSignInSubmitted());
+                                   },
+                            child: Image.asset(
+                              'assets/images/apple_logo.png',
+                              fit: BoxFit.contain,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 24.h),
                     ],
                   ),
                 ),
@@ -235,7 +260,7 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared Private Sub-widgets (used only in auth screens)
+// Shared Private Sub-widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AppLogo extends StatelessWidget {
@@ -247,9 +272,9 @@ class _AppLogo extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Image.asset(
-          'assets/images/logo.jpeg',
-          width: 80,
-          height: 80,
+          'assets/images/logo.png',
+          width: 80.w,
+          height: 80.h,
           fit: BoxFit.cover,
         ),
       ),
@@ -265,10 +290,10 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 13,
+      style: TextStyle(
+        fontSize: 13.sp,
         fontWeight: FontWeight.w600,
-        color: AppColors.textDark,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
@@ -278,56 +303,54 @@ class _RememberForgotRow extends StatelessWidget {
   final bool rememberMe;
   final ValueChanged<bool?> onRememberChanged;
   final VoidCallback onForgotTap;
-
   const _RememberForgotRow({
     required this.rememberMe,
     required this.onRememberChanged,
     required this.onForgotTap,
-  });
-
-  @override
+  });  @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Remember me (right in RTL)
         GestureDetector(
           onTap: () => onRememberChanged(!rememberMe),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                width: 22,
-                height: 22,
+                width: 22.w,
+                height: 22.h,
                 child: Checkbox(
                   value: rememberMe,
-                  activeColor: AppColors.primary,
+                  activeColor: colorScheme.primary,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4)),
-                  side: const BorderSide(color: AppColors.border, width: 1.5),
+                  side: BorderSide(
+                      color: colorScheme.outline.withValues(alpha: 0.5),
+                      width: 1.5.w),
                   onChanged: onRememberChanged,
                 ),
               ),
-              const SizedBox(width: 8),
-              const Text(
-                'تذكرني',
+              SizedBox(width: 8.w),
+              Text(
+                'remember_me'.tr(),
                 style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textDark,
+                  fontSize: 13.sp,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
         ),
-        // Forgot password link (left in RTL)
         GestureDetector(
           onTap: onForgotTap,
-          child: const Text(
-            'نسيت كلمة المرور؟',
+          child: Text(
+            tr('forgot_password'),
             style: TextStyle(
-              fontSize: 13,
-              color: AppColors.primary,
+              fontSize: 13.sp,
+              color: colorScheme.primary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -337,24 +360,30 @@ class _RememberForgotRow extends StatelessWidget {
   }
 }
 
-class _OrDivider extends StatelessWidget {
-  final String label;
-  const _OrDivider({required this.label});
-
-  @override
+class _SocialLoginButton extends StatelessWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  const _SocialLoginButton({
+    required this.child,
+    required this.onTap,
+  });  @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Expanded(child: Divider(color: AppColors.border)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            label,
-            style: const TextStyle(color: AppColors.textGrey, fontSize: 12),
-          ),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          border:
+              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(12),
         ),
-        const Expanded(child: Divider(color: AppColors.border)),
-      ],
+        child: SizedBox(
+          width: 28.w,
+          height: 28.h,
+          child: Center(child: child),
+        ),
+      ),
     );
   }
 }
@@ -363,30 +392,29 @@ class _AuthFooterLink extends StatelessWidget {
   final String question;
   final String actionLabel;
   final VoidCallback onTap;
-
   const _AuthFooterLink({
     required this.question,
     required this.actionLabel,
     required this.onTap,
-  });
-
-  @override
+  });  @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           question,
-          style: const TextStyle(color: AppColors.textGrey, fontSize: 13),
+          style:
+              TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13.sp),
         ),
         GestureDetector(
           onTap: onTap,
           child: Text(
             actionLabel,
-            style: const TextStyle(
-              color: AppColors.primary,
+            style: TextStyle(
+              color: colorScheme.primary,
               fontWeight: FontWeight.w700,
-              fontSize: 13,
+              fontSize: 13.sp,
             ),
           ),
         ),

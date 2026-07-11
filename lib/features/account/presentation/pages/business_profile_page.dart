@@ -121,7 +121,7 @@ class _BusinessProfilePageState extends State<BusinessProfilePage> {
                 _buildLabel('نوع النشاط'),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _selectedActivity,
+                  initialValue: _selectedActivity,
                   decoration: _buildInputDecoration('اختر نوع النشاط'),
                   items: ['ملابس وأزياء', 'إلكترونيات', 'مستحضرات تجميل', 'ألعاب وهدايا']
                       .map((act) => DropdownMenuItem(value: act, child: Text(act)))

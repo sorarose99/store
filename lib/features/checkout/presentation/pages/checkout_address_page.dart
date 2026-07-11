@@ -1,9 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 import '../../domain/entities/checkout_entities.dart';
 import 'checkout_location_search_page.dart';
 import 'checkout_saved_address_page.dart';
-import 'checkout_payment_page.dart';
 
 class CheckoutAddressPage extends StatefulWidget {
   final bool isFromSavedPage;
@@ -22,7 +23,7 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
   final _streetController = TextEditingController();
   final _buildingController = TextEditingController();
   final _zipController = TextEditingController();
-  
+
   bool _isDefault = false;
 
   @override
@@ -78,22 +79,22 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: context.surfaceColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: context.surfaceColor,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark, size: 20),
+            icon: Icon(Icons.arrow_back_ios, color: context.textDark, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
           centerTitle: true,
-          title: const Text(
-            'عنوان الشحن',
+          title: Text(
+            'shipping_address'.tr(),
             style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 16,
+              color: context.textDark,
+              fontSize: 16.sp,
               fontWeight: FontWeight.bold,
               fontFamily: 'Tajawal',
             ),
@@ -103,91 +104,112 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
           children: [
             // Breadcrumbs progress indicator
             Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              color: context.backgroundColor,
+              padding: EdgeInsets.symmetric(vertical: 12.h),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildStep(1, 'العنوان', isActive: true, isCompleted: false),
+                  _buildStep(1, 'address'.tr(),
+                      isActive: true, isCompleted: false),
                   _buildStepDivider(isActive: false),
-                  _buildStep(2, 'الدفع', isActive: false, isCompleted: false),
+                  _buildStep(2, 'payment'.tr(),
+                      isActive: false, isCompleted: false),
                   _buildStepDivider(isActive: false),
-                  _buildStep(3, 'المراجعة', isActive: false, isCompleted: false),
+                  _buildStep(3, 'review'.tr(),
+                      isActive: false, isCompleted: false),
                 ],
               ),
             ),
-            const Divider(color: AppColors.border, height: 1),
+            Divider(color: context.border, height: 1.h),
 
             // Form
             Expanded(
               child: Form(
                 key: _formKey,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Full name field
-                      _buildLabel('الاسم بالكامل'),
+                      _buildLabel(context, 'full_name_2'.tr()),
                       _buildTextField(
                         controller: _fullNameController,
-                        hintText: 'أدخل الاسم الثلاثي',
-                        prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.textGrey, size: 20),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'الرجاء إدخال الاسم' : null,
+                        hintText: 'enter_the_full_name'.tr(),
+                        prefixIcon: Icon(Icons.person_outline_rounded,
+                            color: context.textGrey, size: 20),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'please_enter_name'.tr()
+                            : null,
                       ),
-                      const SizedBox(height: 14),
+                      SizedBox(height: 14.h),
 
                       // Phone field
-                      _buildLabel('رقم الجوال'),
+                      _buildLabel(context, 'phone'.tr()),
                       _buildTextField(
                         controller: _phoneController,
                         hintText: '5xxxxxxxx',
-                        prefixText: '+966 ',
-                        prefixIcon: const Icon(Icons.phone_iphone_rounded, color: AppColors.textGrey, size: 20),
+                        prefixText: '966'.tr(),
+                        prefixIcon: Icon(Icons.phone_iphone_rounded,
+                            color: context.textGrey, size: 20),
                         keyboardType: TextInputType.phone,
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'الرجاء إدخال رقم الجوال';
-                          if (v.trim().length < 9) return 'رقم الجوال غير صحيح';
+                          if (v == null || v.trim().isEmpty) {
+                            return 'please_enter_mobile_number'.tr();
+                          }
+                          if (v.trim().length < 9) {
+                            return 'mobile_number_is_incorrect'.tr();
+                          }
                           return null;
                         },
                       ),
-                      const SizedBox(height: 14),
+                      SizedBox(height: 14.h),
 
                       // City selection field (tappable to search page)
-                      _buildLabel('المدينة'),
+                      _buildLabel(context, 'city'.tr()),
                       GestureDetector(
                         onTap: _selectCity,
                         child: AbsorbPointer(
                           child: _buildTextField(
                             controller: _cityController,
-                            hintText: 'اختر المدينة',
-                            prefixIcon: const Icon(Icons.location_city_outlined, color: AppColors.textGrey, size: 20),
-                            suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textGrey, size: 24),
-                            validator: (v) => (v == null || v.trim().isEmpty) ? 'الرجاء اختيار المدينة' : null,
+                            hintText: 'select_city'.tr(),
+                            prefixIcon: Icon(Icons.location_city_outlined,
+                                color: context.textGrey, size: 20),
+                            suffixIcon: Icon(Icons.keyboard_arrow_down_rounded,
+                                color: context.textGrey, size: 24),
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'please_select_a_city'.tr()
+                                : null,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      SizedBox(height: 14.h),
 
                       // Area field
-                      _buildLabel('الحي / المنطقة'),
+                      _buildLabel(context, 'الحي / المنطقة'),
                       _buildTextField(
                         controller: _areaController,
-                        hintText: 'مثال: حي النخيل',
-                        prefixIcon: const Icon(Icons.explore_outlined, color: AppColors.textGrey, size: 20),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'الرجاء إدخال الحي' : null,
+                        hintText: 'example_al_nakheel_neighborhood'.tr(),
+                        prefixIcon: Icon(Icons.explore_outlined,
+                            color: context.textGrey, size: 20),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'please_enter_the_neighborhood'.tr()
+                            : null,
                       ),
-                      const SizedBox(height: 14),
+                      SizedBox(height: 14.h),
 
                       // Street field
-                      _buildLabel('الشارع'),
+                      _buildLabel(context, 'street'.tr()),
                       _buildTextField(
                         controller: _streetController,
-                        hintText: 'مثال: شارع الملك فهد',
-                        prefixIcon: const Icon(Icons.edit_road_outlined, color: AppColors.textGrey, size: 20),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'الرجاء إدخال اسم الشارع' : null,
+                        hintText: 'example_king_fahd_street'.tr(),
+                        prefixIcon: Icon(Icons.edit_road_outlined,
+                            color: context.textGrey, size: 20),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'please_enter_street_name'.tr()
+                            : null,
                       ),
-                      const SizedBox(height: 14),
+                      SizedBox(height: 14.h),
 
                       // Row for Building and Zip Code
                       Row(
@@ -196,24 +218,27 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel('رقم المبنى / الدور'),
+                                _buildLabel(context, 'رقم المبنى / الدور'),
                                 _buildTextField(
                                   controller: _buildingController,
-                                  hintText: 'مثال: مبنى 14، الدور 2',
-                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'مطلوب' : null,
+                                  hintText: 'example_building_14_2nd'.tr(),
+                                  validator: (v) =>
+                                      (v == null || v.trim().isEmpty)
+                                          ? 'required'.tr()
+                                          : null,
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12.w),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel('الرمز البريدي (اختياري)'),
+                                _buildLabel(context, 'zip_code_optional'.tr()),
                                 _buildTextField(
                                   controller: _zipController,
-                                  hintText: '12345',
+                                  hintText: '12345'.tr(),
                                   keyboardType: TextInputType.number,
                                 ),
                               ],
@@ -221,7 +246,7 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
 
                       // Set as default checkbox
                       GestureDetector(
@@ -230,26 +255,31 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
                           children: [
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
-                              width: 22,
-                              height: 22,
+                              width: 22.w,
+                              height: 22.h,
                               decoration: BoxDecoration(
-                                color: _isDefault ? AppColors.primary : Colors.white,
+                                color: _isDefault
+                                    ? context.primaryColor
+                                    : context.backgroundColor,
                                 border: Border.all(
-                                  color: _isDefault ? AppColors.primary : const Color(0xFFD1D1D6),
-                                  width: 2,
+                                  color: _isDefault
+                                      ? context.primaryColor
+                                      : context.primaryColor,
+                                  width: 2.w,
                                 ),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: _isDefault
-                                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                                  ? Icon(Icons.check,
+                                      size: 16, color: context.backgroundColor)
                                   : null,
                             ),
-                            const SizedBox(width: 10),
-                            const Text(
-                              'تعيين كعنوان توصيل افتراضي',
+                            SizedBox(width: 10.w),
+                            Text(
+                              'set_as_default_delivery'.tr(),
                               style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.textDark,
+                                fontSize: 13.sp,
+                                color: context.textDark,
                                 fontFamily: 'Tajawal',
                                 fontWeight: FontWeight.w600,
                               ),
@@ -257,7 +287,7 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32.h),
                     ],
                   ),
                 ),
@@ -266,31 +296,37 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
 
             // Submit Button bottom panel
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+              decoration: BoxDecoration(
+                color: context.backgroundColor,
                 boxShadow: [
-                  BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, -4)),
+                  BoxShadow(
+                      color: context.shadowColor.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -4)),
                 ],
               ),
               child: SafeArea(
                 top: false,
                 child: SizedBox(
                   width: double.infinity,
-                  height: 52,
+                  height: 52.h,
                   child: ElevatedButton(
                     onPressed: _submit,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: context.primaryColor,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(
-                      widget.isFromSavedPage ? 'إضافة العنوان' : 'متابعة الشراء',
-                      style: const TextStyle(
-                        fontSize: 16,
+                      widget.isFromSavedPage
+                          ? 'add_title'.tr()
+                          : 'purchase_followup'.tr(),
+                      style: TextStyle(
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontFamily: 'Tajawal',
                       ),
                     ),
@@ -304,15 +340,15 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(BuildContext context, String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
+      padding: EdgeInsets.only(bottom: 6.0.h),
       child: Text(
         text,
-        style: const TextStyle(
-          fontSize: 12,
+        style: TextStyle(
+          fontSize: 12.sp,
           fontWeight: FontWeight.bold,
-          color: AppColors.textDark,
+          color: context.textDark,
           fontFamily: 'Tajawal',
         ),
       ),
@@ -333,81 +369,94 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
       keyboardType: keyboardType,
       validator: validator,
       textAlign: TextAlign.start,
-      style: const TextStyle(fontSize: 14, color: AppColors.textDark, fontFamily: 'Tajawal'),
+      style: TextStyle(
+          fontSize: 14.sp, color: context.textDark, fontFamily: 'Tajawal'),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(fontSize: 13, color: AppColors.textGrey, fontFamily: 'Tajawal'),
+        hintStyle: TextStyle(
+            fontSize: 13.sp, color: context.textGrey, fontFamily: 'Tajawal'),
         prefixIcon: prefixIcon,
         prefixText: prefixText,
-        prefixStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
+        prefixStyle: TextStyle(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.bold,
+            color: context.textDark),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: const Color(0xFFF9F9FC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: context.surfaceColor,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE2E2EA)),
+          borderSide: BorderSide(color: context.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE2E2EA)),
+          borderSide: BorderSide(color: context.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: context.primaryColor, width: 1.5.w),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFFF3B30)),
+          borderSide: BorderSide(color: context.primaryColor),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFFF3B30), width: 1.5),
+          borderSide: BorderSide(color: context.primaryColor, width: 1.5.w),
         ),
       ),
     );
   }
 
-  Widget _buildStep(int number, String label, {required bool isActive, required bool isCompleted}) {
+  Widget _buildStep(int number, String label,
+      {required bool isActive, required bool isCompleted}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 22,
-          height: 22,
+          width: 22.w,
+          height: 22.h,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isCompleted
-                ? AppColors.primary
+                ? context.primaryColor
                 : isActive
-                    ? Colors.white
-                    : Colors.white,
+                    ? context.primaryColor.withValues(alpha: 0.1)
+                    : context.cardBackground,
             border: Border.all(
-              color: isCompleted || isActive ? AppColors.primary : const Color(0xFFD1D1D6),
-              width: 2,
+              color: isCompleted || isActive
+                  ? context.primaryColor
+                  : context.border,
+              width: 1.5.w,
             ),
           ),
           child: Center(
             child: isCompleted
-                ? const Icon(Icons.check, size: 12, color: Colors.white)
+                ? Icon(Icons.check, size: 12, color: Theme.of(context).colorScheme.onPrimary)
                 : Text(
                     number.toString(),
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.bold,
-                      color: isActive ? AppColors.primary : const Color(0xFF8E8E93),
+                      color: isActive
+                          ? context.primaryColor
+                          : context.textGrey,
                       fontFamily: 'Tajawal',
                     ),
                   ),
           ),
         ),
-        const SizedBox(width: 6),
+        SizedBox(width: 6.w),
         Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: isActive || isCompleted ? FontWeight.bold : FontWeight.normal,
-            color: isActive || isCompleted ? AppColors.textDark : const Color(0xFF8E8E93),
+            fontSize: 11.sp,
+            fontWeight:
+                isActive || isCompleted ? FontWeight.bold : FontWeight.normal,
+            color: isActive || isCompleted
+                ? context.primaryColor
+                : context.textGrey,
             fontFamily: 'Tajawal',
           ),
         ),
@@ -417,10 +466,10 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
 
   Widget _buildStepDivider({required bool isActive}) {
     return Container(
-      width: 30,
-      height: 1.5,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: isActive ? AppColors.primary : const Color(0xFFD1D1D6),
+      width: 30.w,
+      height: 1.5.h,
+      margin: EdgeInsets.symmetric(horizontal: 8.w),
+      color: isActive ? context.primaryColor : context.border,
     );
   }
 }

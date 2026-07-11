@@ -171,7 +171,7 @@ class NotificationsPage extends StatelessWidget {
   }
 
   Color _getBgColor(String type) {
-    return _getColor(type).withOpacity(0.08);
+    return _getColor(type).withValues(alpha: 0.08);
   }
 
   IconData _getIcon(String type) {

@@ -1,4 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 import '../../domain/entities/review_entity.dart';
 
@@ -22,24 +24,24 @@ class ReviewDistributionWidget extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'التقييمات',
+            Text(
+              'reviews'.tr(),
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textDark,
+                color: context.textDark,
               ),
             ),
             Text(
               '(أكثر من $totalReviews)',
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textGrey,
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: context.textGrey,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.h),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -48,10 +50,10 @@ class ReviewDistributionWidget extends StatelessWidget {
               children: [
                 Text(
                   averageRating.toStringAsFixed(1),
-                  style: const TextStyle(
-                    fontSize: 36,
+                  style: TextStyle(
+                    fontSize: 36.sp,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+                    color: context.textDark,
                   ),
                 ),
                 Row(
@@ -59,28 +61,33 @@ class ReviewDistributionWidget extends StatelessWidget {
                   children: List.generate(
                     5,
                     (index) => Icon(
-                      index < averageRating.round() ? Icons.star : Icons.star_border,
-                      color: const Color(0xFFFFCC00),
+                      index < averageRating.round()
+                          ? Icons.star
+                          : Icons.star_border,
+                      color: context.primaryColor,
                       size: 16,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 24),
+            SizedBox(width: 24.w),
             // Right Side: Distribution Bars
             Expanded(
               child: Column(
                 children: [
-                  _buildBarRow(context, 'ممتاز', distribution[5] ?? 0.0),
-                  const SizedBox(height: 4),
-                  _buildBarRow(context, 'جيد جداً', distribution[4] ?? 0.0),
-                  const SizedBox(height: 4),
-                  _buildBarRow(context, 'جيد', distribution[3] ?? 0.0),
-                  const SizedBox(height: 4),
-                  _buildBarRow(context, 'مقبول', distribution[2] ?? 0.0),
-                  const SizedBox(height: 4),
-                  _buildBarRow(context, 'ضعيف', distribution[1] ?? 0.0),
+                  _buildBarRow(
+                      context, 'excellent'.tr(), distribution[5] ?? 0.0),
+                  SizedBox(height: 4.h),
+                  _buildBarRow(
+                      context, 'very_good'.tr(), distribution[4] ?? 0.0),
+                  SizedBox(height: 4.h),
+                  _buildBarRow(context, 'good'.tr(), distribution[3] ?? 0.0),
+                  SizedBox(height: 4.h),
+                  _buildBarRow(
+                      context, 'acceptable'.tr(), distribution[2] ?? 0.0),
+                  SizedBox(height: 4.h),
+                  _buildBarRow(context, 'weak'.tr(), distribution[1] ?? 0.0),
                 ],
               ),
             ),
@@ -94,29 +101,29 @@ class ReviewDistributionWidget extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 50,
+          width: 50.w,
           child: Text(
             label,
-            style: const TextStyle(fontSize: 11, color: AppColors.textGrey),
+            style: TextStyle(fontSize: 11.sp, color: context.textGrey),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8.w),
         Expanded(
           child: Stack(
             children: [
               Container(
-                height: 6,
+                height: 6.h,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEEEEE),
+                  color: context.primaryColor,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
               FractionallySizedBox(
                 widthFactor: percentage,
                 child: Container(
-                  height: 6,
+                  height: 6.h,
                   decoration: BoxDecoration(
-                    color: AppColors.textDark,
+                    color: context.textDark,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -124,12 +131,12 @@ class ReviewDistributionWidget extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: 8.w),
         SizedBox(
-          width: 30,
+          width: 30.w,
           child: Text(
             '${(percentage * 100).toInt()}%',
-            style: const TextStyle(fontSize: 11, color: AppColors.textGrey),
+            style: TextStyle(fontSize: 11.sp, color: context.textGrey),
           ),
         ),
       ],
@@ -145,7 +152,7 @@ class ReviewCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.only(bottom: 20.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -155,71 +162,73 @@ class ReviewCardWidget extends StatelessWidget {
               Row(
                 children: [
                   CircleAvatar(
-                    radius: 16,
-                    backgroundColor: const Color(0xFFEEEEEE),
-                    backgroundImage: NetworkImage(review.userAvatar), // Assuming network image or handle local
+                    radius: 16.w,
+                    backgroundColor: context.primaryColor,
+                    backgroundImage: NetworkImage(review
+                        .userAvatar), // Assuming network image or handle local
                     onBackgroundImageError: (_, __) {},
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.w),
                   Text(
                     review.userName,
-                    style: const TextStyle(
-                      fontSize: 13,
+                    style: TextStyle(
+                      fontSize: 13.sp,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
+                      color: context.textDark,
                     ),
                   ),
                 ],
               ),
               Text(
                 review.date,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textGrey,
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  color: context.textGrey,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Row(
             children: List.generate(
               5,
               (index) => Icon(
                 index < review.rating.round() ? Icons.star : Icons.star_border,
-                color: const Color(0xFFFFCC00),
+                color: context.primaryColor,
                 size: 14,
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             review.comment,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textDark,
-              height: 1.5,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: context.textDark,
+              height: 1.5.h,
             ),
           ),
           if (review.attachedImage != null) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12.h),
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.asset(
                 review.attachedImage!,
-                height: 100,
-                width: 100,
+                height: 100.h,
+                width: 100.w,
                 fit: BoxFit.cover,
               ),
             ),
           ],
-          const SizedBox(height: 12),
+          SizedBox(height: 12.h),
           Row(
             children: [
-              const Icon(Icons.thumb_up_alt_outlined, size: 16, color: AppColors.textGrey),
-              const SizedBox(width: 4),
+              Icon(Icons.thumb_up_alt_outlined,
+                  size: 16, color: context.textGrey),
+              SizedBox(width: 4.w),
               Text(
                 'مفيدة (${review.likes})',
-                style: const TextStyle(fontSize: 12, color: AppColors.textGrey),
+                style: TextStyle(fontSize: 12.sp, color: context.textGrey),
               ),
             ],
           ),

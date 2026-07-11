@@ -1,174 +1,212 @@
+import 'dart:developer' as developer;
+import 'package:dio/dio.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<UserModel> login({
-    required String phoneNumber,
+    required String email,
     required String password,
   });
+
+  Future<void> sendRegisterOtp({required String email});
 
   Future<UserModel> register({
     required String name,
     required String email,
-    required String phoneNumber,
     required String password,
-  });
-
-  Future<void> forgotPassword({
-    required String phoneNumber,
-  });
-
-  Future<UserModel> verifyOtp({
-    required String phoneNumber,
+    required String passwordConfirmation,
     required String otpCode,
   });
 
+  Future<void> sendForgotOtp({required String email});
+
   Future<void> resetPassword({
-    required String phoneNumber,
+    required String email,
+    required String otpCode,
     required String newPassword,
+    required String passwordConfirmation,
+  });
+
+  Future<void> logout();
+
+  Future<String> socialLogin({
+    required String provider,
+    required String token,
+    required String name,
+    required String email,
   });
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final ApiClient apiClient;
-  
-  // Set this to false to link directly with your backend REST API endpoints
-  static const bool useMockData = true;
 
-  AuthRemoteDataSourceImpl(this.apiClient);
+  AuthRemoteDataSourceImpl({required this.apiClient});
 
+  // ── Login ─────────────────────────────────────────────────────────
   @override
   Future<UserModel> login({
-    required String phoneNumber,
+    required String email,
     required String password,
   }) async {
-    if (useMockData) {
-      await Future.delayed(const Duration(milliseconds: 1200));
-      return UserModel(
-        id: '12345',
-        name: 'كريم أحمد',
-        email: 'krem@github.com',
-        phoneNumber: phoneNumber,
-        token: 'mock_jwt_token_xyz123',
-      );
-    }
-
     final response = await apiClient.post(
       ApiEndpoints.login,
       data: {
-        'phone_number': phoneNumber,
+        'login': email,
         'password': password,
       },
     );
 
-    if (response.data != null) {
+    if (response.statusCode == 200 && response.data['success'] == true) {
       return UserModel.fromJson(response.data);
-    } else {
-      throw Exception('فشل تسجيل الدخول. استجابة فارغة من الخادم.');
+    }
+    throw ServerException(
+        message: response.data['message'] ?? 'Login failed');
+  }
+
+  // ── Register: Step 1 — Send OTP ───────────────────────────────────
+  @override
+  Future<void> sendRegisterOtp({required String email}) async {
+    final response = await apiClient.post(
+      ApiEndpoints.sendRegisterOtp,
+      data: {
+        'register_type': 'email',
+        'email': email,
+      },
+    );
+
+    if (response.statusCode != 200 || response.data['success'] != true) {
+      throw ServerException(
+          message: response.data['message'] ?? 'Failed to send OTP');
     }
   }
 
+  // ── Register: Step 2 — Create Account ────────────────────────────
   @override
   Future<UserModel> register({
     required String name,
     required String email,
-    required String phoneNumber,
     required String password,
+    required String passwordConfirmation,
+    required String otpCode,
   }) async {
-    if (useMockData) {
-      await Future.delayed(const Duration(milliseconds: 1200));
-      return UserModel(
-        id: '12345',
-        name: name,
-        email: email,
-        phoneNumber: phoneNumber,
-        token: 'mock_jwt_token_xyz123',
-      );
-    }
+    final nameParts = name.trim().split(' ');
+    final firstName = nameParts.isNotEmpty ? nameParts.first : 'User';
+    final lastName = nameParts.length > 1
+        ? nameParts.sublist(1).join(' ')
+        : 'User';
 
     final response = await apiClient.post(
       ApiEndpoints.register,
       data: {
-        'name': name,
+        'register_type': 'email',
+        'first_name': firstName,
+        'last_name': lastName,
         'email': email,
-        'phone_number': phoneNumber,
         'password': password,
+        'password_confirmation': passwordConfirmation,
+        'otp': otpCode,
+        'terms': true,
       },
     );
 
-    if (response.data != null) {
+    if (response.statusCode == 200 && response.data['success'] == true) {
       return UserModel.fromJson(response.data);
-    } else {
-      throw Exception('فشل إنشاء الحساب. استجابة فارغة من الخادم.');
     }
+    throw ServerException(
+        message: response.data['message'] ?? 'Registration failed');
   }
 
+  // ── Forgot Password: Step 1 — Send OTP ───────────────────────────
   @override
-  Future<void> forgotPassword({
-    required String phoneNumber,
-  }) async {
-    if (useMockData) {
-      await Future.delayed(const Duration(milliseconds: 800));
-      return;
-    }
-
-    await apiClient.post(
-      ApiEndpoints.forgotPassword,
-      data: {
-        'phone_number': phoneNumber,
-      },
-    );
-  }
-
-  @override
-  Future<UserModel> verifyOtp({
-    required String phoneNumber,
-    required String otpCode,
-  }) async {
-    if (useMockData) {
-      await Future.delayed(const Duration(milliseconds: 1000));
-      // Hardcode acceptance for verification code
-      return UserModel(
-        id: '12345',
-        name: 'كريم أحمد',
-        email: 'krem@github.com',
-        phoneNumber: phoneNumber,
-        token: 'mock_jwt_token_xyz123',
-      );
-    }
-
+  Future<void> sendForgotOtp({required String email}) async {
     final response = await apiClient.post(
-      ApiEndpoints.verifyOtp,
+      ApiEndpoints.sendForgotOtp,
       data: {
-        'phone_number': phoneNumber,
-        'otp_code': otpCode,
+        'target': email,
       },
     );
 
-    if (response.data != null) {
-      return UserModel.fromJson(response.data);
-    } else {
-      throw Exception('فشل التحقق من الرمز.');
+    if (response.statusCode != 200 || response.data['success'] != true) {
+      throw ServerException(
+          message: response.data['message'] ?? 'Failed to send OTP');
     }
   }
 
+  // ── Forgot Password: Step 2 — Reset ──────────────────────────────
   @override
   Future<void> resetPassword({
-    required String phoneNumber,
+    required String email,
+    required String otpCode,
     required String newPassword,
+    required String passwordConfirmation,
   }) async {
-    if (useMockData) {
-      await Future.delayed(const Duration(milliseconds: 1000));
-      return;
-    }
-
-    await apiClient.post(
+    final response = await apiClient.post(
       ApiEndpoints.resetPassword,
       data: {
-        'phone_number': phoneNumber,
+        'target': email,
+        'otp': otpCode,
         'password': newPassword,
+        'password_confirmation': passwordConfirmation,
       },
     );
+
+    if (response.statusCode != 200 || response.data['success'] != true) {
+      throw ServerException(
+          message: response.data['message'] ?? 'Password reset failed');
+    }
+  }
+
+  // ── Logout ────────────────────────────────────────────────────────
+  @override
+  Future<void> logout() async {
+    try {
+      await apiClient.post(ApiEndpoints.logout);
+    } catch (_) {
+      // Ignore errors on logout
+    }
+  }
+
+  // ── Social Login ─────────────────────────────────────────────
+  @override
+  Future<String> socialLogin({
+    required String provider,
+    required String token,
+    required String name,
+    required String email,
+  }) async {
+    try {
+      final dio = Dio();
+      dio.options.headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+      
+      final response = await dio.post(
+        '${ApiEndpoints.baseUrl}${ApiEndpoints.socialLogin}',
+        data: {
+          'provider': provider,
+          'token': token,
+          'name': name,
+          'email': email,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['access_token'] as String;
+      }
+      throw ServerException(
+          message: response.data['message'] ?? 'Failed to sync with backend');
+    } on DioException catch (e) {
+      developer.log(
+          'Social Login Dio Error: ${e.response?.statusCode} - ${e.response?.data}',
+          name: 'Auth');
+      throw ServerException(message: 'Sync failed: ${e.message}');
+    } catch (e) {
+      developer.log('Social Login Error: $e', name: 'Auth');
+      throw ServerException(message: 'Sync failed: $e');
+    }
   }
 }

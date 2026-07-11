@@ -8,6 +8,7 @@ class UserEntity extends Equatable {
   final int ordersCount;
   final String gender;
   final DateTime dateOfBirth;
+  final String? avatar;
 
   const UserEntity({
     required this.name,
@@ -17,10 +18,36 @@ class UserEntity extends Equatable {
     required this.ordersCount,
     required this.gender,
     required this.dateOfBirth,
+    this.avatar,
   });
 
   @override
-  List<Object?> get props => [name, email, phone, walletBalance, ordersCount, gender, dateOfBirth];
+  List<Object?> get props => [name, email, phone, walletBalance, ordersCount, gender, dateOfBirth, avatar];
+}
+
+class DashboardStatsEntity extends Equatable {
+  final int totalOrders;
+  final int pendingOrders;
+  final int processingOrders;
+  final int completedOrders;
+  final int wishlistCount;
+
+  const DashboardStatsEntity({
+    required this.totalOrders,
+    required this.pendingOrders,
+    required this.processingOrders,
+    required this.completedOrders,
+    required this.wishlistCount,
+  });
+
+  @override
+  List<Object?> get props => [
+        totalOrders,
+        pendingOrders,
+        processingOrders,
+        completedOrders,
+        wishlistCount,
+      ];
 }
 
 class OrderEntity extends Equatable {

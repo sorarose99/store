@@ -1,60 +1,78 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
+import 'search_active_page.dart';
+import '../../../camera_search/presentation/pages/camera_search_page.dart';
 
+/// Shown when a search query returns zero results.
+/// Accepts the [failedQuery] so it can pre-fill the search bar on retry.
 class SearchEmptyPage extends StatelessWidget {
-  const SearchEmptyPage({super.key});
+  /// The query that produced no results. Used to pre-fill the search bar.
+  final String? failedQuery;
+
+  const SearchEmptyPage({super.key, this.failedQuery});
+
+  // L7/U7 fix: both the fake search bar AND the "Try Again" button
+  // navigate to SearchActivePage with the failed query pre-filled.
+  void _goToSearch(BuildContext context) {
+    // Replace this empty-result page with a fresh SearchActivePage so the
+    // user can immediately edit their query without seeing a blank back-stack.
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const SearchActivePage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: context.surfaceColor,
         appBar: _buildAppBar(context),
         body: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            padding: EdgeInsets.symmetric(horizontal: 24.0.w),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Composed Document Search X Illustration
+                // ── Illustration ──────────────────────────────────────────
                 Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Document File Background
-                    const Icon(
+                    Icon(
                       Icons.description_outlined,
                       size: 110,
-                      color: Color(0xFFE5E5EA),
+                      color: context.primaryColor,
                     ),
-                    
-                    // Overlapping Search Circle
                     Positioned(
-                      bottom: 8,
-                      left: 10,
+                      bottom: 8.h,
+                      left: 10.w,
                       child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        padding: EdgeInsets.all(5.w),
+                        decoration: BoxDecoration(
+                          color: context.backgroundColor,
                           shape: BoxShape.circle,
                           boxShadow: [
-                            BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
+                            BoxShadow(
+                              color: context.textDark.withValues(alpha: 0.12),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
                           ],
                         ),
                         child: Stack(
                           alignment: Alignment.center,
-                          children: const [
-                            // Circular search ring base
+                          children: [
                             Icon(
                               Icons.radio_button_unchecked_rounded,
                               size: 38,
-                              color: Color(0xFFC7C7CC),
+                              color: context.primaryColor,
                             ),
-                            // Small X mark inside the search lens
                             Icon(
                               Icons.close_rounded,
                               size: 16,
-                              color: Color(0xFFC7C7CC),
+                              color: context.primaryColor,
                             ),
                           ],
                         ),
@@ -62,49 +80,82 @@ class SearchEmptyPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32.h),
 
-                // Error Heading Message
-                const Text(
-                  'عذراً، لم يتم العثور على نتائج بحث',
+                // ── No results message ────────────────────────────────────
+                Text(
+                  'sorry_no_search_results'.tr(),
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 15.sp,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+                    color: context.textDark,
                     fontFamily: 'Tajawal',
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 8.h),
+                if (failedQuery != null && failedQuery!.isNotEmpty)
+                  Text(
+                    '"$failedQuery"',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: context.textGrey,
+                      fontFamily: 'Tajawal',
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                SizedBox(height: 24.h),
 
-                // Try Again Teal Button
+                // ── Try Again button ──────────────────────────────────────
+                // U7 fix: pushes SearchActivePage instead of just popping.
                 SizedBox(
-                  width: 150,
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
+                  width: 170.w,
+                  height: 46.h,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _goToSearch(context),
+                    icon: const Icon(Icons.search, color: Colors.white, size: 18),
+                    label: Text(
+                      'try_again'.tr(),
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: context.primaryColor,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                       shadowColor: Colors.transparent,
                     ),
-                    child: const Text(
-                      'أعد المحاولة',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontFamily: 'Tajawal',
-                      ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+
+                // ── Try visual search CTA (U1 enhancement) ───────────────
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const CameraSearchPage()),
+                    );
+                  },
+                  icon: Icon(Icons.camera_alt_outlined,
+                      color: context.textGrey, size: 18),
+                  label: Text(
+                    'try_visual_search'.tr(),
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: context.textGrey,
+                      fontFamily: 'Tajawal',
                     ),
                   ),
                 ),
-                const SizedBox(height: 60), // Shifting content slightly upwards for a balanced layout
+
+                SizedBox(height: 60.h),
               ],
             ),
           ),
@@ -115,45 +166,49 @@ class SearchEmptyPage extends StatelessWidget {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: context.surfaceColor,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark, size: 20),
+        icon: Icon(Icons.arrow_back_ios, color: context.textDark, size: 20),
         onPressed: () => Navigator.of(context).pop(),
       ),
       titleSpacing: 0,
-      title: Container(
-        height: 38,
-        margin: const EdgeInsets.only(left: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF2F3F8),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.search, color: AppColors.textGrey, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: RichText(
-                text: const TextSpan(
+      // L7 fix: the fake search bar is now wrapped in GestureDetector
+      // so tapping it navigates back to the live search input.
+      title: GestureDetector(
+        onTap: () => _goToSearch(context),
+        child: Container(
+          height: 38.h,
+          margin: EdgeInsets.only(left: 16.w),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: context.cardBackground,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: context.border, width: 0.8),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.search, color: context.textGrey, size: 18),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  failedQuery?.isNotEmpty == true
+                      ? failedQuery!
+                      : 'search_1'.tr(),
                   style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textDark,
+                    fontSize: 13.sp,
+                    color: failedQuery?.isNotEmpty == true
+                        ? context.textDark
+                        : context.textGrey,
                     fontFamily: 'Tajawal',
                     fontWeight: FontWeight.bold,
                   ),
-                  children: [
-                    TextSpan(text: 'ابحث'),
-                    TextSpan(
-                      text: ' |',
-                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.normal),
-                    ),
-                  ],
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-            ),
-          ],
+              Icon(Icons.close_rounded, color: context.textGrey, size: 16),
+            ],
+          ),
         ),
       ),
     );

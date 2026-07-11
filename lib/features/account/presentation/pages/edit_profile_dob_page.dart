@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import '../../../../core/constants/colors.dart';
 
 class EditProfileDobPage extends StatefulWidget {
@@ -13,21 +14,6 @@ class EditProfileDobPage extends StatefulWidget {
 class _EditProfileDobPageState extends State<EditProfileDobPage> {
   // Years list
   final List<int> _years = List.generate(100, (index) => DateTime.now().year - 99 + index);
-  // Arabic months
-  final List<String> _months = [
-    'يناير',
-    'فبراير',
-    'مارس',
-    'أبريل',
-    'مايو',
-    'يونيو',
-    'يوليو',
-    'أغسطس',
-    'سبتمبر',
-    'أكتوبر',
-    'نوفمبر',
-    'ديسمبر'
-  ];
   // Days
   final List<int> _days = List.generate(31, (index) => index + 1);
 
@@ -68,7 +54,7 @@ class _EditProfileDobPageState extends State<EditProfileDobPage> {
           GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               width: double.infinity,
               height: double.infinity,
             ),
@@ -77,7 +63,7 @@ class _EditProfileDobPageState extends State<EditProfileDobPage> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Directionality(
-              textDirection: TextDirection.rtl,
+              textDirection: Directionality.of(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                 decoration: const BoxDecoration(
@@ -93,10 +79,10 @@ class _EditProfileDobPageState extends State<EditProfileDobPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Center(
+                      Center(
                         child: Text(
-                          'تحديد تاريخ',
-                          style: TextStyle(
+                          tr('select_date'),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textDark,
@@ -115,7 +101,7 @@ class _EditProfileDobPageState extends State<EditProfileDobPage> {
                               child: Container(
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.05),
+                                  color: AppColors.primary.withValues(alpha: 0.05),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
@@ -154,13 +140,16 @@ class _EditProfileDobPageState extends State<EditProfileDobPage> {
                                       _selectedMonthIndex = index;
                                     },
                                     childDelegate: ListWheelChildBuilderDelegate(
-                                      childCount: _months.length,
-                                      builder: (context, index) => Center(
-                                        child: Text(
-                                          _months[index],
-                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
+                                      childCount: 12,
+                                      builder: (context, index) {
+                                        final monthName = DateFormat.MMMM(context.locale.toString()).format(DateTime(2000, index + 1));
+                                        return Center(
+                                          child: Text(
+                                            monthName,
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
@@ -205,9 +194,9 @@ class _EditProfileDobPageState extends State<EditProfileDobPage> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
-                              child: const Text(
-                                'إلغاء',
-                                style: TextStyle(color: AppColors.textGrey, fontWeight: FontWeight.bold),
+                              child: Text(
+                                tr('cancel'),
+                                style: const TextStyle(color: AppColors.textGrey, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -228,9 +217,9 @@ class _EditProfileDobPageState extends State<EditProfileDobPage> {
                                 ),
                                 elevation: 0,
                               ),
-                              child: const Text(
-                                'تطبيق',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                              child: Text(
+                                tr('apply'),
+                                style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),

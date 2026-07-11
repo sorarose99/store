@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class ProductEntity extends Equatable {
   final String id;
+  final String slug;
   final String name;
   final String brand;
   final double price;
@@ -13,11 +14,15 @@ class ProductEntity extends Equatable {
   final double rating;
   final int reviewCount;
   final bool isWishlisted;
-  final String? discountLabel; // e.g. "اليوم", "بكرة"
+  final String? discountLabel; // e.g. 'اليوم', 'بكرة'
   final String categoryId;
+
+  final bool featured;
+  final bool requiresShipping;
 
   const ProductEntity({
     required this.id,
+    required this.slug,
     required this.name,
     required this.brand,
     required this.price,
@@ -31,6 +36,8 @@ class ProductEntity extends Equatable {
     this.isWishlisted = false,
     this.discountLabel,
     required this.categoryId,
+    this.featured = false,
+    this.requiresShipping = false,
   });
 
   int? get discountPercent {
@@ -41,6 +48,7 @@ class ProductEntity extends Equatable {
   @override
   List<Object?> get props => [
         id,
+        slug,
         name,
         brand,
         price,
@@ -54,5 +62,7 @@ class ProductEntity extends Equatable {
         isWishlisted,
         discountLabel,
         categoryId,
+        featured,
+        requiresShipping,
       ];
 }

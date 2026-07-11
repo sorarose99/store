@@ -1,6 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/colors.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import '../../../../core/utils/error_handler.dart';
 import '../blocs/auth_bloc.dart';
 import '../blocs/auth_event.dart';
 import '../blocs/auth_state.dart';
@@ -14,7 +17,7 @@ class ResetPasswordData {
   final String newPassword;
   final String confirmPassword;
 
-  const ResetPasswordData({
+  ResetPasswordData({
     required this.newPassword,
     required this.confirmPassword,
   });
@@ -24,9 +27,11 @@ class ResetPasswordData {
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 class ResetPasswordPage extends StatefulWidget {
-  final String phoneNumber;
+  final String email;
+  final String otpCode;
 
-  const ResetPasswordPage({super.key, required this.phoneNumber});
+  const ResetPasswordPage(
+      {super.key, required this.email, required this.otpCode});
 
   @override
   State<ResetPasswordPage> createState() => _ResetPasswordPageState();
@@ -48,7 +53,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(
             ResetPasswordSubmitted(
-              phoneNumber: widget.phoneNumber,
+              email: widget.email,
+              otpCode: widget.otpCode,
               newPassword: _newPasswordController.text,
             ),
           );
@@ -57,15 +63,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textDark, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: colorScheme.onSurface, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -79,137 +87,131 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               ),
             );
           } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
+            showAuthSnackBar(context, getLocalizedAuthError(state.message));
           }
         },
         builder: (context, state) {
           return Directionality(
-            textDirection: TextDirection.rtl,
+            textDirection: Directionality.of(context),
             child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.0.w),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
 
-                      // ── Key Icon ───────────────────────────────────────────
+                      // ── Icon ───────────────────────────────────────────────
                       Center(
                         child: Container(
-                          width: 72,
-                          height: 72,
+                          width: 72.w,
+                          height: 72.h,
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withAlpha(25),
+                            color: colorScheme.primary.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.vpn_key_outlined,
-                            color: AppColors.primary,
+                            color: colorScheme.primary,
                             size: 34,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
 
                       // ── Title ──────────────────────────────────────────────
-                      const Center(
+                      Center(
                         child: Text(
-                          'إعادة تعيين كلمة المرور',
+                          'reset_password'.tr(),
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 20.sp,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.textDark,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Center(
+                      SizedBox(height: 8.h),
+                      Center(
                         child: Text(
                           'أدخل كلمة المرور الجديدة\nلتتمكن من الوصول إلى حسابك',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textGrey,
-                            height: 1.5,
+                            fontSize: 13.sp,
+                            color: colorScheme.onSurfaceVariant,
+                            height: 1.5.h,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 36),
+                      SizedBox(height: 36.h),
 
                       // ── New Password ───────────────────────────────────────
-                      const _FieldLabel(text: 'كلمة المرور الجديدة'),
-                      const SizedBox(height: 6),
+                      _FieldLabel(text: 'new_password'.tr()),
+                      SizedBox(height: 6.h),
                       AuthTextField(
                         controller: _newPasswordController,
-                        hintText: 'أدخل كلمة المرور الجديدة',
+                        hintText: 'enter_the_new_password'.tr(),
                         prefixIcon: Icons.lock_outline_rounded,
                         isPassword: true,
                         textInputAction: TextInputAction.next,
                         validator: (v) {
                           if (v == null || v.isEmpty) {
-                            return 'يرجى إدخال كلمة المرور الجديدة';
+                            return tr('validation_new_password_required');
                           }
                           if (v.length < 6) {
-                            return 'يجب أن تكون 6 أحرف على الأقل';
+                            return tr('validation_password_min_length');
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.h),
 
                       // ── Confirm Password ───────────────────────────────────
-                      const _FieldLabel(text: 'تأكيد كلمة المرور'),
-                      const SizedBox(height: 6),
+                      _FieldLabel(text: tr('confirm_password')),
+                      SizedBox(height: 6.h),
                       AuthTextField(
                         controller: _confirmPasswordController,
-                        hintText: 'أعد كتابة كلمة المرور',
+                        hintText: tr('confirm_password'),
                         prefixIcon: Icons.lock_outline_rounded,
                         isPassword: true,
                         textInputAction: TextInputAction.done,
                         validator: (v) {
                           if (v == null || v.isEmpty) {
-                            return 'يرجى تأكيد كلمة المرور';
+                            return tr('validation_confirm_password_required');
                           }
                           if (v != _newPasswordController.text) {
-                            return 'كلمات المرور غير متطابقة';
+                            return tr('validation_passwords_mismatch');
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: 36),
+                      SizedBox(height: 36.h),
 
                       // ── Submit Button ──────────────────────────────────────
                       if (state is AuthLoading)
-                        const Center(
+                        Center(
                           child: CircularProgressIndicator(
-                              color: AppColors.primary),
+                              color: colorScheme.primary),
                         )
                       else
                         ElevatedButton(
                           onPressed: _onResetPressed,
-                          child:
-                              const Text('حفظ كلمة المرور الجديدة'),
+                          child: Text('save_the_new_password'.tr()),
                         ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20.h),
 
                       // ── Back to Login ──────────────────────────────────────
                       Center(
                         child: GestureDetector(
                           onTap: () =>
                               Navigator.popUntil(context, (r) => r.isFirst),
-                          child: const Text(
-                            'العودة لتسجيل الدخول',
+                          child: Text(
+                            'back_to_login'.tr(),
                             style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.primary,
+                              fontSize: 13.sp,
+                              color: colorScheme.primary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -220,6 +222,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 ),
               ),
             ),
+          ),
           );
         },
       ),
@@ -235,10 +238,10 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 13,
+      style: TextStyle(
+        fontSize: 13.sp,
         fontWeight: FontWeight.w600,
-        color: AppColors.textDark,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }

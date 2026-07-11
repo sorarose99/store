@@ -148,7 +148,7 @@ class _DeleteAccountReasonPageState extends State<DeleteAccountReasonPage> {
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
+                      disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.5),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),

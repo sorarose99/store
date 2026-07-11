@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Namshe-style Section Header
-// Bold title with teal left-border accent + "عرض الكل" teal link
+// Bold title with teal left-border accent + 'show_all'.tr() teal link
 // ─────────────────────────────────────────────────────────────────────────────
 class SectionHeader extends StatelessWidget {
   final String title;
@@ -22,12 +23,12 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // "عرض الكل" link — left side in RTL
+          // 'show_all'.tr() link — left side in RTL
           if (actionLabel != null && onAction != null)
             GestureDetector(
               onTap: onAction,
@@ -36,17 +37,17 @@ class SectionHeader extends StatelessWidget {
                 children: [
                   Text(
                     actionLabel!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.primary,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      color: context.primaryColor,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 2),
-                  const Icon(
+                  SizedBox(width: 2.w),
+                  Icon(
                     Icons.arrow_back_ios_new_rounded,
                     size: 11,
-                    color: AppColors.primary,
+                    color: context.primaryColor,
                   ),
                 ],
               ),
@@ -60,37 +61,39 @@ class SectionHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 18,
+                    style: TextStyle(
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
+                      color: context.textDark,
                       letterSpacing: -0.3,
                     ),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
+                  if (subtitle != null && subtitle!.isNotEmpty) ...[
+                    SizedBox(height: 2.h),
                     Text(
                       subtitle!,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textGrey,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: context.textGrey,
                       ),
                     ),
                   ],
                 ],
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: 10.w),
               // Teal accent bar
               Container(
-                width: 4,
-                height: 22,
+                width: 4.w,
+                height: 22.h,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryDark],
+                  gradient: LinearGradient(
+                    colors: [context.primaryColor, context.primaryDark],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),

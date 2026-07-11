@@ -1,8 +1,9 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import '../../../../core/constants/colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// A polished, reusable text-field for all auth screens.
-/// Drop-in replacement for the old CustomTextField.
+/// All colors are pulled from Theme.of(context) — fully dark-mode & theme aware.
 class AuthTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
@@ -11,7 +12,7 @@ class AuthTextField extends StatefulWidget {
   final bool isPassword;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
-  final TextDirection? textDirection;
+  final ui.TextDirection? textDirection;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onChanged;
   final int maxLines;
@@ -57,7 +58,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final isRtl = (widget.textDirection ?? TextDirection.rtl) == TextDirection.rtl;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isRtl =
+        (widget.textDirection ?? ui.TextDirection.rtl) == ui.TextDirection.rtl;
 
     return TextFormField(
       controller: widget.controller,
@@ -65,32 +68,33 @@ class _AuthTextFieldState extends State<AuthTextField> {
       obscureText: widget.isPassword ? _obscure : false,
       keyboardType: widget.keyboardType,
       validator: widget.validator,
-      textDirection: widget.textDirection ?? TextDirection.rtl,
+      textDirection: widget.textDirection ?? ui.TextDirection.rtl,
       textAlign: isRtl ? TextAlign.right : TextAlign.left,
       textInputAction: widget.textInputAction,
       onChanged: widget.onChanged,
       maxLines: widget.isPassword ? 1 : widget.maxLines,
-      style: const TextStyle(
-        fontSize: 14,
-        color: AppColors.textDark,
+      style: TextStyle(
+        fontSize: 14.sp,
+        color: colorScheme.onSurface,
         fontWeight: FontWeight.w500,
-        height: 1.4,
+        height: 1.4.h,
       ),
       decoration: InputDecoration(
         hintText: widget.hintText,
         labelText: widget.labelText,
-        labelStyle: const TextStyle(
-          fontSize: 13,
-          color: AppColors.textGrey,
+        labelStyle: TextStyle(
+          fontSize: 13.sp,
+          color: colorScheme.onSurfaceVariant,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
         filled: true,
-        fillColor: const Color(0xFFF8F8F8),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         prefixIcon: widget.prefixIcon != null
             ? Icon(
                 widget.prefixIcon,
-                color: _isFocused ? AppColors.primary : AppColors.textGrey,
+                color: _isFocused
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
                 size: 20,
               )
             : null,
@@ -100,31 +104,39 @@ class _AuthTextFieldState extends State<AuthTextField> {
                   _obscure
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: AppColors.textGrey,
+                  color: colorScheme.onSurfaceVariant,
                   size: 20,
                 ),
                 onPressed: () => setState(() => _obscure = !_obscure),
               )
             : null,
-        hintStyle: const TextStyle(
-          color: AppColors.textGreyLight,
-          fontSize: 13,
+        hintStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+          fontSize: 13.sp,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border, width: 1),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.4),
+            width: 1.w,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5.w),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.error, width: 1),
+          borderSide: BorderSide(color: colorScheme.error, width: 1.w),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+          borderSide: BorderSide(color: colorScheme.error, width: 1.5.w),
+        ),
+        errorStyle: TextStyle(
+          color: colorScheme.error,
+          fontSize: 12.sp,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
