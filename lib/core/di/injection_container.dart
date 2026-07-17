@@ -281,7 +281,10 @@ Future<void> init() async {
   sl.registerFactory(() => ProductDetailsCubit(getProductDetailsUseCase: sl()));
 
   // AuthBloc now uses Firebase Auth directly — no use cases needed
-  sl.registerFactory(() => AuthBloc());
+  sl.registerFactory(() => AuthBloc(
+        authRemoteDataSource: sl(),
+        tokenService: sl(),
+      ));
 
   sl.registerFactory(() => HomeBloc(getHomeData: sl()));
   sl.registerFactory(() => CategoryBloc(

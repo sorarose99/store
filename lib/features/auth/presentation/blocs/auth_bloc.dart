@@ -2,25 +2,31 @@ import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/social_auth_service.dart';
+import '../../../../core/network/token_service.dart';
+import '../../data/datasources/auth_remote_datasource.dart';
 import '../../domain/entities/user.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 /// ─────────────────────────────────────────────────────────────────
-///  AuthBloc — Firebase-Only Authentication
+///  AuthBloc — Combined Firebase & Sanctum Backend Authentication
 ///
-///  All auth operations (login, register, forgot-password, social)
-///  are handled directly by Firebase Auth. The Laravel/Sanctum
-///  backend is NOT used for authentication.
-///
-///  Shopping features (cart, orders, wishlist) still call the
-///  backend using the Firebase ID token as a Bearer token.
+///  Authenticates user sessions in Firebase, then synchronizes
+///  with the legacy Laravel/Sanctum backend to cache a Sanctum API token.
+///  This allows wishlist and cart features to function correctly.
 /// ─────────────────────────────────────────────────────────────────
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final fb.FirebaseAuth _firebaseAuth;
+  final AuthRemoteDataSource _authRemoteDataSource;
+  final TokenService _tokenService;
 
-  AuthBloc({fb.FirebaseAuth? firebaseAuth})
-      : _firebaseAuth = firebaseAuth ?? fb.FirebaseAuth.instance,
+  AuthBloc({
+    fb.FirebaseAuth? firebaseAuth,
+    required AuthRemoteDataSource authRemoteDataSource,
+    required TokenService tokenService,
+  })  : _firebaseAuth = firebaseAuth ?? fb.FirebaseAuth.instance,
+        _authRemoteDataSource = authRemoteDataSource,
+        _tokenService = tokenService,
         super(AuthInitial()) {
     on<LoginSubmitted>(_onLoginSubmitted);
     on<RegisterOtpRequested>(_onRegisterOtpRequested);
@@ -30,6 +36,41 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ResetPasswordSubmitted>(_onResetPasswordSubmitted);
     on<GoogleSignInSubmitted>(_onGoogleSignInSubmitted);
     on<AppleSignInSubmitted>(_onAppleSignInSubmitted);
+  }
+
+  /// Synchronizes a signed-in Firebase user with the Laravel backend
+  /// by calling the socialLogin API with the Firebase ID token.
+  Future<String?> _syncWithBackend(fb.User firebaseUser) async {
+    try {
+      final token = await firebaseUser.getIdToken();
+      if (token == null || token.isEmpty) return null;
+
+      final name = firebaseUser.displayName ?? '';
+      final email = firebaseUser.email ?? '';
+      
+      // Determine provider name (google, apple, etc.)
+      String provider = 'google';
+      if (firebaseUser.providerData.isNotEmpty) {
+        final provId = firebaseUser.providerData.first.providerId;
+        if (provId.contains('apple')) {
+          provider = 'apple';
+        }
+      }
+
+      final sanctumToken = await _authRemoteDataSource.socialLogin(
+        provider: provider,
+        token: token,
+        name: name,
+        email: email,
+      );
+      
+      await _tokenService.saveSanctumToken(sanctumToken);
+      await _tokenService.saveUserId(firebaseUser.uid);
+      return sanctumToken;
+    } catch (e) {
+      developer.log('Backend sync failed: $e', name: 'AuthBloc');
+      return null;
+    }
   }
 
   // ── Email / Password Login ─────────────────────────────────────
@@ -50,7 +91,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return;
       }
 
-      emit(LoginSuccess(_userFromFirebase(firebaseUser)));
+      // Sync with the legacy backend
+      final sanctumToken = await _syncWithBackend(firebaseUser);
+      if (sanctumToken == null) {
+        await _firebaseAuth.signOut();
+        emit(const AuthError('backend_sync_failed'));
+        return;
+      }
+
+      emit(LoginSuccess(_userFromFirebase(firebaseUser, token: sanctumToken)));
     } on fb.FirebaseAuthException catch (e) {
       emit(AuthError(_mapFirebaseError(e)));
     } catch (e) {
@@ -66,9 +115,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     RegisterOtpRequested event,
     Emitter<AuthState> emit,
   ) async {
-    // Firebase doesn't need a prior OTP step — emit success so the
-    // UI navigates to the name/password step (OtpVerificationPage
-    // will be repurposed or skipped — see register_page.dart).
     emit(RegisterOtpSendSuccess());
   }
 
@@ -96,14 +142,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await firebaseUser.reload();
       }
 
-      // Send verification email (non-blocking)
-      try {
-        await firebaseUser.sendEmailVerification();
-      } catch (_) {
-        // Not critical — ignore
+      final updatedUser = _firebaseAuth.currentUser ?? firebaseUser;
+
+      // Sync with the legacy backend
+      final sanctumToken = await _syncWithBackend(updatedUser);
+      if (sanctumToken == null) {
+        await _firebaseAuth.signOut();
+        emit(const AuthError('backend_sync_failed'));
+        return;
       }
 
-      emit(RegisterSuccess(_userFromFirebase(_firebaseAuth.currentUser ?? firebaseUser)));
+      // Send verification email (non-blocking)
+      try {
+        await updatedUser.sendEmailVerification();
+      } catch (_) {
+        // Ignore email sending failures
+      }
+
+      emit(RegisterSuccess(_userFromFirebase(updatedUser, token: sanctumToken)));
     } on fb.FirebaseAuthException catch (e) {
       emit(AuthError(_mapFirebaseError(e)));
     } catch (e) {
@@ -131,13 +187,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  // ── OTP Verify — not used for Firebase email flow ─────────────
-  /// Kept for compatibility. With Firebase, this step is skipped.
+  // ── OTP Verify ───────────────────────────────────────────────
   Future<void> _onVerifyOtpSubmitted(
     VerifyOtpSubmitted event,
     Emitter<AuthState> emit,
   ) async {
-    // Not used in Firebase flow — emit a placeholder success
     emit(OtpVerificationSuccess(User(
       id: '',
       uuid: '',
@@ -148,17 +202,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     )));
   }
 
-  // ── Reset Password — Firebase handles via email link ──────────
-  /// Firebase reset is email-link based (no OTP code entry needed).
-  /// This handler remains for UI compatibility but is effectively
-  /// replaced by sendPasswordResetEmail in _onForgotPasswordSubmitted.
+  // ── Reset Password ────────────────────────────────────────────
   Future<void> _onResetPasswordSubmitted(
     ResetPasswordSubmitted event,
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
     try {
-      // Confirm the password reset using the code Firebase sent via email
       await _firebaseAuth.confirmPasswordReset(
         code: event.otpCode,
         newPassword: event.newPassword,
@@ -178,23 +228,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoading());
     final result = await SocialAuthService.signInWithGoogle();
-    result.fold(
-      (failure) {
-        // User cancelled — go back to initial silently
+    await result.fold(
+      (failure) async {
         if (failure.message.contains('cancelled')) {
           emit(AuthInitial());
         } else {
           emit(AuthError(failure.message));
         }
       },
-      (socialResult) {
+      (socialResult) async {
         final firebaseUser = socialResult.userCredential.user;
         if (firebaseUser == null) {
           emit(const AuthError('google_sign_in_failed'));
           return;
         }
-        // No backend sync needed — Firebase user session is enough
-        emit(SocialLoginSuccess(_userFromFirebase(firebaseUser)));
+
+        // Sync with backend
+        final sanctumToken = await _syncWithBackend(firebaseUser);
+        if (sanctumToken == null) {
+          await _firebaseAuth.signOut();
+          emit(const AuthError('backend_sync_failed'));
+          return;
+        }
+
+        emit(SocialLoginSuccess(_userFromFirebase(firebaseUser, token: sanctumToken)));
       },
     );
   }
@@ -206,28 +263,37 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoading());
     final result = await SocialAuthService.signInWithApple();
-    result.fold(
-      (failure) {
+    await result.fold(
+      (failure) async {
         if (failure.message.contains('cancelled')) {
           emit(AuthInitial());
         } else {
           emit(AuthError(failure.message));
         }
       },
-      (socialResult) {
+      (socialResult) async {
         final firebaseUser = socialResult.userCredential.user;
         if (firebaseUser == null) {
           emit(const AuthError('apple_sign_in_failed'));
           return;
         }
-        emit(SocialLoginSuccess(_userFromFirebase(firebaseUser)));
+
+        // Sync with backend
+        final sanctumToken = await _syncWithBackend(firebaseUser);
+        if (sanctumToken == null) {
+          await _firebaseAuth.signOut();
+          emit(const AuthError('backend_sync_failed'));
+          return;
+        }
+
+        emit(SocialLoginSuccess(_userFromFirebase(firebaseUser, token: sanctumToken)));
       },
     );
   }
 
   // ── Helpers ───────────────────────────────────────────────────
 
-  User _userFromFirebase(fb.User firebaseUser) {
+  User _userFromFirebase(fb.User firebaseUser, {String? token}) {
     final nameParts = (firebaseUser.displayName ?? '').trim().split(' ');
     return User(
       id: firebaseUser.uid,
@@ -235,11 +301,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       firstName: nameParts.isNotEmpty ? nameParts.first : '',
       lastName: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
       email: firebaseUser.email ?? '',
-      token: null, // No Sanctum token needed
+      token: token ?? _tokenService.getSanctumToken(),
     );
   }
 
-  /// Maps Firebase error codes to translation keys used in error_handler.dart.
   String _mapFirebaseError(fb.FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
