@@ -43,9 +43,9 @@ class TokenService {
   }
 
   bool get hasToken {
-    final hasFirebase = FirebaseAuth.instance.currentUser != null;
-    final hasSanctum = getSanctumToken() != null;
-    return hasFirebase || hasSanctum;
+    // Firebase Auth is the single source of truth.
+    // The app shows MainShell if and only if a Firebase user is signed in.
+    return FirebaseAuth.instance.currentUser != null;
   }
 
   Future<void> clearToken() async {

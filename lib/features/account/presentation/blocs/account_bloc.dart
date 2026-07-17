@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/get_profile_usecase.dart';
 import '../../domain/usecases/update_profile_usecase.dart';
@@ -40,6 +41,15 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     AccountProfileRequested event,
     Emitter<AccountState> emit,
   ) async {
+    // Dedup: skip if a fetch is already in-flight
+    if (state is AccountLoading) return;
+
+    // Guard: only call authenticated endpoints when a Firebase user exists
+    if (FirebaseAuth.instance.currentUser == null) {
+      emit(const AccountError('يرجى تسجيل الدخول أولاً'));
+      return;
+    }
+
     emit(AccountLoading());
     final profileResult = await getProfileUseCase();
     final dashboardResult = await getDashboardUseCase();

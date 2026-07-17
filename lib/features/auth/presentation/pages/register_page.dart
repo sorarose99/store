@@ -10,9 +10,9 @@ import '../blocs/auth_bloc.dart';
 import '../blocs/auth_event.dart';
 import '../blocs/auth_state.dart';
 import '../widgets/auth_text_field.dart';
-import 'otp_verification_page.dart';
 import 'terms_acceptance_page.dart';
 import 'login_page.dart';
+import '../../../shell/presentation/pages/main_shell.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Model
@@ -64,9 +64,13 @@ class _RegisterPageState extends State<RegisterPage> {
       showAuthSnackBar(context, tr('error_accept_terms'));
       return;
     }
+    // Firebase-only: dispatch RegisterSubmitted directly — no OTP step needed
     context.read<AuthBloc>().add(
-          RegisterOtpRequested(
+          RegisterSubmitted(
+            name: _nameController.text.trim(),
             email: _emailController.text.trim(),
+            password: _passwordController.text,
+            otpCode: '', // Not used with Firebase
           ),
         );
   }
@@ -89,21 +93,11 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is RegisterOtpSendSuccess) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => OtpVerificationPage(
-                  email: _emailController.text.trim(),
-                  isPasswordReset: false,
-                  registerData: RegisterFormData(
-                    name: _nameController.text.trim(),
-                    email: _emailController.text.trim(),
-                    password: _passwordController.text,
-                    agreedToTerms: _agreedToTerms,
-                  ),
-                ),
-              ),
+          // Firebase register success → go to app
+          if (state is RegisterSuccess) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const MainShell()),
+              (route) => false,
             );
           } else if (state is AuthError) {
             final msg = getLocalizedAuthError(state.message);

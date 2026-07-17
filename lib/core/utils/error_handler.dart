@@ -33,7 +33,8 @@ String getLocalizedAuthError(String message) {
   }
 
   // ── Email already in use ──────────────────────────────────────────────────
-  if (m.contains('email_in_use') ||
+  if (m.contains('email_already_registered') ||
+      m.contains('email_in_use') ||
       m.contains('already exists') ||
       m.contains('already in use') ||
       m.contains('already taken') ||
@@ -45,10 +46,19 @@ String getLocalizedAuthError(String message) {
   }
 
   // ── Weak password ─────────────────────────────────────────────────────────
-  if (m.contains('password_too_weak') ||
+  if (m.contains('weak_password') ||
+      m.contains('password_too_weak') ||
       m.contains('weak password') ||
       m.contains('weak')) {
     return tr('error_weak_password');
+  }
+
+  // ── Account disabled ─────────────────────────────────────────────────────
+  if (m.contains('account_disabled') ||
+      m.contains('user-disabled') ||
+      m.contains('disabled') ||
+      m.contains('blocked')) {
+    return tr('error_account_disabled');
   }
 
   // ── Invalid email format ──────────────────────────────────────────────────

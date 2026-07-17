@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -42,10 +43,12 @@ class _AccountPageState extends State<AccountPage> {
   @override
   void initState() {
     super.initState();
-    // Fetch data if not already fetched
-    final state = context.read<AccountBloc>().state;
-    if (state is AccountInitial || state is AccountError) {
-      context.read<AccountBloc>().add(const AccountProfileRequested());
+    // Only fetch account data if the user is actually signed in
+    if (FirebaseAuth.instance.currentUser != null) {
+      final state = context.read<AccountBloc>().state;
+      if (state is AccountInitial || state is AccountError) {
+        context.read<AccountBloc>().add(const AccountProfileRequested());
+      }
     }
     _loadNotificationStatus();
   }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -120,11 +121,20 @@ class PushNotificationService {
   }
 
   Future<void> _handleFCMTokenLocally(String token) async {
+    // Only upload to backend if the user is authenticated
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      if (kDebugMode) {
+        print('FCM token not uploaded — user not logged in yet.');
+      }
+      return;
+    }
+
     try {
       await _apiClient.post(ApiEndpoints.saveFcmToken, data: {
         'token': token,
         'device_id': 'flutter_app_device',
-        'platform': 'ios',
+        'platform': 'android',
         'device_name': 'KDX App',
       });
       if (kDebugMode) {

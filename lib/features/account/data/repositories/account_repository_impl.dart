@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/account_entities.dart';
 import '../../domain/repositories/account_repository.dart';
@@ -86,6 +87,20 @@ class AccountRepositoryImpl implements AccountRepository {
       }
 
       return Right((stats: stats, recentOrders: recentOrders));
+    } on UnauthorizedException {
+      // Backend doesn't have a matching account yet (e.g. Firebase-only user).
+      // Return zero stats instead of an error so the account page still loads.
+      developer.log('getDashboardData: user not found on backend — returning zero stats', name: 'AccountRepo');
+      return Right((
+        stats: const DashboardStatsModel(
+          totalOrders: 0,
+          pendingOrders: 0,
+          processingOrders: 0,
+          completedOrders: 0,
+          wishlistCount: 0,
+        ),
+        recentOrders: [],
+      ));
     } catch (e, stackTrace) {
       developer.log('getDashboardData error', error: e, stackTrace: stackTrace);
       return Left(ServerFailure(e.toString()));
