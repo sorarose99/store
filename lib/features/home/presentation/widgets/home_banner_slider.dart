@@ -39,15 +39,13 @@ class _HomeBannerSliderState extends State<HomeBannerSlider> {
   }
 
   List<dynamic> _buildMixedBanners() {
-    List<dynamic> mixed = [];
-    
-    // API Banners
+    // If API banners are available, use them exclusively
     if (widget.banners.isNotEmpty) {
-      mixed.addAll(widget.banners);
+      return widget.banners;
     }
     
-    // Static Banners Fallback / Mixed
-    mixed.addAll([
+    // Otherwise, fall back to static banners
+    return [
       'assets/images/home_banner_new.png',
       'assets/images/banner_1.png',
       'assets/images/banner_2.png',
@@ -56,9 +54,7 @@ class _HomeBannerSliderState extends State<HomeBannerSlider> {
       'assets/images/banner_5.png',
       'assets/images/banner_6.png',
       'assets/images/banner_7.png',
-    ]);
-    
-    return mixed;
+    ];
   }
 
   void _startAutoPlay() {

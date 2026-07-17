@@ -1,14 +1,9 @@
-import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../../core/network/api_client.dart';
 import '../../../auth/presentation/pages/login_page.dart';
-import '../../data/onboarding_remote_datasource.dart';
 
 
 class OnboardingPage extends StatefulWidget {
@@ -23,60 +18,23 @@ class _OnboardingPageState extends State<OnboardingPage>
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  /// The resolved slides — starts empty while loading from API.
-  List<OnboardingSlideData> _slides = [];
-  bool _isLoading = true;
+  /// Always use static asset slides — API is never called in onboarding.
+  static const List<_StaticSlide> _slides = [
+    _StaticSlide(assetPath: 'assets/images/onboarding_1.png'),
+    _StaticSlide(assetPath: 'assets/images/onboarding_2.png'),
+    _StaticSlide(assetPath: 'assets/images/onboarding_3.png'),
+    _StaticSlide(assetPath: 'assets/images/onboarding_4.png'),
+  ];
 
   @override
   void initState() {
     super.initState();
-    _loadSlides();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
-  }
-
-  // ── Data Loading ──────────────────────────────────────────────────────────
-
-  Future<void> _loadSlides() async {
-    List<OnboardingSlideData> slides;
-    try {
-      final apiClient = GetIt.instance<ApiClient>();
-      slides = await fetchOnboardingSlides(apiClient);
-    } catch (_) {
-      // If DI hasn't registered ApiClient yet, use static slides
-      slides = const [
-        OnboardingSlideData(
-          assetPath: 'assets/images/onboarding_1.png',
-          title: '',
-          description: '',
-        ),
-        OnboardingSlideData(
-          assetPath: 'assets/images/onboarding_2.png',
-          title: '',
-          description: '',
-        ),
-        OnboardingSlideData(
-          assetPath: 'assets/images/onboarding_3.png',
-          title: '',
-          description: '',
-        ),
-        OnboardingSlideData(
-          assetPath: 'assets/images/onboarding_4.png',
-          title: '',
-          description: '',
-        ),
-      ];
-    }
-
-    if (!mounted) return;
-    setState(() {
-      _slides = slides;
-      _isLoading = false;
-    });
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -106,12 +64,6 @@ class _OnboardingPageState extends State<OnboardingPage>
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     final isLast = _slides.isNotEmpty && _currentPage == _slides.length - 1;
 
     return Scaffold(
@@ -213,10 +165,17 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 }
 
+// ── Simple static slide model (asset-only) ────────────────────────────────────
+
+class _StaticSlide {
+  final String assetPath;
+  const _StaticSlide({required this.assetPath});
+}
+
 // ── Individual Slide Card ─────────────────────────────────────────────────────
 
 class _SlideCard extends StatelessWidget {
-  final OnboardingSlideData slide;
+  final _StaticSlide slide;
   final int index;
 
   const _SlideCard({
@@ -246,34 +205,20 @@ class _SlideCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: slide.isNetwork
-                  ? CachedNetworkImage(
-                      imageUrl: slide.imageUrl!,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.centerLeft,
-                      placeholder: (_, __) => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                      errorWidget: (_, __, ___) => Image.asset(
-                        'assets/images/onboarding_1.png',
-                        fit: BoxFit.cover,
-                        alignment: Alignment.centerLeft,
-                      ),
-                    )
-                  : Image.asset(
-                      slide.assetPath!,
-                      fit: BoxFit.cover,
-                      alignment: Alignment.centerLeft,
-                    ),
+              // alignment: centerLeft ensures the KDX logo on the left
+              // edge is always fully visible and never cropped.
+              child: Image.asset(
+                slide.assetPath,
+                fit: BoxFit.cover,
+                alignment: Alignment.centerLeft,
+              ),
             ),
           ),
           SizedBox(height: 16.h),
 
           // ── Title ────────────────────────────────────────────────────────
           Text(
-            slide.title.isNotEmpty
-                ? slide.title
-                : tr('onboarding_title_${index + 1}'),
+            tr('onboarding_title_${index + 1}'),
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w800,
@@ -288,9 +233,7 @@ class _SlideCard extends StatelessWidget {
 
           // ── Description ──────────────────────────────────────────────────
           Text(
-            slide.description.isNotEmpty
-                ? slide.description
-                : tr('onboarding_desc_${index + 1}'),
+            tr('onboarding_desc_${index + 1}'),
             style: TextStyle(
               fontSize: 13.sp,
               color: context.textGrey,
