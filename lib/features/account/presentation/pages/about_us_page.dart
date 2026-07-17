@@ -103,7 +103,7 @@ class AboutUsPage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'البريد الإلكتروني: contact@store.com\nالرقم الموحد: 920002244\nالرياض، المملكة العربية السعودية',
+                'البريد الإلكتروني: support@kdx-sa.com\nرقم الواتساب: +966542139388\nالمملكة العربية السعودية',
                 style: TextStyle(fontSize: 12, color: AppColors.textGrey, height: 1.5),
               ),
               const SizedBox(height: 24),

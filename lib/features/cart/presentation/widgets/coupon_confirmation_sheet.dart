@@ -97,7 +97,7 @@ class CouponConfirmationSheet extends StatelessWidget {
                   const TextSpan(text: '؟\n'),
                   TextSpan(text: 'you_will_get_an'.tr()),
                   TextSpan(
-                    text: '${discountAmount.toStringAsFixed(1)} ر.س',
+                    text: '${discountAmount.toStringAsFixed(1)} ﷼',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: context.primaryColor,

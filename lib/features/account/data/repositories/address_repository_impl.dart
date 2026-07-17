@@ -29,14 +29,14 @@ class AddressRepositoryImpl implements AddressRepository {
     try {
       final model = SavedAddressModel(
         id: address.id,
-        recipientName: address.recipientName,
+        title: address.title,
+        fullName: address.fullName,
         phone: address.phone,
+        email: address.email,
+        country: address.country,
         city: address.city,
-        district: address.district,
-        street: address.street,
-        buildingNo: address.buildingNo,
-        floor: address.floor,
         zipCode: address.zipCode,
+        detailedAddress: address.detailedAddress,
         isDefault: address.isDefault,
       );
       final response = await remoteDataSource.addAddress(model.toJson());
@@ -49,14 +49,14 @@ class AddressRepositoryImpl implements AddressRepository {
             : 'temp_${DateTime.now().millisecondsSinceEpoch}';
         final fallbackModel = SavedAddressModel(
           id: fallbackId,
-          recipientName: model.recipientName,
+          title: model.title,
+          fullName: model.fullName,
           phone: model.phone,
+          email: model.email,
+          country: model.country,
           city: model.city,
-          district: model.district,
-          street: model.street,
-          buildingNo: model.buildingNo,
-          floor: model.floor,
           zipCode: model.zipCode,
+          detailedAddress: model.detailedAddress,
           isDefault: model.isDefault,
         );
         return Right(fallbackModel);
@@ -72,14 +72,14 @@ class AddressRepositoryImpl implements AddressRepository {
     try {
       final model = SavedAddressModel(
         id: address.id,
-        recipientName: address.recipientName,
+        title: address.title,
+        fullName: address.fullName,
         phone: address.phone,
+        email: address.email,
+        country: address.country,
         city: address.city,
-        district: address.district,
-        street: address.street,
-        buildingNo: address.buildingNo,
-        floor: address.floor,
         zipCode: address.zipCode,
+        detailedAddress: address.detailedAddress,
         isDefault: address.isDefault,
       );
       final response = await remoteDataSource.updateAddress(id, model.toJson());

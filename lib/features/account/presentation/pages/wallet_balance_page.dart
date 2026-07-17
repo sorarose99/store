@@ -70,7 +70,7 @@ class WalletBalancePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '${user.walletBalance.toStringAsFixed(2)} ر.س',
+                            '${user.walletBalance.toStringAsFixed(2)} ﷼',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 32,
@@ -167,7 +167,7 @@ class WalletBalancePage extends StatelessWidget {
                                   const Icon(Icons.account_balance_wallet, color: AppColors.primary, size: 16),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${user.walletBalance.toStringAsFixed(2)} ر.س',
+                                    '${user.walletBalance.toStringAsFixed(2)} ﷼',
                                     style: const TextStyle(
                                       color: AppColors.textDark,
                                       fontSize: 16,
@@ -275,7 +275,7 @@ class WalletBalancePage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            isDeposit ? '+ 25.0 ر.س' : '- 12.0 ر.س',
+                            isDeposit ? '+ 25.0 ﷼' : '- 12.0 ﷼',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,

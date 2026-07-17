@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/colors.dart';
 
 class FaqItem {
@@ -23,40 +24,64 @@ class FaqPage extends StatefulWidget {
 class _FaqPageState extends State<FaqPage> {
   final List<FaqItem> _faqItems = [
     FaqItem(
-      question: 'هل تتوفر لديكم خدمة التوصيل لجميع مناطق المملكة؟',
-      answer: 'نعم، نوفر خدمة التوصيل والشحن لكافة مدن ومناطق المملكة العربية السعودية ودول الخليج العربي بالتعاون مع أفضل شركات الشحن السريع.',
+      question:
+          'هل تتوفر لديكم خدمة التوصيل لجميع مناطق المملكة العربية السعودية ودول الخليج العربي ؟',
+      answer:
+          'نعم، نوفر خدمة التوصيل والشحن لكافة مدن ومناطق المملكة العربية السعودية ودول الخليج العربي بالتعاون مع أفضل شركات الشحن السريع.',
     ),
     FaqItem(
       question: 'كم يستغرق التوصيل؟',
-      answer: 'يستغرق الشحن والتوصيل عادةً من 3 إلى 5 أيام عمل داخل المملكة العربية السعودية، ومن 5 إلى 7 أيام عمل لباقي دول الخليج العربي.',
+      answer:
+          'يستغرق الشحن والتوصيل عادةً من 3 إلى 5 أيام عمل داخل المملكة العربية السعودية، ومن 5 إلى 7 أيام عمل لباقي دول الخليج العربي.',
     ),
     FaqItem(
       question: 'هل تتوفر خدمة التوصيل المجاني؟',
-      answer: 'نعم، نوفر توصيلاً مجانياً بالكامل لجميع الطلبات التي تتجاوز قيمتها 300 ريال سعودي أو ما يعادلها بالعملات الأخرى.',
+      answer:
+          'نعم، نوفر توصيلاً مجانياً بالكامل لجميع الطلبات التي تتجاوز قيمتها 300 ﷼ أو ما يعادلها بالعملات الأخرى.',
     ),
     FaqItem(
       question: 'ما هي شروط الاستبدال والاسترجاع؟',
-      answer: 'يمكنك طلب استبدال أو استرجاع المنتجات خلال 14 يوماً من تاريخ استلام الطلب، بشرط أن تكون المنتجات بحالتها الأصلية وغير مستخدمة ومعها كافة التغليفات والملصقات الأصلية.',
+      answer:
+          'يمكنك طلب استبدال أو استرجاع المنتجات خلال 14 يوماً من تاريخ استلام الطلب، بشرط أن تكون المنتجات بحالتها الأصلية وغير مستخدمة ومعها كافة التغليفات والملصقات الأصلية.',
     ),
     FaqItem(
       question: 'كيف يمكنني تتبع طلبي؟',
-      answer: 'يمكنك تتبع شحنتك بكل سهولة من خلال الانتقال إلى صفحة "طلباتي" في حسابك والضغط على تفاصيل الطلب لمشاهدة خط التتبع المباشر، أو من خلال رابط التتبع المرسل إليك عبر رسالة SMS.',
+      answer:
+          'يمكنك تتبع شحنتك بكل سهولة من خلال الانتقال إلى صفحة "طلباتي" في حسابك والضغط على تفاصيل الطلب لمشاهدة خط التتبع المباشر، أو من خلال رابط التتبع المرسل إليك عبر  ',
     ),
     FaqItem(
       question: 'هل يمكنني إلغاء طلبي؟',
-      answer: 'نعم، يمكنك إلغاء الطلب مباشرةً من التطبيق طالما أنه في مرحلة "قيد المعالجة" ولم يتم شحنه أو تسليمه لشركة الشحن بعد. في حال تم الشحن، يرجى التواصل مع الدعم الفني.',
+      answer:
+          'نعم، يمكنك إلغاء الطلب مباشرةً من التطبيق طالما أنه في مرحلة "قيد المعالجة" ولم يتم شحنه أو تسليمه لشركة الشحن بعد. في حال تم الشحن، يرجى التواصل مع الدعم الفني.',
     ),
     FaqItem(
       question: 'ما هي وسائل الدفع المتاحة؟',
-      answer: 'نوفر خيارات دفع متعددة وآمنة تشمل: مدى (Mada)، فيزا (Visa)، ماستركارد (Mastercard)، آبل باي (Apple Pay)، إس تي سي باي (STC Pay)، بالإضافة إلى الدفع عند الاستلام.',
+      answer:
+          'نوفر خيارات دفع متعددة وآمنة تشمل: ، فيزا (Visa)، ماستركارد (Mastercard)، آبل باي   (Apple Pay).',
     ),
     FaqItem(
       question: 'هل يمكنني الشراء بالتقسيط؟',
-      answer: 'نعم، يمكنك تقسيم فاتورتك على دفعات ميسرة بدون فوائد أو رسوم إضافية عبر اختيار خدمة تمارا (Tamara) عند الانتقال لصفحة الدفع.',
+      answer:
+          'نعم، يمكنك تقسيم فاتورتك على دفعات ميسرة بدون فوائد أو رسوم إضافية عبر اختيار خدمة تابي (Tabby) أو تمارا (Tamara) عند الانتقال لصفحة الدفع.',
     ),
   ];
 
   String _searchQuery = '';
+
+  Future<void> _openWhatsApp() async {
+    final uri = Uri.parse('https://wa.me/966542139388');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _openEmail() async {
+    final String subject = Uri.encodeComponent('استفسار من تطبيق KDX');
+    final uri = Uri.parse('mailto:support@kdx-sa.com?subject=$subject');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,13 +99,17 @@ class _FaqPageState extends State<FaqPage> {
           backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, size: 20, color: AppColors.textDark),
+            icon: const Icon(Icons.arrow_back_ios,
+                size: 20, color: AppColors.textDark),
             onPressed: () => Navigator.pop(context),
           ),
           centerTitle: true,
           title: const Text(
             'الأسئلة الشائعة',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: AppColors.textDark),
           ),
         ),
         body: Column(
@@ -102,8 +131,10 @@ class _FaqPageState extends State<FaqPage> {
                   },
                   decoration: const InputDecoration(
                     hintText: 'ابحث عن سؤالك هنا...',
-                    hintStyle: TextStyle(color: AppColors.textGrey, fontSize: 13),
-                    prefixIcon: Icon(Icons.search, color: AppColors.textGrey, size: 20),
+                    hintStyle:
+                        TextStyle(color: AppColors.textGrey, fontSize: 13),
+                    prefixIcon:
+                        Icon(Icons.search, color: AppColors.textGrey, size: 20),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -117,7 +148,8 @@ class _FaqPageState extends State<FaqPage> {
                   ? const Center(
                       child: Text(
                         'لا توجد نتائج تطابق بحثك',
-                        style: TextStyle(color: AppColors.textGrey, fontSize: 14),
+                        style:
+                            TextStyle(color: AppColors.textGrey, fontSize: 14),
                       ),
                     )
                   : ListView.builder(
@@ -125,52 +157,55 @@ class _FaqPageState extends State<FaqPage> {
                       itemCount: filteredItems.length,
                       itemBuilder: (context, index) {
                         final item = filteredItems[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
+                        return Material(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFEEEEEE)),
+                            side: const BorderSide(color: Color(0xFFEEEEEE)),
                           ),
-                          child: Theme(
-                            data: Theme.of(context).copyWith(
-                              dividerColor: Colors.transparent,
-                            ),
-                            child: ExpansionTile(
-                              key: Key(item.question),
-                              initiallyExpanded: item.isExpanded,
-                              onExpansionChanged: (expanded) {
-                                setState(() {
-                                  item.isExpanded = expanded;
-                                });
-                              },
-                              title: Text(
-                                item.question,
-                                style: const TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textDark,
-                                ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            child: Theme(
+                              data: Theme.of(context).copyWith(
+                                dividerColor: Colors.transparent,
                               ),
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 16.0,
-                                    right: 16.0,
-                                    bottom: 16.0,
+                              child: ExpansionTile(
+                                key: Key(item.question),
+                                initiallyExpanded: item.isExpanded,
+                                onExpansionChanged: (expanded) {
+                                  setState(() {
+                                    item.isExpanded = expanded;
+                                  });
+                                },
+                                title: Text(
+                                  item.question,
+                                  style: const TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textDark,
                                   ),
-                                  child: Text(
-                                    item.answer,
-                                    style: const TextStyle(
-                                      fontSize: 12.5,
-                                      color: AppColors.textGrey,
-                                      height: 1.5,
+                                ),
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      left: 16.0,
+                                      right: 16.0,
+                                      bottom: 16.0,
+                                    ),
+                                    child: Text(
+                                      item.answer,
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        color: AppColors.textGrey,
+                                        height: 1.5,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
+                          ), // close inner Container
                         );
                       },
                     ),
@@ -193,14 +228,36 @@ class _FaqPageState extends State<FaqPage> {
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: _openWhatsApp,
                         icon: const Icon(Icons.chat_bubble_outline, size: 20),
                         label: const Text(
                           'تواصل معنا عبر الواتساب',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF25D366),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: _openEmail,
+                        icon: const Icon(Icons.email_outlined, size: 20),
+                        label: const Text(
+                          'تواصل معنا عبر البريد',
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),

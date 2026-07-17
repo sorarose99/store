@@ -18,4 +18,5 @@ abstract class AccountRepository {
     String? platform,
     String? deviceName,
   });
+  Future<Either<Failure, void>> sendContactMessage(Map<String, dynamic> data);
 }

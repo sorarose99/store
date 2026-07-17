@@ -78,19 +78,11 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         cartResult.fold(
           (failure) => emit(CartError(failure.message)),
           (summary) {
-            emit(CartLoaded(
-              items: summary.items,
-              subtotal: summary.subtotal,
-              taxAmount: summary.taxAmount,
-              shippingCost: summary.shippingCost,
-              couponDiscount: summary.discount,
-              total: summary.total,
-              zones: summary.zones,
-              selectedZone: summary.selectedZone,
-            ));
-            if (event.sizeName != null &&
-                event.sizeName!.isNotEmpty &&
-                summary.items.isNotEmpty) {
+            if (summary.items.isNotEmpty) {
+              final String resolvedSize = (event.sizeName != null && event.sizeName!.isNotEmpty)
+                  ? event.sizeName!
+                  : 'مقاس واحد'; // Default size to pass backend validation
+
               CartItemEntity? match;
               final expectedCartItemId = event.imageId != null 
                   ? '${event.productId}_img_${event.imageId}' 
@@ -124,12 +116,31 @@ class CartBloc extends Bloc<CartEvent, CartState> {
               }
 
               // Update or add the new size
-              int sizeIndex = newBreakdown.indexWhere((b) => b['size_name'] == event.sizeName);
+              int sizeIndex = newBreakdown.indexWhere((b) => b['size_name'] == resolvedSize);
               if (sizeIndex >= 0) {
                 newBreakdown[sizeIndex]['qty'] = (newBreakdown[sizeIndex]['qty'] as int) + event.quantity;
               } else {
-                newBreakdown.add({'size_name': event.sizeName, 'qty': event.quantity});
+                newBreakdown.add({'size_name': resolvedSize, 'qty': event.quantity});
               }
+
+              // Optimistically update the item with the new breakdown
+              final updatedItems = summary.items.map((item) {
+                if (item.id == match!.id) {
+                  return item.copyWith(breakdown: newBreakdown);
+                }
+                return item;
+              }).toList();
+
+              emit(CartLoaded(
+                items: updatedItems,
+                subtotal: summary.subtotal,
+                taxAmount: summary.taxAmount,
+                shippingCost: summary.shippingCost,
+                couponDiscount: summary.discount,
+                total: summary.total,
+                zones: summary.zones,
+                selectedZone: summary.selectedZone,
+              ));
 
               if (match.id.isNotEmpty) {
                 add(CartItemBreakdownUpdated(
@@ -137,6 +148,18 @@ class CartBloc extends Bloc<CartEvent, CartState> {
                   breakdown: newBreakdown,
                 ));
               }
+            } else {
+              // Fallback if summary items is empty for some reason
+              emit(CartLoaded(
+                items: summary.items,
+                subtotal: summary.subtotal,
+                taxAmount: summary.taxAmount,
+                shippingCost: summary.shippingCost,
+                couponDiscount: summary.discount,
+                total: summary.total,
+                zones: summary.zones,
+                selectedZone: summary.selectedZone,
+              ));
             }
           },
         );
@@ -246,10 +269,14 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     if (currentState is CartLoaded) {
       final result = await applyCouponUseCase(event.code);
       result.fold(
-        (failure) => emit(CartError(failure.message)),
+        (failure) => emit(currentState.copyWith(
+          actionError: 'invalid_promo_code', // Or failure.message
+        )),
         (discount) => emit(currentState.copyWith(
           appliedCouponCode: event.code,
           couponDiscount: discount,
+          actionError: null,
+          actionSuccess: 'promo_code_applied',
         )),
       );
     }

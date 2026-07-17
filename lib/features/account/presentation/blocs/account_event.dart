@@ -58,3 +58,24 @@ class AccountSaveFcmRequested extends AccountEvent {
   @override
   List<Object?> get props => [token, deviceId, platform, deviceName];
 }
+
+class AccountSendContactRequested extends AccountEvent {
+  final String name;
+  final String email;
+  final String phone;
+  final String type;
+  final String subject;
+  final String message;
+
+  const AccountSendContactRequested({
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.type,
+    required this.subject,
+    required this.message,
+  });
+
+  @override
+  List<Object?> get props => [name, email, phone, type, subject, message];
+}

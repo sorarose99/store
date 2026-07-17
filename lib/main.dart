@@ -20,13 +20,14 @@ import 'features/cart/presentation/blocs/cart_event.dart';
 import 'features/wishlist/presentation/blocs/wishlist_bloc.dart';
 import 'features/wishlist/presentation/blocs/wishlist_event.dart';
 import 'features/account/presentation/blocs/account_bloc.dart';
+import 'features/account/presentation/blocs/address_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'core/services/push_notification_service.dart';
 import 'core/config/payment_config.dart';
 import 'package:tabby_flutter_inapp_sdk/tabby_flutter_inapp_sdk.dart';
+import 'features/auth/data/datasources/auth_remote_datasource.dart' as import_auth_remote;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +66,35 @@ void main() async {
       ),
     ),
   );
+
+  // Background token sync: if the user is signed into Firebase but missing a Sanctum token
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final tokenService = di.sl<TokenService>();
+    if (currentUser != null && tokenService.getSanctumToken() == null) {
+      try {
+        final token = await currentUser.getIdToken();
+        if (token != null && token.isNotEmpty) {
+          final authDataSource = di.sl<import_auth_remote.AuthRemoteDataSource>();
+          final name = currentUser.displayName ?? '';
+          final email = currentUser.email ?? '';
+          final provider = currentUser.providerData.isNotEmpty 
+              ? currentUser.providerData.first.providerId 
+              : 'google';
+              
+          final sanctumToken = await authDataSource.socialLogin(
+            provider: provider.contains('apple') ? 'apple' : 'google',
+            token: token,
+            name: name,
+            email: email,
+          );
+          await tokenService.saveSanctumToken(sanctumToken);
+        }
+      } catch (e) {
+        debugPrint('Auto-sync of Sanctum token failed: $e');
+      }
+    }
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -98,6 +128,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<AccountBloc>(
           create: (_) => di.sl<AccountBloc>(),
+        ),
+        BlocProvider<AddressBloc>(
+          create: (_) => di.sl<AddressBloc>(),
         ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(
@@ -148,10 +181,9 @@ class MyApp extends StatelessWidget {
                           );
                         }
                         
-                        final hasFirebase = snapshot.hasData && snapshot.data != null;
-                        final hasSanctum = di.sl<TokenService>().getSanctumToken() != null;
+                        final hasToken = di.sl<TokenService>().hasToken;
 
-                        if (hasFirebase || hasSanctum) {
+                        if (hasToken) {
                           return const MainShell();
                         }
 

@@ -7,11 +7,15 @@ import '../../../camera_search/presentation/pages/camera_search_page.dart';
 
 /// Shown when a search query returns zero results.
 /// Accepts the [failedQuery] so it can pre-fill the search bar on retry.
+/// When [embedded] is true, renders just the body content (no Scaffold/AppBar)
+/// so it can be placed inside a Sliver layout.
 class SearchEmptyPage extends StatelessWidget {
   /// The query that produced no results. Used to pre-fill the search bar.
   final String? failedQuery;
+  /// When true, skips the Scaffold — renders body content only.
+  final bool embedded;
 
-  const SearchEmptyPage({super.key, this.failedQuery});
+  const SearchEmptyPage({super.key, this.failedQuery, this.embedded = false});
 
   // L7/U7 fix: both the fake search bar AND the "Try Again" button
   // navigate to SearchActivePage with the failed query pre-filled.
@@ -25,17 +29,26 @@ class SearchEmptyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // When embedded inside a Sliver, skip Scaffold/AppBar and render body only
+    if (embedded) return _buildBody(context);
+
     return Directionality(
       textDirection: Directionality.of(context),
       child: Scaffold(
         backgroundColor: context.surfaceColor,
         appBar: _buildAppBar(context),
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.0.w),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+        body: _buildBody(context),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.0.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
                 // ── Illustration ──────────────────────────────────────────
                 Stack(
                   alignment: Alignment.center,
@@ -159,9 +172,7 @@ class SearchEmptyPage extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
+        );
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {

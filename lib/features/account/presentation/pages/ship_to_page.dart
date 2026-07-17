@@ -16,7 +16,7 @@ class ShippingCountry {
 }
 
 const _shippingCountries = [
-  ShippingCountry(name: 'المملكة العربية السعودية', code: 'SA', flag: '🇸🇦', currency: 'ريال سعودي (SAR)'),
+  ShippingCountry(name: 'المملكة العربية السعودية', code: 'SA', flag: '🇸🇦', currency: '﷼'),
   ShippingCountry(name: 'الإمارات العربية المتحدة', code: 'AE', flag: '🇦🇪', currency: 'درهم إماراتي (AED)'),
   ShippingCountry(name: 'الكويت', code: 'KW', flag: '🇰🇼', currency: 'دينار كويتي (KWD)'),
   ShippingCountry(name: 'البحرين', code: 'BH', flag: '🇧🇭', currency: 'دينار بحريني (BHD)'),
@@ -39,7 +39,7 @@ class _ShipToPageState extends State<ShipToPage> with SingleTickerProviderStateM
     {
       'title': 'عتبة الشحن المجاني',
       'icon': Icons.card_giftcard_rounded,
-      'content': 'نحن نقدم شحنًا عاديًا مجانيًا بالكامل لجميع الطلبات داخل المملكة العربية السعودية دون أي حد أدنى للشراء. بالنسبة للشحن السريع، فهو مجاني للطلبات التي تزيد قيمتها عن 300 ريال سعودي، وبتكلفة 25 ريال للطلبات الأقل من ذلك.',
+      'content': 'نحن نقدم شحنًا عاديًا مجانيًا بالكامل لجميع الطلبات داخل المملكة العربية السعودية دون أي حد أدنى للشراء. بالنسبة للشحن السريع، فهو مجاني للطلبات التي تزيد قيمتها عن 300 ﷼، وبتكلفة 25 ﷼ للطلبات الأقل من ذلك.',
     },
     {
       'title': 'تتبع الشحنات المباشر',
@@ -54,7 +54,7 @@ class _ShipToPageState extends State<ShipToPage> with SingleTickerProviderStateM
     {
       'title': 'سياسة عدم الاستلام والتوصيل المتكرر',
       'icon': Icons.assignment_return_outlined,
-      'content': 'ستقوم شركة الشحن بمحاولة الاتصال بك لتسليم الطلب حتى 3 مرات متتالية. في حال عدم الاستجابة أو تعذر التسليم، سيتم إرجاع الطلب إلى مستودعاتنا. قد يتم فرض رسوم إرجاع بقيمة 15 ريالاً تخصم من قيمة المستردات في حال كان الإلغاء ناتجًا عن عدم استلام العميل المتعمد.',
+      'content': 'ستقوم شركة الشحن بمحاولة الاتصال بك لتسليم الطلب حتى 3 مرات متتالية. في حال عدم الاستجابة أو تعذر التسليم، سيتم إرجاع الطلب إلى مستودعاتنا. قد يتم فرض رسوم إرجاع بقيمة 15 ﷼ تخصم من قيمة المستردات في حال كان الإلغاء ناتجًا عن عدم استلام العميل المتعمد.',
     },
   ];
 
@@ -470,7 +470,7 @@ class _ShipToPageState extends State<ShipToPage> with SingleTickerProviderStateM
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
-                              '25.00 ر.س',
+                              '25.00 ﷼',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -481,7 +481,7 @@ class _ShipToPageState extends State<ShipToPage> with SingleTickerProviderStateM
                           ),
                           const SizedBox(width: 8),
                           const Text(
-                            '(مجاني للطلبات فوق 300 ر.س)',
+                            '(مجاني للطلبات فوق 300 ﷼)',
                             style: TextStyle(
                               fontSize: 10.5,
                               color: AppColors.textGrey,
@@ -534,7 +534,7 @@ class _ShipToPageState extends State<ShipToPage> with SingleTickerProviderStateM
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           elevation: 0,
-          color: Colors.white,
+          // No color set here — let Material handle it so ExpansionTile ink works
           child: ExpansionTile(
             leading: Icon(policy['icon'] as IconData, color: AppColors.primary),
             title: Text(

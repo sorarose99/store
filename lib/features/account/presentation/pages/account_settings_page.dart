@@ -1,4 +1,6 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/colors.dart';
 import '../blocs/account_bloc.dart';
@@ -8,7 +10,8 @@ import 'delete_account_step1_page.dart';
 import '../../../onboarding/presentation/pages/onboarding_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/widgets/app_shimmer.dart';
-
+import 'notifications_page.dart';
+import 'licenses_page.dart';
 class AccountSettingsPage extends StatefulWidget {
   const AccountSettingsPage({super.key});
 
@@ -17,8 +20,6 @@ class AccountSettingsPage extends StatefulWidget {
 }
 
 class _AccountSettingsPageState extends State<AccountSettingsPage> {
-  bool _notifications = true;
-
   Future<void> _handleLogout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_done', false);
@@ -34,7 +35,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: ui.TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xFFF9F9F9),
         appBar: AppBar(
@@ -153,18 +154,31 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                           _buildNavigationTile(
                             icon: Icons.monetization_on_outlined,
                             title: 'العملة',
-                            trailingText: 'الريال السعودي',
+                            trailingText: '﷼',
                             onTap: () {},
                           ),
                           _buildDivider(),
-                          _buildToggleTile(
+                          _buildNavigationTile(
                             icon: Icons.notifications_none_outlined,
                             title: 'الإشعارات',
-                            value: _notifications,
-                            onChanged: (val) {
-                              setState(() {
-                                _notifications = val;
-                              });
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const NotificationsPage(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildDivider(),
+                          _buildNavigationTile(
+                            icon: Icons.verified_outlined,
+                            title: 'licenses'.tr(),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const LicensesPage(),
+                                ),
+                              );
                             },
                           ),
                         ],

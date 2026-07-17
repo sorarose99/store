@@ -181,7 +181,7 @@ class _ProductCardState extends State<ProductCard>
                         ),
                         SizedBox(width: 8.w),
                         Text(
-                          '${product.originalPrice!.toInt()} ر.س',
+                          '${product.originalPrice!.toInt()} ﷼',
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: context.textGrey,
@@ -192,7 +192,7 @@ class _ProductCardState extends State<ProductCard>
                         SizedBox(width: 8.w),
                       ],
                       Text(
-                        '${product.price.toInt()} ر.س',
+                        '${product.price.toInt()} ﷼',
                         style: TextStyle(
                           fontSize: 16.sp,
                           color: context.textDark,
@@ -218,7 +218,7 @@ class _ProductCardState extends State<ProductCard>
                       style: TextStyle(
                         fontSize: 10.sp,
                         fontWeight: FontWeight.bold,
-                        color: context.textDark,
+                        color: context.onPrimary,
                         fontFamily: 'Tajawal',
                       ),
                     ),

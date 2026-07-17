@@ -22,8 +22,8 @@ android {
         applicationId = "com.example.store"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = flutter.minSdkVersion          // Android 5.0 — covers 99%+ of active Android devices
+        targetSdk = 35       // Android 15 — required for Play Store & latest devices
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

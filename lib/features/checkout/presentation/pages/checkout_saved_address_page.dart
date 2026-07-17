@@ -300,7 +300,7 @@ class _CheckoutSavedAddressViewState extends State<_CheckoutSavedAddressView> {
                                                 children: [
                                                   Expanded(
                                                     child: Text(
-                                                      address.recipientName,
+                                                      address.fullName,
                                                       style: TextStyle(
                                                         fontWeight:
                                                             FontWeight.bold,

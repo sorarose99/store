@@ -25,7 +25,7 @@ class SocialAuthService {
       final googleSignIn = google_sign_in.GoogleSignIn(
         serverClientId:
             '564761085746-1uhocilojvgj01n5de2tvjbifq9tgqv9.apps.googleusercontent.com',
-        scopes: ['email, profile'],
+        scopes: ['email', 'profile'],
       );
 
       // Sign out first to ensure account selection popup shows up if multiple accounts exist
@@ -56,7 +56,7 @@ class SocialAuthService {
       
       return Right(SocialAuthResult(
         userCredential: userCredential,
-        providerToken: idToken ?? accessToken ?? '',
+        providerToken: accessToken ?? idToken ?? '',
       ));
     } catch (e) {
       developer.log('Google Sign-In FAILED: $e', name: 'SocialAuth');

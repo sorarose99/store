@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/checkout_usecases.dart';
 import 'checkout_event.dart';
@@ -55,46 +56,77 @@ class CheckoutBloc extends Bloc<CheckoutEvent, CheckoutState> {
     emit(CheckoutLoading());
     final result = await submitCheckoutUseCase(event.checkoutData);
     result.fold(
-      (failure) => emit(CheckoutError(failure.message)),
+      (failure) {
+        developer.log('[CheckoutBloc] Submit FAILED: ${failure.message}');
+        emit(CheckoutError(failure.message));
+      },
       (response) {
-        if (response['type'] == 'redirect' && response['payment_url'] != null) {
-          final paymentUrl = response['payment_url'].toString();
-          final uri = Uri.tryParse(paymentUrl);
+        // ── Log the full raw response so we can see exactly what the
+        //    backend returns and map the fields correctly ──────────────
+        developer.log('[CheckoutBloc] Submit response keys: ${response.keys.toList()}');
+        developer.log('[CheckoutBloc] Submit response: $response');
 
-          // Try query param first, then top-level response field, then
-          // last URL path segment (used by tamara/tabby backend routes).
-          final orderNumber = uri?.queryParameters['order_number'] ??
-              response['order_number']?.toString() ??
-              (uri != null && uri.pathSegments.isNotEmpty
-                  ? uri.pathSegments.last
-                  : '');
+        final gateway =
+            event.checkoutData['payment_gateway']?.toString() ?? 'paytabs';
 
-          final gateway =
-              event.checkoutData['payment_gateway']?.toString() ?? 'paytabs';
+        // ── Resolve the URL to load in the WebView ────────────────────
+        // The backend may return the redirect URL under several keys:
+        //   • payment_url   (our expected field)
+        //   • redirect_url  (PayTabs common pattern)
+        //   • url           (generic)
+        //   • data.url      (nested)
+        final rawUrl = response['payment_url']?.toString() ??
+            response['redirect_url']?.toString() ??
+            response['url']?.toString() ??
+            (response['data'] is Map
+                ? (response['data']['url']?.toString() ??
+                    response['data']['payment_url']?.toString() ??
+                    response['data']['redirect_url']?.toString())
+                : null);
 
-          // All gateways use the native SDK path during testing —
-          // tamara calls createTamaraSession() directly in the UI layer,
-          // tabby uses TabbySDK, and paytabs uses flutter_paytabs_bridge.
-          if (gateway == 'tamara' ||
-              gateway == 'tabby' ||
-              gateway == 'paytabs' ||
-              gateway == 'visa' ||
-              gateway == 'mada' ||
-              gateway == 'applepay') {
-            emit(CheckoutNativePaymentInit(
-              paymentUrl: paymentUrl,
-              orderNumber: orderNumber,
-              gateway: gateway,
-            ));
-          } else {
-            emit(CheckoutRedirectToPayment(
-              paymentUrl: paymentUrl,
-              orderNumber: orderNumber,
-              gateway: gateway,
-            ));
-          }
+        developer.log('[CheckoutBloc] Resolved payment URL: $rawUrl');
+        developer.log('[CheckoutBloc] Response type field: ${response['type']}');
+
+        // ── Resolve order number ──────────────────────────────────────
+        final orderNumber = response['order_number']?.toString() ??
+            response['data']?['order_number']?.toString() ??
+            (rawUrl != null
+                ? Uri.tryParse(rawUrl)
+                    ?.queryParameters['order_number']
+                : null) ??
+            '#KDX-UNKNOWN';
+
+        developer.log('[CheckoutBloc] Order number: $orderNumber');
+
+        // ── Decide flow ───────────────────────────────────────────────
+        final hasRedirectUrl = rawUrl != null && rawUrl.isNotEmpty;
+        // Consider it a redirect flow when:
+        //   (a) type == 'redirect'  OR
+        //   (b) a URL is present (backend may not always set type field)
+        final isRedirect =
+            response['type'] == 'redirect' || hasRedirectUrl;
+
+        // Gateways that are handled natively in the app (no browser WebView
+        // needed for the actual gateway page) use a native:// signal URL.
+        const nativeGateways = {'paytabs', 'mada', 'tabby', 'tamara', 'applepay'};
+        final isNativeGateway = nativeGateways.contains(gateway) &&
+            rawUrl != null &&
+            rawUrl.startsWith('native://');
+
+        if (isNativeGateway) {
+          emit(CheckoutNativePaymentInit(
+            paymentUrl: rawUrl,
+            orderNumber: orderNumber,
+            gateway: gateway,
+          ));
+        } else if (isRedirect && hasRedirectUrl) {
+          emit(CheckoutRedirectToPayment(
+            paymentUrl: rawUrl,
+            orderNumber: orderNumber,
+            gateway: gateway,
+          ));
         } else {
-          final orderNumber = response['order_number'] ?? '#KDX-UNKNOWN';
+          developer.log('[CheckoutBloc] No redirect URL found — treating as direct submit');
           emit(CheckoutSubmitted(orderNumber));
         }
       },

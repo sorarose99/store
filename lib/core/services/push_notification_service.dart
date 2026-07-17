@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../network/api_client.dart';
+import '../network/api_endpoints.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -120,15 +121,18 @@ class PushNotificationService {
 
   Future<void> _handleFCMTokenLocally(String token) async {
     try {
-      // FRONTEND ONLY: We just print the FCM token.
-      // We removed the backend API call because the backend doesn't support it yet.
+      await _apiClient.post(ApiEndpoints.saveFcmToken, data: {
+        'token': token,
+        'device_id': 'flutter_app_device',
+        'platform': 'ios',
+        'device_name': 'KDX App',
+      });
       if (kDebugMode) {
-        print(
-            "FCM Token successfully generated but not uploaded (Firebase Native Mode).");
+        print('FCM Token uploaded to backend successfully.');
       }
     } catch (e) {
       if (kDebugMode) {
-        print("Failed to process FCM token: $e");
+        print('Failed to upload FCM token to backend: $e');
       }
     }
   }

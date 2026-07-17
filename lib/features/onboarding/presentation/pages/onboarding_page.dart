@@ -1,10 +1,15 @@
+import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/network/api_client.dart';
 import '../../../auth/presentation/pages/login_page.dart';
-import '../../data/onboarding_data.dart';
+import '../../data/onboarding_remote_datasource.dart';
+
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -17,23 +22,64 @@ class _OnboardingPageState extends State<OnboardingPage>
     with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  late AnimationController _logoAnimController;
+
+  /// The resolved slides — starts empty while loading from API.
+  List<OnboardingSlideData> _slides = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _logoAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
+    _loadSlides();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _logoAnimController.dispose();
     super.dispose();
   }
+
+  // ── Data Loading ──────────────────────────────────────────────────────────
+
+  Future<void> _loadSlides() async {
+    List<OnboardingSlideData> slides;
+    try {
+      final apiClient = GetIt.instance<ApiClient>();
+      slides = await fetchOnboardingSlides(apiClient);
+    } catch (_) {
+      // If DI hasn't registered ApiClient yet, use static slides
+      slides = const [
+        OnboardingSlideData(
+          assetPath: 'assets/images/onboarding_1.png',
+          title: '',
+          description: '',
+        ),
+        OnboardingSlideData(
+          assetPath: 'assets/images/onboarding_2.png',
+          title: '',
+          description: '',
+        ),
+        OnboardingSlideData(
+          assetPath: 'assets/images/onboarding_3.png',
+          title: '',
+          description: '',
+        ),
+        OnboardingSlideData(
+          assetPath: 'assets/images/onboarding_4.png',
+          title: '',
+          description: '',
+        ),
+      ];
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _slides = slides;
+      _isLoading = false;
+    });
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────
 
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
@@ -46,7 +92,7 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 
   void _nextPage() {
-    if (_currentPage < onboardingSlides.length - 1) {
+    if (_currentPage < _slides.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
@@ -56,15 +102,23 @@ class _OnboardingPageState extends State<OnboardingPage>
     }
   }
 
+  // ── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final isLast = _currentPage == onboardingSlides.length - 1;
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final isLast = _slides.isNotEmpty && _currentPage == _slides.length - 1;
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            // ── Page View ─────────────────────────────────────────────────
+            // ── Page View ────────────────────────────────────────────────────
             Expanded(
               child: Column(
                 children: [
@@ -74,23 +128,25 @@ class _OnboardingPageState extends State<OnboardingPage>
                   Expanded(
                     child: PageView.builder(
                       controller: _pageController,
-                      itemCount: onboardingSlides.length,
-                      onPageChanged: (i) => setState(() => _currentPage = i),
+                      itemCount: _slides.length,
+                      onPageChanged: (i) {
+                        setState(() => _currentPage = i);
+                      },
                       itemBuilder: (context, index) {
                         return _SlideCard(
-                          slide: onboardingSlides[index],
+                          slide: _slides[index],
                           index: index,
                         );
                       },
                     ),
                   ),
 
-                  // ── Dots Indicator ────────────────────────────────────
+                  // ── Dots Indicator ─────────────────────────────────────────
                   SizedBox(height: 20.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
-                      onboardingSlides.length,
+                      _slides.length,
                       (i) => AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: EdgeInsets.symmetric(horizontal: 4.w),
@@ -107,7 +163,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                   ),
                   SizedBox(height: 24.h),
 
-                  // ── Bottom Buttons ────────────────────────────────────
+                  // ── Bottom Buttons ─────────────────────────────────────────
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 24.w),
                     child: Row(
@@ -119,7 +175,8 @@ class _OnboardingPageState extends State<OnboardingPage>
                               onPressed: _completeOnboarding,
                               style: TextButton.styleFrom(
                                 foregroundColor: context.textGrey,
-                                padding: EdgeInsets.symmetric(vertical: 14.h),
+                                padding:
+                                    EdgeInsets.symmetric(vertical: 14.h),
                               ),
                               child: Text(
                                 tr('skip'),
@@ -156,9 +213,10 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 }
 
-// ── Individual Slide Card ──────────────────────────────────────────────────
+// ── Individual Slide Card ─────────────────────────────────────────────────────
+
 class _SlideCard extends StatelessWidget {
-  final OnboardingSlide slide;
+  final OnboardingSlideData slide;
   final int index;
 
   const _SlideCard({
@@ -173,13 +231,13 @@ class _SlideCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Image Card ──────────────────────────────────────────────────
+          // ── Image Card ───────────────────────────────────────────────────
           Expanded(
             child: Container(
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: context.primaryColor,
+                color: context.surfaceColor,
                 boxShadow: [
                   BoxShadow(
                     color: context.textDark.withValues(alpha: 0.10),
@@ -188,23 +246,34 @@ class _SlideCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Fashion photo
-                  Image.asset(
-                    slide.imagePath,
-                    fit: BoxFit.cover,
-                  ),
-                ],
-              ),
+              child: slide.isNetwork
+                  ? CachedNetworkImage(
+                      imageUrl: slide.imageUrl!,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.centerLeft,
+                      placeholder: (_, __) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      errorWidget: (_, __, ___) => Image.asset(
+                        'assets/images/onboarding_1.png',
+                        fit: BoxFit.cover,
+                        alignment: Alignment.centerLeft,
+                      ),
+                    )
+                  : Image.asset(
+                      slide.assetPath!,
+                      fit: BoxFit.cover,
+                      alignment: Alignment.centerLeft,
+                    ),
             ),
           ),
           SizedBox(height: 16.h),
 
           // ── Title ────────────────────────────────────────────────────────
           Text(
-            tr('onboarding_title_${index + 1}'),
+            slide.title.isNotEmpty
+                ? slide.title
+                : tr('onboarding_title_${index + 1}'),
             style: TextStyle(
               fontSize: 16.sp,
               fontWeight: FontWeight.w800,
@@ -219,7 +288,9 @@ class _SlideCard extends StatelessWidget {
 
           // ── Description ──────────────────────────────────────────────────
           Text(
-            tr('onboarding_desc_${index + 1}'),
+            slide.description.isNotEmpty
+                ? slide.description
+                : tr('onboarding_desc_${index + 1}'),
             style: TextStyle(
               fontSize: 13.sp,
               color: context.textGrey,

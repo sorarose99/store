@@ -26,6 +26,7 @@ class AppColors {
   static const Color textDark26 = Color(0x421A1A2E);
   static const Color textDark54 = Color(0x8A1A1A2E);
   static const Color textDark87 = Color(0xDE1A1A2E);
+  static const Color textLight = Color.fromARGB(222, 198, 198, 216);
 
   /// Mid-tone body text
   static const Color textMid = Color(0xFF4A4A68);
@@ -80,8 +81,15 @@ extension AppThemeColors on BuildContext {
   Color get primaryColor => Theme.of(this).colorScheme.primary;
   Color get primaryDark => Theme.of(this).colorScheme.primaryContainer;
   Color get primaryLight => Theme.of(this).colorScheme.primaryFixedDim;
+  Color get onPrimary => Theme.of(this).colorScheme.onPrimary;
   Color get accentColor => Theme.of(this).colorScheme.secondary;
   Color get textDark => Theme.of(this).colorScheme.onSurface;
+  
+  Color get textLight => Theme.of(this).brightness == Brightness.dark
+      ? Colors.white
+      : Colors.black;
+      
+  
   Color get textDark12 =>
       Theme.of(this).colorScheme.onSurface.withValues(alpha: 0.12);
   Color get textDark26 =>

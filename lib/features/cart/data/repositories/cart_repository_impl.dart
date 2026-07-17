@@ -32,6 +32,47 @@ class CartRepositoryImpl implements CartRepository {
           }).toList();
         }
         
+        // ── Parse zones (shipping options from backend) ──────────────────
+        // Backend may return zones at top-level or inside cart object.
+        // Each zone map contains: id, name, price/cost, description, etc.
+        final rawZones = (data['zones'] ??
+                cartData['zones'] ??
+                data['shipping_zones'] ??
+                data['shipping_methods']) as List?;
+
+        final List<Map<String, dynamic>> zones = rawZones
+                ?.map((e) => Map<String, dynamic>.from(e as Map))
+                .toList() ??
+            [];
+
+        // ── Parse selected zone id ────────────────────────────────────────
+        // Backend may use 'selectedZone', 'selected_zone', 'selected_zone_id',
+        // or the zone id may live inside cart data.
+        int? selectedZone;
+        final rawSelected = data['selectedZone'] ??
+            data['selected_zone'] ??
+            data['selected_zone_id'] ??
+            cartData['selectedZone'] ??
+            cartData['selected_zone'] ??
+            cartData['selected_zone_id'];
+        if (rawSelected != null) {
+          selectedZone = rawSelected is int
+              ? rawSelected
+              : int.tryParse(rawSelected.toString());
+        }
+        // If still null, pick the first zone with is_selected/selected flag
+        if (selectedZone == null && zones.isNotEmpty) {
+          for (final z in zones) {
+            final sel = z['is_selected'] ?? z['selected'] ?? z['active'];
+            if (sel == true || sel == 1) {
+              selectedZone = z['id'] is int
+                  ? z['id'] as int
+                  : int.tryParse(z['id'].toString());
+              break;
+            }
+          }
+        }
+
         return Right(CartSummaryEntity(
           items: items,
           subtotal: (cartData['subtotal'] as num?)?.toDouble() ?? 0.0,
@@ -39,8 +80,8 @@ class CartRepositoryImpl implements CartRepository {
           shippingCost: (cartData['shipping_cost'] as num?)?.toDouble() ?? 0.0,
           discount: (cartData['discount'] as num?)?.toDouble() ?? 0.0,
           total: (cartData['total'] as num?)?.toDouble() ?? 0.0,
-          zones: (data['zones'] as List?)?.map((e) => e as Map<String, dynamic>).toList() ?? [],
-          selectedZone: data['selectedZone'] as int?,
+          zones: zones,
+          selectedZone: selectedZone,
         ));
       }
 

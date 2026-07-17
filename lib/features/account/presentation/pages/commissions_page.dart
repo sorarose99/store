@@ -123,7 +123,7 @@ class CommissionsPage extends StatelessWidget {
                     child: _QuickActionCard(
                       icon: Icons.account_balance_wallet_outlined,
                       label: 'رصيد المكسبات',
-                      value: '${_mockStats.totalEarnings} ر.س',
+                      value: '${_mockStats.totalEarnings} ﷼',
                       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EarningsPage())),
                     ),
                   ),

@@ -5,14 +5,16 @@ import '../blocs/cart_bloc.dart';
 import '../blocs/cart_event.dart';
 import '../blocs/cart_state.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/widgets/bnpl_payment_banners.dart';
 import '../../domain/entities/cart_item_entity.dart';
 import '../widgets/cart_item_card.dart';
 import '../widgets/tamara_bottom_sheet.dart';
 import '../widgets/tabby_bottom_sheet.dart';
-import '../widgets/coupon_confirmation_sheet.dart';
 import 'bnpl_promo_page.dart';
 import '../../../checkout/presentation/pages/checkout_saved_address_page.dart';
+import '../../../checkout/presentation/pages/checkout_region_page.dart';
 import '../../../delivery_options/presentation/widgets/delivery_options_widget.dart';
+import '../../../shell/presentation/pages/main_shell.dart' as kdx_shell;
 
 class CartFilledPage extends StatefulWidget {
   const CartFilledPage({super.key});
@@ -176,6 +178,11 @@ class _CartFilledPageState extends State<CartFilledPage> {
           ...item.breakdown.first,
           'qty': newQty,
         }];
+      } else if (item.breakdown.isEmpty) {
+        newBreakdown = [{
+          'size_name': 'مقاس واحد',
+          'qty': newQty,
+        }];
       }
       context.read<CartBloc>().add(CartItemUpdated(
             productId: item.id,
@@ -209,6 +216,11 @@ class _CartFilledPageState extends State<CartFilledPage> {
           ...item.breakdown.first,
           'qty': newQty,
         }];
+      } else if (item.breakdown.isEmpty) {
+        newBreakdown = [{
+          'size_name': 'مقاس واحد',
+          'qty': newQty,
+        }];
       }
       context.read<CartBloc>().add(CartItemUpdated(
             productId: item.id,
@@ -239,22 +251,8 @@ class _CartFilledPageState extends State<CartFilledPage> {
     final code = _couponController.text.trim();
     if (code.isEmpty) return;
 
-    final calculatedDiscount = _subtotal * 0.10;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => CouponConfirmationSheet(
-        couponCode: code,
-        discountAmount: calculatedDiscount,
-        onAccept: () {
-          context.read<CartBloc>().add(CartCouponApplied(code: code));
-        },
-        onCancel: () {
-          _couponController.clear();
-        },
-      ),
-    );
+    FocusScope.of(context).unfocus();
+    context.read<CartBloc>().add(CartCouponApplied(code: code));
   }
 
   void _removeCoupon() {
@@ -274,7 +272,34 @@ class _CartFilledPageState extends State<CartFilledPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CartBloc, CartState>(
+    return BlocConsumer<CartBloc, CartState>(
+      listener: (context, state) {
+        if (state is CartLoaded) {
+          if (state.actionError != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.actionError!.tr(),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
+                ),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          } else if (state.actionSuccess != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.actionSuccess!.tr(),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
+                ),
+                backgroundColor: const Color(0xFF1BE39A),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      },
       builder: (context, state) {
         if (state is CartLoading) {
           return Scaffold(
@@ -535,7 +560,7 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                               ),
                                             ),
                                             Text(
-                                              'لقد وفرت ${_couponDiscount.toStringAsFixed(1)} ر.س',
+                                              'لقد وفرت ${_couponDiscount.toStringAsFixed(1)} ﷼',
                                               style: TextStyle(
                                                 fontSize: 11,
                                                 color: context.primaryColor,
@@ -677,7 +702,7 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                           child: const Text(
-                                            'مع تغليف هدية فاخر (+15.0 ر.س)',
+                                            'مع تغليف هدية فاخر (+15.0 ﷼)',
                                             style: TextStyle(fontSize: 10, color: AppColors.accent, fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
                                           ),
                                         ),
@@ -690,19 +715,19 @@ class _CartFilledPageState extends State<CartFilledPage> {
                           */
 // Price breakdowns
                           _buildSummaryRow('subtotal'.tr(),
-                              '${_subtotal.toStringAsFixed(1)} ر.س'),
+                              '${_subtotal.toStringAsFixed(1)} ﷼'),
                           if (_couponDiscount > 0) ...[
                             const SizedBox(height: 10),
                             _buildSummaryRow(
                               'coupon_discount_applied'
                                   .tr(args: [_appliedCouponCode ?? '']),
-                              '−${_couponDiscount.toStringAsFixed(1)} ر.س',
+                              '−${_couponDiscount.toStringAsFixed(1)} ﷼',
                               isDiscount: true,
                             ),
                           ],
                           if (_giftWrapFee > 0) ...[
                             const SizedBox(height: 10),
-                            _buildSummaryRow('gift_wrap'.tr(), '+15.0 ر.س'),
+                            _buildSummaryRow('gift_wrap'.tr(), '+15.0 ﷼'),
                           ],
                           const SizedBox(height: 10),
                           
@@ -728,7 +753,7 @@ class _CartFilledPageState extends State<CartFilledPage> {
                                 ),
                               ),
                               Text(
-                                '${_total.toStringAsFixed(1)} ر.س',
+                                '${_total.toStringAsFixed(1)} ﷼',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
@@ -777,134 +802,16 @@ class _CartFilledPageState extends State<CartFilledPage> {
     }
 
   Widget _buildTamaraBanner() {
-    return GestureDetector(
+    return TamaraBanner(
+      totalAmount: _total,
       onTap: () => _showBnplOptions('tamara'),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? context.accentColor.withValues(alpha: 0.1)
-              : const Color(0xFFFFF7F2),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFFFFA670).withValues(alpha: 0.3)
-                  : const Color(0xFFFFE0CC),
-              width: 0.8),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFFA670),
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      'T',
-                      style: TextStyle(
-                        color: context.surfaceColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${'split_in_3'.tr()} ${(_total / 3).toStringAsFixed(2)} ${'sar'.tr()}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.textDark,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Tajawal',
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_back_ios,
-                size: 12,
-                color: context.textGrey,
-                textDirection: TextDirection.ltr),
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildTabbyBanner() {
-    return GestureDetector(
+    return TabbyBanner(
+      totalAmount: _total,
       onTap: () => _showBnplOptions('tabby'),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF1BE39A).withValues(alpha: 0.1)
-              : const Color(0xFFE8FAF4),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? const Color(0xFF1BE39A).withValues(alpha: 0.3)
-                  : context.primaryLight,
-              width: 0.8),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF1BE39A), // Tabby green
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      't',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${'split_in_4'.tr()} ${(_total / 4).toStringAsFixed(2)} ${'sar'.tr()}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.textDark,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Tajawal',
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_back_ios,
-                size: 12,
-                color: context.textGrey,
-                textDirection: TextDirection.ltr),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1047,7 +954,7 @@ class _CartFilledPageState extends State<CartFilledPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'المجموع الفرعي: ${_subtotal.toStringAsFixed(1)} ر.س',
+                    'المجموع الفرعي: ${_subtotal.toStringAsFixed(1)} ﷼',
                     style: TextStyle(
                       fontSize: 11,
                       color: context.textGrey,
@@ -1056,7 +963,7 @@ class _CartFilledPageState extends State<CartFilledPage> {
                   ),
                   if (_shippingFee > 0)
                     Text(
-                      'شحن: ${_shippingFee.toStringAsFixed(1)} ر.س',
+                      'شحن: ${_shippingFee.toStringAsFixed(1)} ﷼',
                       style: TextStyle(
                         fontSize: 11,
                         color: context.textGrey,
@@ -1095,7 +1002,7 @@ class _CartFilledPageState extends State<CartFilledPage> {
                       ),
                     ),
                     Text(
-                      '${_total.toStringAsFixed(1)} ر.س',
+                      '${_total.toStringAsFixed(1)} ﷼',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
@@ -1129,7 +1036,7 @@ class _CartFilledPageState extends State<CartFilledPage> {
 
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                  builder: (_) => const CheckoutSavedAddressPage()),
+                                  builder: (_) => const CheckoutRegionPage()),
                             );
                           },
                     style: ElevatedButton.styleFrom(
@@ -1204,7 +1111,12 @@ class _CartFilledPageState extends State<CartFilledPage> {
               child: ElevatedButton.icon(
                 onPressed: () {
                   // Pop all the way back to the root (shell/home)
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (_) => const kdx_shell.MainShell(),
+                    ),
+                    (route) => false,
+                  );
                 },
                 icon: const Icon(Icons.explore_outlined, size: 20),
                 label: Text(

@@ -47,7 +47,7 @@ class HomeController extends Controller
             ->limit(8)
             ->get();
 
-        $banner = Banner::where('position', 'home')
+        $banners = Banner::where('position', 'home')
             ->where('status', 'active')
             ->where(function ($q) {
                 $q->whereNull('start_date')
@@ -58,14 +58,15 @@ class HomeController extends Controller
                     ->orWhereDate('end_date', '>=', now());
             })
             ->latest()
-            ->first();
+            ->get();
 
         return response()->json([
             'success' => true,
             'categories' => $categories,
             'new_products' => $new_products,
             'featured_products' => $featured_products,
-            'banner' => $banner,
+            'banners' => $banners,
+            'banner' => $banners->first(),
         ]);
 
     }

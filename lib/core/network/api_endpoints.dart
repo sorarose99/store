@@ -105,6 +105,10 @@ class ApiEndpoints {
   static const String otpSend = '/sms/otp/send';
   static const String otpVerify = '/sms/otp/verify';
 
+  // ── Contact / Support ─────────────────────────────────────────────
+  static const String contactUs = '/contact-us';
+
   // ── Firebase ──────────────────────────────────────────────────────
   static const String saveFcmToken = '/api-save-fcm-token';
+
 }

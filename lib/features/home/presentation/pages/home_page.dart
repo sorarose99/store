@@ -341,6 +341,7 @@ class _HomePageState extends State<HomePage>
                     Positioned(
                       bottom: 20.h,
                       right: 16.w,
+                      left: 8.w,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -348,7 +349,7 @@ class _HomePageState extends State<HomePage>
                             'summer_collection'.tr(),
                             style: TextStyle(
                               color: context.backgroundColor,
-                              fontSize: 24.sp,
+                              fontSize: 18.sp,
                               fontWeight: FontWeight.bold,
                               height: 1.1.h,
                               fontFamily: 'Tajawal',
@@ -375,34 +376,34 @@ class _HomePageState extends State<HomePage>
           Expanded(
             flex: 3,
             child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.only(left: 16.w),
-              itemCount: products.length,
-              separatorBuilder: (_, __) => SizedBox(width: 12.w),
-              itemBuilder: (context, index) {
-                final product = products[index];
-                final heroTag = 'home_slider_product_image_${product.id}';
-                return SizedBox(
-                  width: 140.w,
-                  child: ProductCard(
-                    product: product,
-                    isWishlisted: false, // Wire with block later if needed
-                    heroTag: heroTag,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        CupertinoPageRoute(
-                          builder: (_) =>
-                              ProductDetailsPage(
-                                slug: product.slug,
-                                heroTag: heroTag,
-                              ),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
+               scrollDirection: Axis.horizontal,
+               padding: EdgeInsets.only(left: 16.w),
+               itemCount: products.length,
+               separatorBuilder: (_, __) => SizedBox(width: 12.w),
+               itemBuilder: (context, index) {
+                 final product = products[index];
+                 final heroTag = 'home_slider_product_image_${product.id}';
+                 return SizedBox(
+                   width: 180.w,
+                   child: ProductCard(
+                     product: product,
+                     isWishlisted: false, // Wire with block later if needed
+                     heroTag: heroTag,
+                     onTap: () {
+                       Navigator.of(context).push(
+                         CupertinoPageRoute(
+                           builder: (_) =>
+                               ProductDetailsPage(
+                                 slug: product.slug,
+                                 heroTag: heroTag,
+                               ),
+                         ),
+                       );
+                     },
+                   ),
+                 );
+               },
+             ),
           ),
         ],
       ),

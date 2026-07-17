@@ -29,6 +29,8 @@ class CartLoaded extends CartState {
   final double total;
   final List<Map<String, dynamic>> zones;
   final int? selectedZone;
+  final String? actionError;
+  final String? actionSuccess;
 
   const CartLoaded({
     required this.items,
@@ -40,6 +42,8 @@ class CartLoaded extends CartState {
     this.total = 0.0,
     this.zones = const [],
     this.selectedZone,
+    this.actionError,
+    this.actionSuccess,
   });
 
   CartLoaded copyWith({
@@ -52,6 +56,8 @@ class CartLoaded extends CartState {
     double? total,
     List<Map<String, dynamic>>? zones,
     int? selectedZone,
+    String? actionError,
+    String? actionSuccess,
   }) {
     return CartLoaded(
       items: items ?? this.items,
@@ -63,6 +69,8 @@ class CartLoaded extends CartState {
       total: total ?? this.total,
       zones: zones ?? this.zones,
       selectedZone: selectedZone ?? this.selectedZone,
+      actionError: actionError,
+      actionSuccess: actionSuccess,
     );
   }
 
@@ -77,6 +85,8 @@ class CartLoaded extends CartState {
         total,
         zones,
         selectedZone,
+        actionError,
+        actionSuccess,
       ];
 }
 

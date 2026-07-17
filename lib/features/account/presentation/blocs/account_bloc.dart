@@ -6,6 +6,7 @@ import '../../domain/usecases/change_password_usecase.dart';
 import '../../domain/usecases/delete_account_usecase.dart';
 import '../../domain/usecases/get_dashboard_usecase.dart';
 import '../../domain/usecases/save_fcm_token_usecase.dart';
+import '../../domain/usecases/send_contact_message_usecase.dart';
 import 'account_event.dart';
 import 'account_state.dart';
 
@@ -16,6 +17,7 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   final ChangePasswordUseCase changePasswordUseCase;
   final DeleteAccountUseCase deleteAccountUseCase;
   final SaveFcmTokenUseCase saveFcmTokenUseCase;
+  final SendContactMessageUseCase sendContactMessageUseCase;
 
   AccountBloc({
     required this.getProfileUseCase,
@@ -24,12 +26,14 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     required this.changePasswordUseCase,
     required this.deleteAccountUseCase,
     required this.saveFcmTokenUseCase,
+    required this.sendContactMessageUseCase,
   }) : super(AccountInitial()) {
     on<AccountProfileRequested>(_onAccountProfileRequested);
     on<AccountUpdateProfileRequested>(_onAccountUpdateProfileRequested);
     on<AccountChangePasswordRequested>(_onAccountChangePasswordRequested);
     on<AccountDeleteRequested>(_onAccountDeleteRequested);
     on<AccountSaveFcmRequested>(_onAccountSaveFcmRequested);
+    on<AccountSendContactRequested>(_onAccountSendContactRequested);
   }
 
   Future<void> _onAccountProfileRequested(
@@ -68,8 +72,6 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
       (user) {
         emit(AccountActionSuccess(message: 'the_profile_has_been'.tr()));
 
-        // Since we don't have the old stats here easily (unless we cast state),
-        // we should probably just re-fetch the dashboard or emit the old stats if available.
         if (state is AccountLoaded) {
           final currentState = state as AccountLoaded;
           emit(AccountLoaded(
@@ -78,7 +80,6 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
             recentOrders: currentState.recentOrders,
           ));
         } else {
-          // Fallback, trigger full reload
           add(const AccountProfileRequested());
         }
       },
@@ -118,15 +119,25 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
   ) async {
     final result = await saveFcmTokenUseCase(
         token: event.token, deviceId: 'default_device_id');
+    result.fold((failure) {}, (_) {});
+  }
+
+  Future<void> _onAccountSendContactRequested(
+    AccountSendContactRequested event,
+    Emitter<AccountState> emit,
+  ) async {
+    emit(AccountActionLoading());
+    final result = await sendContactMessageUseCase({
+      'name': event.name,
+      'email': event.email,
+      'phone': event.phone,
+      'type': event.type,
+      'subject': event.subject,
+      'message': event.message,
+    });
     result.fold(
-      (failure) {
-        // We might not want to emit a full error state for failing to save FCM token,
-        // but maybe we can log it or just ignore it.
-        // For now, let's just emit a failure if needed, or do nothing.
-      },
-      (_) {
-        // Successfully saved FCM token
-      },
+      (failure) => emit(AccountActionError(message: failure.message)),
+      (_) => emit(const AccountActionSuccess(message: 'تم إرسال رسالتك بنجاح')),
     );
   }
 }

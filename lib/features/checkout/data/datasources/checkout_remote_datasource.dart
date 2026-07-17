@@ -61,7 +61,7 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
   Future<Map<String, dynamic>> editAddress(
       int id, Map<String, dynamic> addressData) async {
     final response = await apiClient
-        .post(ApiEndpoints.addressUpdate(id.toString()), data: addressData);
+        .put(ApiEndpoints.addressUpdate(id.toString()), data: addressData);
     return response.data as Map<String, dynamic>? ?? {};
   }
 }

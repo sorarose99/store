@@ -541,7 +541,7 @@ class _OrderDetailContentView extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      '${item.price.toStringAsFixed(1)} ر.س',
+                                      '${item.price.toStringAsFixed(1)} ﷼',
                                       style: TextStyle(
                                           fontWeight: FontWeight.w800,
                                           fontSize: 13.sp,
@@ -605,10 +605,10 @@ class _OrderDetailContentView extends StatelessWidget {
                       child: Column(
                         children: [
                           _priceRow(context, 'subtotal'.tr(),
-                              '${order.subtotal.toStringAsFixed(2)} ر.س'),
+                              '${order.subtotal.toStringAsFixed(2)} ﷼'),
                           SizedBox(height: 10.h),
                           _priceRow(context, 'opponent'.tr(),
-                              '−${order.discount.toStringAsFixed(2)} ر.س',
+                              '−${order.discount.toStringAsFixed(2)} ﷼',
                               isDiscount: true),
                           SizedBox(height: 10.h),
                           _priceRow(
@@ -616,11 +616,11 @@ class _OrderDetailContentView extends StatelessWidget {
                               'shipping_fees'.tr(),
                               order.shippingFee == 0
                                   ? 'free'.tr()
-                                  : '${order.shippingFee.toStringAsFixed(2)} ر.س',
+                                  : '${order.shippingFee.toStringAsFixed(2)} ﷼',
                               isHighlight: order.shippingFee == 0),
                           Divider(height: 24.h, color: context.border),
                           _priceRow(context, 'grand_total'.tr(),
-                              '${order.total.toStringAsFixed(2)} ر.س',
+                              '${order.total.toStringAsFixed(2)} ﷼',
                               isBold: true),
                         ],
                       ),

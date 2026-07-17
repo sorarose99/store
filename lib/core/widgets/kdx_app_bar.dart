@@ -55,20 +55,10 @@ class KdxAppBar extends StatelessWidget implements PreferredSizeWidget {
             constraints: const BoxConstraints(),
           )
         else
-          // Placeholder for logo
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-            decoration: BoxDecoration(
-              color: context.textDark,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              'KDX',
-              style: TextStyle(
-                  color: context.backgroundColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.sp),
-            ),
+          Image.asset(
+            'assets/images/logo.png',
+            height: 32.h,
+            fit: BoxFit.contain,
           ),
         SizedBox(width: 12.w),
         // Search Bar

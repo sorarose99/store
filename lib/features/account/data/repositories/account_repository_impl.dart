@@ -163,4 +163,15 @@ class AccountRepositoryImpl implements AccountRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> sendContactMessage(
+      Map<String, dynamic> data) async {
+    try {
+      await remoteDataSource.sendContactMessage(data);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

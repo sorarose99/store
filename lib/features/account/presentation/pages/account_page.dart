@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../../../core/theme/theme_cubit.dart';
 import '../../../../core/theme/language_cubit.dart';
 import '../../../../core/constants/colors.dart';
@@ -13,6 +14,9 @@ import '../../../orders/presentation/pages/orders_list_page.dart';
 import '../../../wishlist/presentation/pages/wishlist_filled_page.dart';
 import '../pages/delivery_addresses_page.dart';
 import 'account_settings_page.dart';
+
+// Widgets
+import '../widgets/quick_links_section.dart';
 
 // Bloc
 import '../blocs/account_bloc.dart';
@@ -33,6 +37,8 @@ class AccountPage extends StatefulWidget {
 }
 
 class _AccountPageState extends State<AccountPage> {
+  bool _notificationsEnabled = false;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +46,48 @@ class _AccountPageState extends State<AccountPage> {
     final state = context.read<AccountBloc>().state;
     if (state is AccountInitial || state is AccountError) {
       context.read<AccountBloc>().add(const AccountProfileRequested());
+    }
+    _loadNotificationStatus();
+  }
+
+  Future<void> _loadNotificationStatus() async {
+    final settings = await FirebaseMessaging.instance.getNotificationSettings();
+    if (mounted) {
+      setState(() {
+        _notificationsEnabled =
+            settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+      });
+    }
+  }
+
+  Future<void> _toggleNotifications(bool val) async {
+    if (val) {
+      final settings =
+          await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (mounted) {
+        setState(() {
+          _notificationsEnabled =
+              settings.authorizationStatus == AuthorizationStatus.authorized ||
+              settings.authorizationStatus == AuthorizationStatus.provisional;
+        });
+      }
+    } else {
+      // Can't programmatically revoke — send user to app settings
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(tr('disable_notifications_in_settings')),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
     }
   }
 
@@ -388,22 +436,12 @@ class _AccountPageState extends State<AccountPage> {
             title: tr('notifications'),
             icon: Icons.notifications_none_outlined,
             trailing: CupertinoSwitch(
-              value: true,
+              value: _notificationsEnabled,
               activeTrackColor: context.primaryColor,
-              onChanged: (val) {
-                // Notifications logic
-              },
+              onChanged: _toggleNotifications,
             ),
             onTap: () {},
             hideChevron: true,
-          ),
-          _buildDivider(),
-          _buildSettingsItem(
-            title: tr('delete_account'),
-            icon: Icons.delete_outline,
-            onTap: () {
-              // Delete account logic / dialog
-            },
           ),
           _buildDivider(),
           _buildSettingsItem(
@@ -413,7 +451,6 @@ class _AccountPageState extends State<AccountPage> {
             iconColor: Colors.red,
             hideChevron: true,
             onTap: () {
-              // Proceed to account settings page which handles logout
               final accountBloc = context.read<AccountBloc>();
               Navigator.push(
                 context,
@@ -427,6 +464,10 @@ class _AccountPageState extends State<AccountPage> {
             },
           ),
         ]),
+        const SizedBox(height: 24),
+
+        // ── Quick Links ────────────────────────────────────────────
+        const QuickLinksSection(),
       ],
     );
   }

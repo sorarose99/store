@@ -233,7 +233,7 @@ class CartItemCard extends StatelessWidget {
                         SizedBox(height: 12.h),
                         // Price (Red text in mockup)
                         Text(
-                          '${item.price.toInt()} SAR',
+                          '${item.price.toInt()} ﷼',
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w900,

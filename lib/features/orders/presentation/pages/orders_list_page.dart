@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/order_entity.dart';
+import '../../domain/repositories/order_repository.dart';
 import '../blocs/orders_bloc.dart';
 import '../blocs/orders_event.dart';
 import '../blocs/orders_state.dart';
@@ -249,126 +250,7 @@ class _OrdersListContentView extends StatelessWidget {
                         itemCount: group.orders.length,
                         itemBuilder: (context, orderIndex) {
                           final order = group.orders[orderIndex];
-                          final mainItem =
-                              order.items.isNotEmpty ? order.items.first : null;
-
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => OrderDetailPage(
-                                      orderNumber: order.orderNumber),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              margin: EdgeInsets.symmetric(
-                                  horizontal: 16.w, vertical: 6.h),
-                              padding: EdgeInsets.all(14.w),
-                              decoration: BoxDecoration(
-                                color: context.backgroundColor,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: context.border, width: 0.8.w),
-                                boxShadow: AppColors.cardShadow,
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Product Image Thumbnail on the Right (RTL context)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(
-                                      mainItem?.imageUrl ?? '',
-                                      width: 72.w,
-                                      height: 72.h,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
-                                        width: 72.w,
-                                        height: 72.h,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surface,
-                                        child: Icon(Icons.shopping_bag_outlined,
-                                            color: context.textGrey),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 14.w),
-
-                                  // Order Info details on the left
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                'طلب رقم: ${order.orderNumber}',
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w800,
-                                                  fontSize: 13.sp,
-                                                  color: context.textDark,
-                                                  fontFamily: 'Tajawal',
-                                                ),
-                                              ),
-                                            ),
-                                            IconButton(
-                                              icon: Icon(Icons.more_horiz,
-                                                  color: context.textGrey,
-                                                  size: 20),
-                                              padding: EdgeInsets.zero,
-                                              constraints:
-                                                  const BoxConstraints(),
-                                              onPressed: () => _showOrderMenu(
-                                                  context, order),
-                                            ),
-                                          ],
-                                        ),
-                                        SizedBox(height: 4.h),
-                                        Text(
-                                          mainItem?.name ??
-                                              'order_without_products'.tr(),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: context.textMid,
-                                            fontFamily: 'Tajawal',
-                                          ),
-                                        ),
-                                        SizedBox(height: 6.h),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              '${'total'.tr()}: ${order.total.toStringAsFixed(1)} ر.س',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 12.sp,
-                                                color: context.textDark,
-                                                fontFamily: 'Tajawal',
-                                              ),
-                                            ),
-                                            // Status Badge chips
-                                            Row(
-                                              children: _buildStatusBadges(
-                                                  context, order.status),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
+                          return _OrderListCard(order: order, onShowMenu: () => _showOrderMenu(context, order));
                         },
                       ),
                     ],
@@ -385,7 +267,9 @@ class _OrdersListContentView extends StatelessWidget {
 
   // Generate dual-status badges matching the design requirement
   List<Widget> _buildStatusBadges(BuildContext context, String status) {
-    if (status == 'shipped'.tr()) {
+    final lowerStatus = status.toLowerCase();
+    
+    if (lowerStatus == 'shipped' || lowerStatus == 'shipped'.tr().toLowerCase()) {
       return [
         _buildChip(
             text: 'shipped'.tr(),
@@ -397,7 +281,7 @@ class _OrdersListContentView extends StatelessWidget {
             bgColor: context.primaryColor.withValues(alpha: 0.1),
             textColor: context.primaryColor),
       ];
-    } else if (status == 'delivered'.tr()) {
+    } else if (lowerStatus == 'delivered' || lowerStatus == 'delivered'.tr().toLowerCase() || lowerStatus == 'complete' || lowerStatus == 'completed') {
       return [
         _buildChip(
             text: 'complete'.tr(),
@@ -409,17 +293,24 @@ class _OrdersListContentView extends StatelessWidget {
             bgColor: context.successColor.withValues(alpha: 0.1),
             textColor: context.successColor),
       ];
-    } else if (status == 'canceled'.tr()) {
+    } else if (lowerStatus == 'canceled' || lowerStatus == 'cancelled' || lowerStatus == 'canceled'.tr().toLowerCase()) {
       return [
         _buildChip(
             text: 'canceled'.tr(),
             bgColor: context.errorColor.withValues(alpha: 0.1),
             textColor: context.errorColor),
       ];
+    } else if (lowerStatus == 'pending' || lowerStatus == 'processing') {
+      return [
+        _buildChip(
+            text: 'pending'.tr(),
+            bgColor: Colors.orange.withValues(alpha: 0.1),
+            textColor: Colors.orange),
+      ];
     }
     return [
       _buildChip(
-          text: status,
+          text: status.tr(),
           bgColor: context.textGreyLight,
           textColor: context.textGrey),
     ];
@@ -442,6 +333,151 @@ class _OrdersListContentView extends StatelessWidget {
           fontWeight: FontWeight.bold,
           color: textColor,
           fontFamily: 'Tajawal',
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderListCard extends StatefulWidget {
+  final OrderEntity order;
+  final VoidCallback onShowMenu;
+
+  const _OrderListCard({required this.order, required this.onShowMenu});
+
+  @override
+  State<_OrderListCard> createState() => _OrderListCardState();
+}
+
+class _OrderListCardState extends State<_OrderListCard> {
+  OrderEntity? _fullOrder;
+
+  @override
+  void initState() {
+    super.initState();
+    _fullOrder = widget.order;
+    _fetchDetailsIfNeeded();
+  }
+
+  void _fetchDetailsIfNeeded() async {
+    if (_fullOrder!.items.isEmpty) {
+      final repository = sl<OrderRepository>();
+      final result = await repository.getOrderDetail(_fullOrder!.orderNumber);
+      if (mounted) {
+        result.fold((l) => null, (fullOrder) {
+          setState(() {
+            _fullOrder = fullOrder;
+          });
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final order = _fullOrder!;
+    final mainItem = order.items.isNotEmpty ? order.items.first : null;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => OrderDetailPage(orderNumber: order.orderNumber),
+          ),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: context.backgroundColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.border, width: 0.8.w),
+          boxShadow: AppColors.cardShadow,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Image Thumbnail on the Right (RTL context)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                mainItem?.imageUrl ?? '',
+                width: 72.w,
+                height: 72.h,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 72.w,
+                  height: 72.h,
+                  color: Theme.of(context).colorScheme.surface,
+                  child: Icon(Icons.shopping_bag_outlined, color: context.textGrey),
+                ),
+              ),
+            ),
+            SizedBox(width: 14.w),
+
+            // Order Info details on the left
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'طلب رقم: ${order.orderNumber}',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13.sp,
+                            color: context.textDark,
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.more_horiz, color: context.textGrey, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: widget.onShowMenu,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    mainItem?.name ?? 'order_without_products'.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: context.textMid,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${'total'.tr()}: ${order.total.toStringAsFixed(1)} ﷼',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12.sp,
+                          color: context.textDark,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                      // Status Badge chips
+                      Row(
+                        children: const _OrdersListContentView()._buildStatusBadges(context, order.status),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

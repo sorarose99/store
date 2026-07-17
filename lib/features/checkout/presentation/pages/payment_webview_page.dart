@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -6,10 +7,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/colors.dart';
-import '../../../../core/di/injection_container.dart';
 import '../../../cart/presentation/blocs/cart_bloc.dart';
 import '../../../cart/presentation/blocs/cart_event.dart';
-import '../../data/services/payment_redirect_service.dart';
 import 'checkout_success_page.dart';
 
 
@@ -49,14 +48,26 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
+            developer.log('[PaymentWebView] Loading: $url');
             setState(() => _loading = true);
           },
           onPageFinished: (String url) {
+            developer.log('[PaymentWebView] Finished: $url');
             setState(() => _loading = false);
+
+            // ── If the WebView lands on a JSON-returning API endpoint,
+            //    the page content will be raw JSON. We detect this by
+            //    evaluating the document body and looking for JSON.
+            _checkIfPageIsJson(url);
+          },
+          onWebResourceError: (WebResourceError error) {
+            developer.log(
+                '[PaymentWebView] Error ${error.errorCode}: ${error.description} at ${error.url}');
           },
           onNavigationRequest: (NavigationRequest request) {
             final url = request.url.toLowerCase();
-            
+            developer.log('[PaymentWebView] Navigation request: ${request.url}');
+
             if (_isSuccessUrl(url)) {
               _onPaymentSuccess();
               return NavigationDecision.prevent;
@@ -67,30 +78,76 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
               _onPaymentFailed('payment_failed'.tr());
               return NavigationDecision.prevent;
             }
-            
+
             return NavigationDecision.navigate;
           },
         ),
       );
 
     try {
-      final redirectService = sl<PaymentRedirectService>();
-      final checkoutUrl = await redirectService.resolveCheckoutUrl(widget.paymentUrl);
-
-      final Map<String, String> headers = {};
-      
       final prefs = await SharedPreferences.getInstance();
       final lang = prefs.getString('app_language') ?? 'ar';
-      headers['Accept-Language'] = lang;
+
+      // Payment URLs should NEVER get the Authorization header.
+      // Even our own backend payment endpoints (/payments/paytabs/pay etc.)
+      // return JSON when they see an Authorization header — they expect
+      // a browser redirect flow, not an authenticated API call.
+      // Always load with plain browser headers only.
+      final Map<String, String> headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': lang,
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+      };
 
       await _controller.loadRequest(
-        Uri.parse(checkoutUrl),
+        Uri.parse(widget.paymentUrl),
         headers: headers,
       );
     } catch (e) {
+      developer.log('[PaymentWebView] Init error: $e');
       if (mounted) {
         _onPaymentFailed('${'payment_failed'.tr()}: ${e.toString()}');
       }
+    }
+  }
+
+  /// Evaluates the page body to detect if raw JSON is being shown.
+  /// If so, tries to parse the redirect URL from it.
+  Future<void> _checkIfPageIsJson(String url) async {
+    if (!url.contains('kdx-sa.com')) return;
+    try {
+      final bodyText = await _controller
+          .runJavaScriptReturningResult('document.body.innerText');
+      final raw = bodyText.toString().replaceAll(r'\"', '"');
+      developer.log('[PaymentWebView] Page body (first 500): ${raw.substring(0, raw.length.clamp(0, 500))}');
+
+      // Look for redirect_url / payment_url in the JSON body
+      final patterns = [
+        RegExp(r'"redirect_url"\s*:\s*"([^"]+)"'),
+        RegExp(r'"payment_url"\s*:\s*"([^"]+)"'),
+        RegExp(r'"url"\s*:\s*"(https?://[^"]+)"'),
+      ];
+
+      for (final pattern in patterns) {
+        final match = pattern.firstMatch(raw);
+        if (match != null) {
+          var redirectUrl = match.group(1)!
+              .replaceAll(r'\/', '/')
+              .replaceAll('\\u0026', '&');
+          developer.log('[PaymentWebView] Found redirect URL in JSON: $redirectUrl');
+          if (mounted) {
+            await _controller.loadRequest(
+              Uri.parse(redirectUrl),
+              headers: {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              },
+            );
+          }
+          return;
+        }
+      }
+    } catch (e) {
+      developer.log('[PaymentWebView] JSON check error: $e');
     }
   }
 
@@ -183,17 +240,15 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
             ),
           ),
         ),
-        body: widget.gateway == 'paytabs'
-            ? const Center(child: CircularProgressIndicator())
-            : Stack(
-                children: [
-                  WebViewWidget(controller: _controller),
-                  if (_loading)
-                    const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                ],
+        body: Stack(
+          children: [
+            WebViewWidget(controller: _controller),
+            if (_loading)
+              const Center(
+                child: CircularProgressIndicator(),
               ),
+          ],
+        ),
       ),
     );
   }

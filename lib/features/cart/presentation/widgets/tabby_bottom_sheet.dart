@@ -78,7 +78,7 @@ class TabbyBottomSheet extends StatelessWidget {
 
             // Title Header
             Text(
-              'قسم فاتورتك على 4 دفعات\nبقيمة $installmentAmount SAR بدون فوائد',
+              'قسم فاتورتك على 4 دفعات\nبقيمة $installmentAmount ﷼ بدون فوائد',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16.sp,

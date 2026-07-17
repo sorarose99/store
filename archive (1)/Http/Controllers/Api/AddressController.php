@@ -33,11 +33,11 @@ class AddressController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'full_name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20',
             'email' => 'nullable|email|max:255',
             'country' => 'required|in:SA,BH,KW,QA,OM,AE',
             'city' => 'required|string|max:255',
-            'postal_code' => 'nullable|string|max:20',
+            'postal_code' => 'required|string|max:20',
             'address' => 'required|string',
             'is_default' => 'nullable|boolean',
         ]);
@@ -101,11 +101,11 @@ class AddressController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'full_name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => 'required|string|max:20',
             'email' => 'nullable|email|max:255',
             'country' => 'required|string|max:255',
             'city' => 'required|string|max:255',
-            'postal_code' => 'nullable|string|max:20',
+            'postal_code' => 'required|string|max:20',
             'address' => 'required|string',
             'is_default' => 'nullable|boolean',
         ]);

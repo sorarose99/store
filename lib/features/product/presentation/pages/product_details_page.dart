@@ -16,6 +16,8 @@ import '../widgets/add_to_cart_dialog.dart';
 import '../pages/product_reviews_page.dart';
 import 'product_specs_page.dart';
 import '../../../cart/presentation/widgets/tamara_bottom_sheet.dart';
+import '../../../cart/presentation/widgets/tabby_bottom_sheet.dart';
+import '../../../../core/widgets/bnpl_payment_banners.dart';
 import '../../../cart/presentation/blocs/cart_bloc.dart';
 import '../../../delivery_options/presentation/widgets/delivery_options_widget.dart';
 import '../../../cart/presentation/blocs/cart_event.dart';
@@ -71,6 +73,17 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
       backgroundColor: Colors.transparent,
       builder: (context) => TamaraBottomSheet(
           installmentAmount: (_productDetails!.baseProduct.price / 3)),
+    );
+  }
+
+  void _showTabbySheet() {
+    if (_productDetails == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TabbyBottomSheet(
+          installmentAmount: (_productDetails!.baseProduct.price / 4)),
     );
   }
 
@@ -179,10 +192,20 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              if (_productDetails!.imageGallery.length > 1)
+                                _buildGalleryThumbnails(context),
                               SizedBox(height: 16.h),
                               _buildHeaderInfo(context),
                               SizedBox(height: 16.h),
-                              _buildTamaraBanner(context),
+                              TamaraBanner(
+                                totalAmount: _productDetails!.baseProduct.price,
+                                onTap: _showTamaraSheet,
+                              ),
+                              SizedBox(height: 8.h),
+                              TabbyBanner(
+                                totalAmount: _productDetails!.baseProduct.price,
+                                onTap: _showTabbySheet,
+                              ),
                               SizedBox(height: 24.h),
                               SizedBox(height: 24.h),
                               _buildImageVariantPicker(context),
@@ -194,12 +217,27 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                               SizedBox(height: 24.h),
                               const DeliveryOptionsWidget(),
                               SizedBox(height: 24.h),
-                              Divider(color: context.border, thickness: 1),
-                              SizedBox(height: 20.h),
-                              _buildDescription(context),
-                              SizedBox(height: 20.h),
-                              Divider(color: context.border, thickness: 1),
-                              SizedBox(height: 20.h),
+                              // Only show the description section + its dividers
+                              // when there is something to display
+                              Builder(builder: (context) {
+                                final desc = _buildDescription(context);
+                                final hasContent =
+                                    _productDetails!.description.trim().isNotEmpty ||
+                                    _productDetails!.sku != null ||
+                                    _productDetails!.tags.isNotEmpty;
+                                if (!hasContent) return const SizedBox.shrink();
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Divider(color: context.border, thickness: 1),
+                                    SizedBox(height: 20.h),
+                                    desc,
+                                    SizedBox(height: 20.h),
+                                    Divider(color: context.border, thickness: 1),
+                                    SizedBox(height: 20.h),
+                                  ],
+                                );
+                              }),
                               _buildReviewsSection(context),
                               SizedBox(height: 20.h),
                               _buildSimilarProducts(context),
@@ -216,6 +254,22 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  void _openImageViewer(BuildContext context, int initialIndex) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (_, __, ___) => _ImageViewerPage(
+          images: _productDetails!.imageGallery,
+          initialIndex: initialIndex,
+        ),
+        transitionsBuilder: (_, anim, __, child) =>
+            FadeTransition(opacity: anim, child: child),
+        transitionDuration: const Duration(milliseconds: 220),
       ),
     );
   }
@@ -302,60 +356,40 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                 });
               },
               itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Hero(
-                    tag: widget.heroTag ?? 'product_image_${_productDetails!.baseProduct.id}',
-                    child:
-                        _productDetails!.imageGallery[index].startsWith('http')
-                            ? Image.network(
-                                _productDetails!.imageGallery[index],
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (_, __, ___) =>
-                                    _buildFallbackProduct(context),
-                              )
-                            : Image.asset(
-                                _productDetails!.imageGallery[index],
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (_, __, ___) =>
-                                    _buildFallbackProduct(context),
-                              ),
-                  );
-                }
-                return _productDetails!.imageGallery[index].startsWith('http')
+                final imageUrl = _productDetails!.imageGallery[index];
+                final imageWidget = imageUrl.startsWith('http')
                     ? Image.network(
-                        _productDetails!.imageGallery[index],
+                        imageUrl,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         errorBuilder: (_, __, ___) =>
                             _buildFallbackProduct(context),
                       )
                     : Image.asset(
-                        _productDetails!.imageGallery[index],
+                        imageUrl,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         errorBuilder: (_, __, ___) =>
                             _buildFallbackProduct(context),
                       );
+
+                if (index == 0) {
+                  return Hero(
+                    tag: widget.heroTag ??
+                        'product_image_${_productDetails!.baseProduct.id}',
+                    child: imageWidget,
+                  );
+                }
+                return imageWidget;
               },
             ),
-            // Gradient Overlay
+            // ── Tap-to-fullscreen overlay ────────────────────────────────
+            // Captures taps to open the viewer.
             Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      context.textDark.withValues(alpha: 0.26),
-                      Colors.transparent,
-                      Colors.transparent,
-                      context.textDark.withValues(alpha: 0.45),
-                    ],
-                    stops: const [0.0, 0.2, 0.8, 1.0],
-                  ),
-                ),
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => _openImageViewer(context, _currentImageIndex),
+                child: const SizedBox.expand(),
               ),
             ),
             // Discount Tag overlay
@@ -380,63 +414,68 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                   ),
                 ),
               ),
-            // Horizontal Thumbnail strip overlay at bottom of image
-            Positioned(
-              bottom: 16.h,
-              left: 16.w,
-              right: 16.w,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _productDetails!.imageGallery.length,
-                  (index) => GestureDetector(
-                    onTap: () {
-                      _pageController.animateToPage(
-                        index,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      );
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      margin: EdgeInsets.symmetric(horizontal: 4.w),
-                      width: 44.w,
-                      height: 44.h,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: _currentImageIndex == index
-                              ? context.primaryColor
-                              : context.backgroundColor.withValues(alpha: 0.6),
-                          width: 2.w,
-                        ),
-                        boxShadow: _currentImageIndex == index
-                            ? AppColors.tealGlowShadow
-                            : null,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: _productDetails!.imageGallery[index]
-                                .startsWith('http')
-                            ? Image.network(
-                                _productDetails!.imageGallery[index],
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    _buildFallbackProduct(context),
-                              )
-                            : Image.asset(
-                                _productDetails!.imageGallery[index],
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    _buildFallbackProduct(context),
-                              ),
-                      ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGalleryThumbnails(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: 16.h),
+      child: Center(
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              _productDetails!.imageGallery.length,
+              (index) => GestureDetector(
+                onTap: () {
+                  _pageController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  margin: EdgeInsets.symmetric(horizontal: 4.w),
+                  width: 52.w,
+                  height: 52.h,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _currentImageIndex == index
+                          ? context.primaryColor
+                          : context.backgroundColor.withValues(alpha: 0.6),
+                      width: 2.w,
                     ),
+                    boxShadow: _currentImageIndex == index
+                        ? AppColors.tealGlowShadow
+                        : null,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: _productDetails!.imageGallery[index]
+                            .startsWith('http')
+                        ? Image.network(
+                            _productDetails!.imageGallery[index],
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                _buildFallbackProduct(context),
+                          )
+                        : Image.asset(
+                            _productDetails!.imageGallery[index],
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                _buildFallbackProduct(context),
+                          ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -529,7 +568,7 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(
-              '${base.price.toInt()} ر.س',
+              '${base.price.toInt()} ﷼',
               style: TextStyle(
                 fontSize: 26.sp,
                 fontWeight: FontWeight.w900,
@@ -539,7 +578,7 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
             if (hasDiscount) ...[
               SizedBox(width: 10.w),
               Text(
-                '${base.originalPrice!.toInt()} ر.س',
+                '${base.originalPrice!.toInt()} ﷼',
                 style: TextStyle(
                   fontSize: 16.sp,
                   color: context.textGrey,
@@ -554,56 +593,6 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
     );
   }
 
-  Widget _buildTamaraBanner(BuildContext context) {
-    final installmentVal =
-        (_productDetails!.baseProduct.price / 3).toStringAsFixed(2);
-    return GestureDetector(
-      onTap: _showTamaraSheet,
-      child: Container(
-        margin: EdgeInsets.only(top: 12.h),
-        padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(
-          color: context.primaryColor, // Light peach Tamara tone
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.primaryColor),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: context.primaryColor,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                'tamara'.tr(),
-                style: TextStyle(
-                  color: context.backgroundColor,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11.sp,
-                ),
-              ),
-            ),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: Text(
-                'قسّم فاتورتك على 3 دفعات بقيمة $installmentVal ر.س بدون فوائد. لمعرفة المزيد',
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  color: context.textDark,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Icon(Icons.arrow_back_ios,
-                textDirection: ui.TextDirection.ltr,
-                size: 12,
-                color: context.textGrey),
-          ],
-        ),
-      ),
-    );
-  }
 
   // ── Task 2: Image-driven variant picker (replaces color swatches) ───────────
   Widget _buildImageVariantPicker(BuildContext context) {
@@ -793,9 +782,17 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
 
 
   Widget _buildDescription(BuildContext context) {
-    final description = _productDetails!.description;
-    final isLong = description.length > 180;
-    final displayedText = isLong ? '${description.substring(0, 180)}...' : description;
+    final description = _productDetails!.description.trim();
+    final hasSku  = _productDetails!.sku != null;
+    final hasTags = _productDetails!.tags.isNotEmpty;
+    final hasDesc = description.isNotEmpty;
+
+    // Nothing to show at all — return empty
+    if (!hasSku && !hasTags && !hasDesc) return const SizedBox.shrink();
+
+    final isLong = hasDesc && description.length > 180;
+    final displayedText =
+        isLong ? '${description.substring(0, 180)}...' : description;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -808,7 +805,7 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
               color: context.textDark),
         ),
         SizedBox(height: 12.h),
-        if (_productDetails!.sku != null) ...[
+        if (hasSku) ...[
           Text(
             'رقم الصنف (SKU): ${_productDetails!.sku}',
             style: TextStyle(
@@ -819,7 +816,7 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
           ),
           SizedBox(height: 8.h),
         ],
-        if (_productDetails!.tags.isNotEmpty) ...[
+        if (hasTags) ...[
           Wrap(
             spacing: 6.w,
             runSpacing: 6.w,
@@ -841,22 +838,24 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
           ),
           SizedBox(height: 12.h),
         ],
-        Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            Text(
-              displayedText,
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: context.textMid,
-                height: 1.8.h,
-                fontFamily: 'Tajawal',
+        // Only show description block when there is actual text
+        if (hasDesc)
+          Stack(
+            alignment: Alignment.bottomCenter,
+            children: [
+              Text(
+                displayedText,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: context.textMid,
+                  height: 1.8.h,
+                  fontFamily: 'Tajawal',
+                ),
               ),
-            ),
-            if (isLong)
-              Positioned(
-                bottom: 0,
-                left: 0,
+              if (isLong)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
                 right: 0,
                 child: Container(
                   height: 30.h,
@@ -1064,6 +1063,7 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                     if (!await AuthGuard.requireLogin(context)) return;
                     if (!mounted) return;
 
+
                     final sizes = _productDetails!.availableSizes.where((s) => s.trim().isNotEmpty).toList();
                     if (sizes.isNotEmpty && _selectedSizeIndex == null) {
                       setState(() => _triedToAdd = true);
@@ -1091,7 +1091,7 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                         _currentImageIndex < _productDetails!.imageIds.length
                             ? _productDetails!.imageIds[_currentImageIndex]
                             : null;
-                    String? sizeName = _selectedSizeIndex != null
+                    String? sizeName = _selectedSizeIndex != null && sizes.isNotEmpty
                         ? sizes[_selectedSizeIndex!]
                         : null;
                     
@@ -1139,3 +1139,170 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
   }
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full-screen image viewer — swipeable, pinch-to-zoom, tap-to-dismiss
+// ─────────────────────────────────────────────────────────────────────────────
+class _ImageViewerPage extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+
+  const _ImageViewerPage({
+    required this.images,
+    required this.initialIndex,
+  });
+
+  @override
+  State<_ImageViewerPage> createState() => _ImageViewerPageState();
+}
+
+class _ImageViewerPageState extends State<_ImageViewerPage> {
+  late final PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // ── Swipeable full-screen images ────────────────────────
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.images.length,
+            onPageChanged: (i) => setState(() => _currentIndex = i),
+            itemBuilder: (context, index) {
+              final url = widget.images[index];
+              return InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 4.0,
+                child: Center(
+                  child: url.startsWith('http')
+                      ? Image.network(
+                          url,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (_, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                  color: Colors.white54),
+                            );
+                          },
+                          errorBuilder: (_, __, ___) => const Icon(
+                              Icons.broken_image_outlined,
+                              color: Colors.white38,
+                              size: 64),
+                        )
+                      : Image.asset(
+                          url,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(
+                              Icons.broken_image_outlined,
+                              color: Colors.white38,
+                              size: 64),
+                        ),
+                ),
+              );
+            },
+          ),
+
+          // ── Close button ────────────────────────────────────────
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Back
+                  _CircleButton(
+                    icon: Icons.arrow_back_ios_new_rounded,
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
+                  // Counter   e.g. "2 / 5"
+                  if (widget.images.length > 1)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${_currentIndex + 1} / ${widget.images.length}',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  // Spacer to balance layout
+                  const SizedBox(width: 40),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Bottom dot indicators ───────────────────────────────
+          if (widget.images.length > 1)
+            Positioned(
+              bottom: 28,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(widget.images.length, (i) {
+                  final active = i == _currentIndex;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: active ? 18 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: active ? Colors.white : Colors.white38,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  );
+                }),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CircleButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CircleButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: const BoxDecoration(
+          color: Colors.black54,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 18),
+      ),
+    );
+  }
+}

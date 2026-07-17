@@ -14,6 +14,7 @@ abstract class AccountRemoteDataSource {
     String? platform,
     String? deviceName,
   });
+  Future<void> sendContactMessage(Map<String, dynamic> data);
 }
 
 class AccountRemoteDataSourceImpl implements AccountRemoteDataSource {
@@ -64,7 +65,13 @@ class AccountRemoteDataSourceImpl implements AccountRemoteDataSource {
       payload = formData;
     }
 
-    final response = await apiClient.post(ApiEndpoints.profile, data: payload);
+    Response response;
+    if (payload is FormData) {
+      payload.fields.add(const MapEntry('_method', 'PUT'));
+      response = await apiClient.post(ApiEndpoints.profile, data: payload);
+    } else {
+      response = await apiClient.put(ApiEndpoints.profile, data: payload);
+    }
     if (response.data is Map<String, dynamic>) {
       return response.data as Map<String, dynamic>;
     }
@@ -74,7 +81,7 @@ class AccountRemoteDataSourceImpl implements AccountRemoteDataSource {
   @override
   Future<void> changePassword(
       String currentPassword, String newPassword) async {
-    await apiClient.post(ApiEndpoints.changePassword, data: {
+    await apiClient.put(ApiEndpoints.changePassword, data: {
       'current_password': currentPassword,
       'password': newPassword,
       'password_confirmation': newPassword,
@@ -83,7 +90,7 @@ class AccountRemoteDataSourceImpl implements AccountRemoteDataSource {
 
   @override
   Future<void> deleteAccount(String password) async {
-    await apiClient.post(ApiEndpoints.deleteAccount, data: {
+    await apiClient.delete(ApiEndpoints.deleteAccount, data: {
       'password': password,
     });
   }
@@ -101,5 +108,10 @@ class AccountRemoteDataSourceImpl implements AccountRemoteDataSource {
       'platform': platform ?? 'android',
       'device_name': deviceName ?? 'device',
     });
+  }
+
+  @override
+  Future<void> sendContactMessage(Map<String, dynamic> data) async {
+    await apiClient.post(ApiEndpoints.contactUs, data: data);
   }
 }

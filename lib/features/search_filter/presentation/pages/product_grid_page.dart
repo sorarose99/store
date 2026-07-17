@@ -213,21 +213,12 @@ class _ProductGridContentViewState extends State<_ProductGridContentView> {
                     );
                   } else if (state is ShopLoaded) {
                     if (state.products.isEmpty) {
-                      // U7/empty: navigate to the proper empty-state page
-                      // with the search query so the user can retry.
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (!mounted) return;
-                        final searchQuery =
-                            _filters['search']?.toString();
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (_) => SearchEmptyPage(
-                              failedQuery: searchQuery,
-                            ),
-                          ),
-                        );
-                      });
-                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                      return SliverFillRemaining(
+                        child: SearchEmptyPage(
+                          failedQuery: _filters['search']?.toString(),
+                          embedded: true,
+                        ),
+                      );
                     }
                     return SliverPadding(
                       padding: EdgeInsets.all(12.w),
@@ -647,7 +638,7 @@ class _CompactProductCardState extends State<CompactProductCard> {
                           children: [
                             Flexible(
                               child: Text(
-                                '${product.price.toInt()} ر.س',
+                                '${product.price.toInt()} ﷼',
                                 style: TextStyle(
                                   fontSize: 10.5.sp,
                                   fontWeight: FontWeight.w900,

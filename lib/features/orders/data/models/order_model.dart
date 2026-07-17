@@ -95,11 +95,20 @@ class OrderModel extends OrderEntity {
       shipCost = _parseDouble(json['shipping_fee']);
     }
 
+    String dateRaw = json['date']?.toString() ?? json['created_at']?.toString() ?? '';
+    String formattedDate = dateRaw;
+    try {
+      if (dateRaw.isNotEmpty) {
+        final dt = DateTime.parse(dateRaw).toLocal();
+        formattedDate = "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+      }
+    } catch (_) {}
+
     return OrderModel(
       id: json['id']?.toString() ?? '',
       orderNumber: json['order_number']?.toString() ?? '',
-      date: json['date'] as String? ?? json['created_at'] as String? ?? '',
-      status: json['status'] as String? ?? '',
+      date: formattedDate,
+      status: json['status']?.toString() ?? 'pending',
       items: items,
       subtotal: _parseDouble(json['subtotal']),
       discount: _parseDouble(json['discount']),

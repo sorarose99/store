@@ -6,45 +6,45 @@
 /// Represents a saved delivery address
 class SavedAddressEntity {
   final String id;
-  final String recipientName;
+  final String title;
+  final String fullName;
   final String phone;
+  final String email;
+  final String country;
   final String city;
-  final String district;
-  final String street;
-  final String buildingNo;
-  final String floor;
   final String zipCode;
+  final String detailedAddress;
   final bool isDefault;
 
   SavedAddressEntity({
     required this.id,
-    required this.recipientName,
+    required this.title,
+    required this.fullName,
     required this.phone,
+    required this.email,
+    required this.country,
     required this.city,
-    required this.district,
-    required this.street,
-    required this.buildingNo,
-    required this.floor,
     required this.zipCode,
+    required this.detailedAddress,
     this.isDefault = false,
   });
 
   factory SavedAddressEntity.fromJson(Map<String, dynamic> json) {
     return SavedAddressEntity(
       id: json['id']?.toString() ?? '',
-      recipientName: json['recipientName']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      fullName: json['full_name']?.toString() ?? '',
       phone: json['phone']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      country: json['country']?.toString() ?? '',
       city: json['city']?.toString() ?? '',
-      district: json['district']?.toString() ?? '',
-      street: json['street']?.toString() ?? '',
-      buildingNo: json['buildingNo']?.toString() ?? '',
-      floor: json['floor']?.toString() ?? '',
-      zipCode: json['zipCode']?.toString() ?? '',
-      isDefault: json['isDefault'] == true,
+      zipCode: json['postal_code']?.toString() ?? '',
+      detailedAddress: json['address']?.toString() ?? '',
+      isDefault: json['is_default'] == true || json['is_default'] == 1,
     );
   }
 
-  String get fullAddress => '$street، $district، $city';
+  String get fullAddress => detailedAddress.isNotEmpty ? detailedAddress : city;
 }
 
 /// Represents a single product item in the cart during checkout

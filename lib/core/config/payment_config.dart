@@ -1,4 +1,5 @@
 import 'env.dart';
+
 /// Payment gateway public configuration (safe for mobile).
 /// Secret keys / server keys must NEVER be stored here.
 class PaymentConfig {

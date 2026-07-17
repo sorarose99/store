@@ -87,6 +87,27 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
       (failure) => emit(ShopError(message: failure.message)),
       (data) {
         final page = _parsePage(data);
+        
+        // --- Smart fallback logic for Camera Search ---
+        // Strategy: if the compound query (e.g. "فستان مورد") returned nothing,
+        // retry with ONLY the item type (first word) so the backend has the
+        // best chance of returning any matching products.
+        if (page.products.isEmpty && filters['is_camera'] == true) {
+          final query = filters['search']?.toString().trim();
+          if (query != null && query.isNotEmpty) {
+            final parts = query.split(' ');
+            if (parts.length > 1) {
+              // Retry with only the first keyword (the item type).
+              final itemOnlyQuery = parts.first;
+              filters['search'] = itemOnlyQuery;
+              // Clear is_camera flag so we don't loop infinitely on no results.
+              filters.remove('is_camera');
+              add(ShopProductsRequested(filters: filters));
+              return;
+            }
+          }
+        }
+
         final hasReachedMax =
             _calcHasReachedMax(page: page, requestedPage: 1);
 

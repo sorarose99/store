@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:kdx/core/network/token_service.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -9,9 +8,7 @@ class AuthGuard {
   AuthGuard._();
 
   static bool get isLoggedIn {
-    final hasFirebase = FirebaseAuth.instance.currentUser != null;
-    final hasSanctum = sl<TokenService>().getSanctumToken() != null;
-    return hasFirebase || hasSanctum;
+    return sl<TokenService>().hasToken;
   }
 
   /// Returns true when the user is logged in. Otherwise navigates to [LoginPage].

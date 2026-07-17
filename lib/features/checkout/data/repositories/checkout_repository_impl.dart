@@ -29,14 +29,14 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
     try {
       final model = SavedAddressModel(
         id: address.id,
-        recipientName: address.recipientName,
+        title: address.title,
+        fullName: address.fullName,
         phone: address.phone,
+        email: address.email,
+        country: address.country,
         city: address.city,
-        district: address.district,
-        street: address.street,
-        buildingNo: address.buildingNo,
-        floor: address.floor,
         zipCode: address.zipCode,
+        detailedAddress: address.detailedAddress,
         isDefault: address.isDefault,
       );
       await remoteDataSource.addAddress(model.toJson());
@@ -87,14 +87,14 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
     try {
       final model = SavedAddressModel(
         id: address.id,
-        recipientName: address.recipientName,
+        title: address.title,
+        fullName: address.fullName,
         phone: address.phone,
+        email: address.email,
+        country: address.country,
         city: address.city,
-        district: address.district,
-        street: address.street,
-        buildingNo: address.buildingNo,
-        floor: address.floor,
         zipCode: address.zipCode,
+        detailedAddress: address.detailedAddress,
         isDefault: address.isDefault,
       );
       final response = await remoteDataSource.editAddress(id, model.toJson());

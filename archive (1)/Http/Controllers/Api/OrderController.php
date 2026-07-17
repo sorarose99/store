@@ -247,20 +247,20 @@ class OrderController extends Controller
             // =========================
             // الدفع الحقيقي
             // =========================
-            $routes = [
-                'tamara' => 'payments.tamara.pay',
-                'tabby' => 'payments.tabby.pay',
-                'paytabs' => 'api-payments.paytabs.pay', // <-- Points to the new API controller!
+            // All gateways use native SDK / direct API flows in the mobile app.
+            // Return a native:// signal so the Flutter app handles payment
+            // without needing a browser/cookie session on the web routes.
+            $nativeSignals = [
+                'paytabs' => 'native://paytabs',
+                'tabby'   => 'native://tabby',
+                'tamara'  => 'native://tamara',
             ];
 
-            $route = $routes[$request->payment_gateway];
-
             return response()->json([
-                'success' => true,
-                'type' => 'redirect',
-                'payment_url' => route($route, [
-                    'order_number' => $order->order_number,
-                ]),
+                'success'      => true,
+                'type'         => 'redirect',
+                'payment_url'  => $nativeSignals[$request->payment_gateway],
+                'order_number' => $order->order_number,
             ]);
 
         } catch (\Exception $e) {

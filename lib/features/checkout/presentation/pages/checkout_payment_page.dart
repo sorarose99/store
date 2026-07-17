@@ -12,7 +12,7 @@ import 'checkout_review_page.dart';
 enum PaymentMethod {
   applePay,
   mada,
-  visa,
+  paytabs,
   maestro,
   mastercard,
   tamara,
@@ -21,10 +21,7 @@ enum PaymentMethod {
   static const List<PaymentMethod> checkoutOptions = [
     PaymentMethod.tabby,
     PaymentMethod.tamara,
-    PaymentMethod.mada,
-    PaymentMethod.applePay,
-    PaymentMethod.visa,
-    PaymentMethod.mastercard,
+    PaymentMethod.paytabs,
   ];
 
   static PaymentMethod? fromString(String gateway) {
@@ -37,7 +34,7 @@ enum PaymentMethod {
         return PaymentMethod.mada;
       case 'visa':
       case 'paytabs':
-        return PaymentMethod.visa;
+        return PaymentMethod.paytabs;
       case 'tamara':
         return PaymentMethod.tamara;
       case 'tabby':
@@ -59,8 +56,8 @@ extension PaymentMethodExt on PaymentMethod {
         return 'Apple Pay';
       case PaymentMethod.mada:
         return 'mada_card'.tr();
-      case PaymentMethod.visa:
-        return 'Visa';
+      case PaymentMethod.paytabs:
+        return 'KDX';
       case PaymentMethod.maestro:
         return 'Maestro';
       case PaymentMethod.mastercard:
@@ -78,8 +75,8 @@ extension PaymentMethodExt on PaymentMethod {
         return ' Pay';
       case PaymentMethod.mada:
         return 'mada';
-      case PaymentMethod.visa:
-        return 'VISA';
+      case PaymentMethod.paytabs:
+        return 'KDX';
       case PaymentMethod.maestro:
         return 'Maestro';
       case PaymentMethod.mastercard:
@@ -97,7 +94,7 @@ extension PaymentMethodExt on PaymentMethod {
         return context.textDark;
       case PaymentMethod.mada:
         return context.primaryColor;
-      case PaymentMethod.visa:
+      case PaymentMethod.paytabs:
         return context.primaryColor;
       case PaymentMethod.maestro:
         return context.primaryColor;
@@ -122,7 +119,7 @@ extension PaymentMethodExt on PaymentMethod {
   bool get isBNPL =>
       this == PaymentMethod.tamara || this == PaymentMethod.tabby;
   bool get needsCardForm =>
-      this == PaymentMethod.visa ||
+      this == PaymentMethod.paytabs ||
       this == PaymentMethod.maestro ||
       this == PaymentMethod.mastercard ||
       this == PaymentMethod.mada;
@@ -176,11 +173,6 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
     for (var gw in widget.activeGateways) {
       final m = PaymentMethod.fromString(gw);
       if (m != null) activeMethods.add(m);
-    }
-    
-    if (activeMethods.contains(PaymentMethod.visa)) {
-      activeMethods.add(PaymentMethod.mastercard);
-      activeMethods.add(PaymentMethod.mada);
     }
 
     return PaymentMethod.checkoutOptions.where((m) => activeMethods.contains(m)).toList();
@@ -443,22 +435,75 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
               ),
             ),
             // Branded badge
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-              decoration: BoxDecoration(
-                color: method.badgeBg(context),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                method.badgeText,
-                style: TextStyle(
-                  color: method.badgeFg(context),
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.4,
+            if (method == PaymentMethod.paytabs)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  height: 22.h,
+                ),
+              )
+            else if (method == PaymentMethod.tabby)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: method.badgeBg(context),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Image.network(
+                  'https://www.google.com/s2/favicons?domain=tabby.ai&sz=128',
+                  height: 22.h,
+                  errorBuilder: (c, o, s) => Text(
+                    method.badgeText,
+                    style: TextStyle(
+                      color: method.badgeFg(context),
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              )
+            else if (method == PaymentMethod.tamara)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: method.badgeBg(context),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Image.network(
+                  'https://www.google.com/s2/favicons?domain=tamara.co&sz=128',
+                  height: 22.h,
+                  errorBuilder: (c, o, s) => Text(
+                    method.badgeText,
+                    style: TextStyle(
+                      color: method.badgeFg(context),
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                decoration: BoxDecoration(
+                  color: method.badgeBg(context),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  method.badgeText,
+                  style: TextStyle(
+                    color: method.badgeFg(context),
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.4,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),

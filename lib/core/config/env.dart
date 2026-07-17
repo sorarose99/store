@@ -36,4 +36,7 @@ abstract class Env {
 
   @EnviedField(varName: 'PAYTABS_CLIENT_KEY', obfuscate: true)
   static final String paytabsClientKey = _Env.paytabsClientKey;
+
+  @EnviedField(varName: 'GEMINI_API_KEY', obfuscate: true, defaultValue: '')
+  static final String geminiApiKey = _Env.geminiApiKey;
 }

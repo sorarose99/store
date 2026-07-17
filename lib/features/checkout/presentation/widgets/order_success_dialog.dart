@@ -76,7 +76,7 @@ class OrderSuccessDialog extends StatelessWidget {
                   _summaryRow(
                       context, 'number_of_products'.tr(), '$itemCount منتج'),
                   SizedBox(height: 8.h),
-                  _summaryRow(context, 'total_1'.tr(), '$total ر.س',
+                  _summaryRow(context, 'total_1'.tr(), '$total ﷼',
                       isHighlight: true),
                 ],
               ),

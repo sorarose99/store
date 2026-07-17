@@ -590,7 +590,7 @@ class CompactWishlistCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          '${product.price.toInt()} ر.س',
+                          '${product.price.toInt()} ﷼',
                           style: TextStyle(
                             fontSize: 10.5.sp,
                             fontWeight: FontWeight.w900,
@@ -791,7 +791,7 @@ class _HorizontalWishlistItemCard extends StatelessWidget {
                         children: [
                           if (hasDiscount)
                             Text(
-                              '${product.originalPrice!.toInt()} ر.س',
+                              '${product.originalPrice!.toInt()} ﷼',
                               style: TextStyle(
                                 fontSize: 10.sp,
                                 color: context.textGrey,
@@ -800,7 +800,7 @@ class _HorizontalWishlistItemCard extends StatelessWidget {
                               ),
                             ),
                           Text(
-                            '${product.price.toInt()} ر.س',
+                            '${product.price.toInt()} ﷼',
                             style: TextStyle(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w900,

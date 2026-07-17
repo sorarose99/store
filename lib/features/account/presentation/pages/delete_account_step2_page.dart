@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/colors.dart';
-import 'delete_account_otp_page.dart';
+import 'delete_account_password_page.dart';
 
 class DeleteAccountStep2Page extends StatelessWidget {
   const DeleteAccountStep2Page({super.key});
@@ -122,7 +122,7 @@ class DeleteAccountStep2Page extends StatelessWidget {
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => const DeleteAccountOtpPage(),
+                          builder: (_) => const DeleteAccountPasswordPage(),
                         ),
                       );
                     },
@@ -134,9 +134,9 @@ class DeleteAccountStep2Page extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: const Text(
-                      'تقديم طلب لحذف الحساب',
+                      'متابعة',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),

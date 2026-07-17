@@ -80,7 +80,7 @@ class MockAccountDataSource {
     CouponEntity(
       code: 'FREE50',
       title: 'شحن مجاني',
-      subtitle: 'شحن مجاني للطلبات فوق 50 ريال',
+      subtitle: 'شحن مجاني للطلبات فوق 50 ﷼',
       expiryDate: DateTime(2024, 1, 31),
     ),
   ];

@@ -131,7 +131,7 @@ class ProductDetailsModel extends ProductDetailsEntity {
           json['description_ar'] as String? ??
           json['description_en'] as String? ??
           json['description'] as String? ??
-          'لا يوجد وصف متاح.',
+          '',
       availableSizes: availableSizes,
       availableColors: availableColors,
       ratingDistribution: ratingDistribution,

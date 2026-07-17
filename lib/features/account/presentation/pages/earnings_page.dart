@@ -37,7 +37,7 @@ class EarningsPage extends StatelessWidget {
                   children: [
                     Text('إجمالي المكسبات', style: TextStyle(color: Colors.white70, fontSize: 13)),
                     SizedBox(height: 8),
-                    Text('1,000.00 ر.س', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                    Text('1,000.00 ﷼', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
                     SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -95,7 +95,7 @@ class _BalanceStat extends StatelessWidget {
         children: [
           Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
           const SizedBox(height: 4),
-          Text('$value ر.س', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          Text('$value ﷼', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
         ],
       );
 }
@@ -135,7 +135,7 @@ class _EarningRow extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('+ $amount ر.س', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF34C759), fontSize: 13)),
+              Text('+ $amount ﷼', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF34C759), fontSize: 13)),
               const SizedBox(height: 2),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

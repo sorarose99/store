@@ -59,6 +59,7 @@ import '../../features/account/domain/usecases/update_profile_usecase.dart';
 import '../../features/account/domain/usecases/change_password_usecase.dart';
 import '../../features/account/domain/usecases/delete_account_usecase.dart';
 import '../../features/account/domain/usecases/save_fcm_token_usecase.dart';
+import '../../features/account/domain/usecases/send_contact_message_usecase.dart';
 import '../../features/search_filter/presentation/blocs/shop_bloc.dart';
 import '../../features/product/domain/usecases/get_shop_products_usecase.dart';
 import '../../features/product/domain/usecases/get_sub_category_products_usecase.dart';
@@ -246,6 +247,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => DeleteAccountUseCase(sl()));
   sl.registerLazySingleton(() => GetNotificationsUseCase(sl()));
   sl.registerLazySingleton(() => SaveFcmTokenUseCase(sl()));
+  sl.registerLazySingleton(() => SendContactMessageUseCase(sl()));
 
   sl.registerLazySingleton(() => GetOrdersUseCase(sl()));
   sl.registerLazySingleton(() => GetOrderDetailUseCase(sl()));
@@ -304,6 +306,7 @@ Future<void> init() async {
         changePasswordUseCase: sl(),
         deleteAccountUseCase: sl(),
         saveFcmTokenUseCase: sl(),
+        sendContactMessageUseCase: sl(),
       ));
   sl.registerFactory(() => AddressBloc(addressRepository: sl()));
 

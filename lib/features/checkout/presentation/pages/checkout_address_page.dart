@@ -53,14 +53,14 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
     if (_formKey.currentState?.validate() ?? false) {
       final newAddress = SavedAddressEntity(
         id: 'addr_${DateTime.now().millisecondsSinceEpoch}',
-        recipientName: _fullNameController.text.trim(),
+        title: 'Home', // default for now
+        fullName: _fullNameController.text.trim(),
         phone: _phoneController.text.trim(),
+        email: '',
+        country: 'SA',
         city: _cityController.text.trim(),
-        district: _areaController.text.trim(),
-        street: _streetController.text.trim(),
-        buildingNo: _buildingController.text.trim(),
-        floor: '',
         zipCode: _zipController.text.trim(),
+        detailedAddress: '${_areaController.text.trim()} - ${_streetController.text.trim()} - ${_buildingController.text.trim()}',
         isDefault: _isDefault,
       );
 

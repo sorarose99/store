@@ -47,8 +47,8 @@ class NativePaymentService {
     required List<CartItemEntity> items,
   }) async {
     // Production endpoint — matches the production JWT in .env.
-    // For a sandbox token swap to: https://api-sandbox.tamara.co/checkout
-    const endpoint = 'https://api-sandbox.tamara.co/checkout';
+    // Sandbox: https://api-sandbox.tamara.co/checkout
+    const endpoint = 'https://api.tamara.co/checkout';
 
     final tamaraToken = Env.tamaraApiToken;
     if (tamaraToken.isEmpty) {
@@ -56,7 +56,7 @@ class NativePaymentService {
       return null;
     }
 
-    final names = address.recipientName.trim().split(RegExp(r'\s+'));
+    final names = address.fullName.trim().split(RegExp(r'\s+'));
     final firstName = names.isNotEmpty ? names.first : 'Customer';
     final lastName = names.length > 1 ? names.sublist(1).join(' ') : 'Doe';
 
@@ -72,7 +72,7 @@ class NativePaymentService {
     }
 
     final String line1 =
-        address.street.isNotEmpty ? address.street : address.fullAddress;
+        address.detailedAddress.isNotEmpty ? address.detailedAddress : address.fullAddress;
     final String city = address.city.isNotEmpty ? address.city : 'Riyadh';
 
     // Shared address block — Tamara production requires BOTH
@@ -124,7 +124,7 @@ class NativePaymentService {
         'success': 'kdxstore://payment/success',
         'failure': 'kdxstore://payment/failure',
         'cancel': 'kdxstore://payment/cancel',
-        'notification': 'https://kdx-sa.com/api/tamara/webhook',
+        'notification': 'https://kdx-sa.com/api/payments/tamara/webhook',
       },
     };
 
@@ -189,7 +189,7 @@ class NativePaymentService {
                 ? customerEmail
                 : 'customer@example.com',
             phone: address.phone,
-            name: address.recipientName,
+            name: address.fullName,
             dob: '2000-01-01',
           ),
           buyerHistory: BuyerHistory(
@@ -248,19 +248,18 @@ class NativePaymentService {
       return;
     }
 
-    final names = address.recipientName.trim().split(' ');
+    final names = address.fullName.trim().split(' ');
     final firstName = names.isNotEmpty && names.first.trim().isNotEmpty
         ? names.first.trim()
         : 'Customer';
 
     // The current entity might not have a country field, let's assume SA
     final safePhone = address.phone.isNotEmpty ? address.phone : '0500000000';
-    final safeStreet = address.street.isNotEmpty
-        ? address.street
+    final safeStreet = address.detailedAddress.isNotEmpty
+        ? address.detailedAddress
         : (address.fullAddress.isNotEmpty ? address.fullAddress : 'Street 1');
     final safeCity = address.city.isNotEmpty ? address.city : 'Riyadh';
-    final safeDistrict =
-        address.district.isNotEmpty ? address.district : 'Riyadh';
+    final safeDistrict = address.city.isNotEmpty ? address.city : 'Riyadh';
     final safeZip = address.zipCode.isNotEmpty ? address.zipCode : '00000';
 
     final billingDetails = BillingDetails(
@@ -352,18 +351,17 @@ class NativePaymentService {
       return;
     }
 
-    final names = address.recipientName.trim().split(' ');
+    final names = address.fullName.trim().split(' ');
     final firstName = names.isNotEmpty && names.first.trim().isNotEmpty
         ? names.first.trim()
         : 'Customer';
 
     final safePhone = address.phone.isNotEmpty ? address.phone : '0500000000';
-    final safeStreet = address.street.isNotEmpty
-        ? address.street
+    final safeStreet = address.detailedAddress.isNotEmpty
+        ? address.detailedAddress
         : (address.fullAddress.isNotEmpty ? address.fullAddress : 'Street 1');
     final safeCity = address.city.isNotEmpty ? address.city : 'Riyadh';
-    final safeDistrict =
-        address.district.isNotEmpty ? address.district : 'Riyadh';
+    final safeDistrict = address.city.isNotEmpty ? address.city : 'Riyadh';
     final safeZip = address.zipCode.isNotEmpty ? address.zipCode : '00000';
 
     final billingDetails = BillingDetails(

@@ -231,6 +231,24 @@ class OrderController extends Controller
             // =========================
             // الدفع الحقيقي
             // =========================
+            
+            // For Flutter App: return native signals to trigger native SDKs
+            if ($request->expectsJson() || $request->is('api/*') || $request->wantsJson()) {
+                $nativeSignals = [
+                    'paytabs' => 'native://paytabs',
+                    'tabby'   => 'native://tabby',
+                    'tamara'  => 'native://tamara',
+                ];
+
+                return response()->json([
+                    'success'      => true,
+                    'type'         => 'redirect',
+                    'payment_url'  => $nativeSignals[$request->payment_gateway],
+                    'order_number' => $order->order_number,
+                ]);
+            }
+
+            // For Web: fallback to standard browser redirect
             $routes = [
                 'tamara' => 'payments.tamara.pay',
                 'tabby' => 'payments.tabby.pay',

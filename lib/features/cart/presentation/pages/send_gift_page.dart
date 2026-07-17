@@ -38,7 +38,7 @@ class _SendGiftPageState extends State<SendGiftPage> {
             TextField(controller: _phoneController, decoration: const InputDecoration(labelText: 'رقم الجوال')),
             TextField(controller: _messageController, decoration: const InputDecoration(labelText: 'رسالة الهدية')),
             CheckboxListTile(
-              title: const Text('تغليف الهدية (+15.0 ر.س)'),
+              title: const Text('تغليف الهدية (+15.0 ﷼)'),
               value: _wrapGift,
               onChanged: (val) => setState(() => _wrapGift = val ?? false),
             ),

@@ -65,7 +65,7 @@ class _DeleteAccountReasonPageState extends State<DeleteAccountReasonPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'يرجى اختيار سبب الحذف',
+                        'يرجى اختيا﷼بب الحذف',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

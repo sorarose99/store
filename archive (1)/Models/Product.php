@@ -214,19 +214,39 @@ class Product extends Model
     {
         return $query->where('new', true);
     }
-
     public function scopeSearch($query, $term)
     {
-        return $query->where(function ($q) use ($term) {
-            $q->where('name_ar', 'LIKE', "%{$term}%")
-                ->orWhere('name_en', 'LIKE', "%{$term}%")
-                ->orWhere('description_ar', 'LIKE', "%{$term}%")
-                ->orWhere('sku', 'LIKE', "%{$term}%")
-                ->orWhereHas('tags', function ($t) use ($term) {
-                    $t->where('name', 'LIKE', "%{$term}%");
+        // Split the search term into individual words (ignoring extra spaces)
+        $terms = array_filter(explode(' ', trim($term)));
+
+        return $query->where(function ($q) use ($terms) {
+            foreach ($terms as $word) {
+                // Ensure EVERY word is found somewhere in the product
+                $q->where(function ($subQuery) use ($word) {
+                    $subQuery->where('name_ar', 'LIKE', "%{$word}%")
+                        ->orWhere('name_en', 'LIKE', "%{$word}%")
+                        ->orWhere('description_ar', 'LIKE', "%{$word}%")
+                        ->orWhere('sku', 'LIKE', "%{$word}%")
+                        ->orWhereHas('tags', function ($t) use ($word) {
+                            $t->where('name', 'LIKE', "%{$word}%");
+                        });
                 });
+            }
         });
     }
+
+    // public function scopeSearch($query, $term)
+    // {
+    //     return $query->where(function ($q) use ($term) {
+    //         $q->where('name_ar', 'LIKE', "%{$term}%")
+    //             ->orWhere('name_en', 'LIKE', "%{$term}%")
+    //             ->orWhere('description_ar', 'LIKE', "%{$term}%")
+    //             ->orWhere('sku', 'LIKE', "%{$term}%")
+    //             ->orWhereHas('tags', function ($t) use ($term) {
+    //                 $t->where('name', 'LIKE', "%{$term}%");
+    //             });
+    //     });
+    // }
 
     // Filter by Categories
     public function scopeOfCategories($query, $categories)

@@ -3,47 +3,42 @@ import '../../domain/entities/checkout_entities.dart';
 class SavedAddressModel extends SavedAddressEntity {
   SavedAddressModel({
     required super.id,
-    required super.recipientName,
+    required super.title,
+    required super.fullName,
     required super.phone,
+    required super.email,
+    required super.country,
     required super.city,
-    required super.district,
-    required super.street,
-    required super.buildingNo,
-    required super.floor,
     required super.zipCode,
+    required super.detailedAddress,
     super.isDefault,
   });
 
   factory SavedAddressModel.fromJson(Map<String, dynamic> json) {
-    final fullAddr = json['address'] as String? ?? '';
-    final parts = fullAddr.split(RegExp(r'[،,]'));
-    final street = parts.isNotEmpty ? parts[0].trim() : '';
-    final district = parts.length > 1 ? parts[1].trim() : '';
-    final buildingNo = parts.length > 2 ? parts[2].trim() : '';
     return SavedAddressModel(
       id: json['id']?.toString() ?? '',
-      recipientName: json['full_name'] as String? ?? '',
-      phone: json['phone'] as String? ?? '',
-      city: json['city'] as String? ?? '',
-      district: district,
-      street: street.isNotEmpty ? street : fullAddr,
-      buildingNo: buildingNo,
-      floor: '',
-      zipCode: json['postal_code'] as String? ?? '',
+      title: json['title']?.toString() ?? '',
+      fullName: json['full_name']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      country: json['country']?.toString() ?? '',
+      city: json['city']?.toString() ?? '',
+      zipCode: json['postal_code']?.toString() ?? '',
+      detailedAddress: json['address']?.toString() ?? '',
       isDefault: json['is_default'] == 1 || json['is_default'] == true,
     );
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
-      'title': 'Home',
-      'full_name': recipientName,
+      'title': title,
+      'full_name': fullName,
       'phone': phone,
-      'country': 'SA',
+      'email': email,
+      'country': country,
       'city': city,
       'postal_code': zipCode,
-      'address':
-          [street, district, buildingNo].where((s) => s.isNotEmpty).join(', '),
+      'address': detailedAddress,
     };
     if (isDefault) {
       data['is_default'] = true;

@@ -103,25 +103,14 @@ class _CameraSearchPageState extends State<CameraSearchPage>
       await Future.delayed(const Duration(milliseconds: 600));
       if (!mounted) return;
 
-      if (result.useCategorySlug && result.categorySlug != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => ProductGridPage(
-              title: result.displayLabel,
-              filters: {'category_name': result.categorySlug!},
-            ),
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ProductGridPage(
+            title: result.displayLabel,
+            filters: {'search': result.searchQuery, 'is_camera': true},
           ),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => ProductGridPage(
-              title: result.displayLabel,
-              filters: {'search': result.searchQuery},
-            ),
-          ),
-        );
-      }
+        ),
+      );
     } on ImageSearchException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -423,6 +412,7 @@ class _CameraSearchPageState extends State<CameraSearchPage>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: context.primaryColor,
                         foregroundColor: Colors.white,
+                        minimumSize: const Size(120, 48),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),

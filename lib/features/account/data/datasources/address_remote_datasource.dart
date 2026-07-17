@@ -42,12 +42,12 @@ class AddressRemoteDataSourceImpl implements AddressRemoteDataSource {
   Future<Map<String, dynamic>> updateAddress(
       String id, Map<String, dynamic> addressData) async {
     final response =
-        await apiClient.post(ApiEndpoints.addressUpdate(id), data: addressData);
+        await apiClient.put(ApiEndpoints.addressUpdate(id), data: addressData);
     return response.data as Map<String, dynamic>? ?? {};
   }
 
   @override
   Future<void> deleteAddress(String id) async {
-    await apiClient.post(ApiEndpoints.addressDelete(id));
+    await apiClient.delete(ApiEndpoints.addressDelete(id));
   }
 }
