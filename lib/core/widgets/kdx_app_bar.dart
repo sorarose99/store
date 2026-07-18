@@ -1,10 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../constants/colors.dart';
 import '../../features/search/presentation/pages/search_active_page.dart';
 import '../../features/notifications/presentation/pages/notifications_page.dart';
+import '../../features/notifications/presentation/blocs/notifications_bloc.dart';
+import '../../features/notifications/presentation/blocs/notifications_state.dart';
 import '../../features/cart/presentation/pages/cart_filled_page.dart';
+import '../../features/cart/presentation/blocs/cart_bloc.dart';
+import '../../features/cart/presentation/blocs/cart_state.dart';
 
 class KdxAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showBackButton;
@@ -100,23 +105,41 @@ class KdxAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         SizedBox(width: 12.w),
         // Notification
-        _buildIconWithBadge(
-          context,
-          icon: Icons.notifications_outlined,
-          badgeCount: '1', // TODO: dynamic
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const NotificationsPage()),
-          ),
+        BlocBuilder<NotificationsBloc, NotificationsState>(
+          builder: (context, state) {
+            int count = 0;
+            if (state is NotificationsLoaded) {
+              count = state.notifications.length;
+            }
+            return _buildIconWithBadge(
+              context,
+              icon: Icons.notifications_outlined,
+              badgeCount: count > 0 ? count.toString() : '',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const NotificationsPage()),
+              ),
+            );
+          },
         ),
         SizedBox(width: 12.w),
         // Cart
-        _buildIconWithBadge(
-          context,
-          icon: Icons.shopping_cart_outlined,
-          badgeCount: '2', // TODO: dynamic
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const CartFilledPage()),
-          ),
+        BlocBuilder<CartBloc, CartState>(
+          builder: (context, state) {
+            int count = 0;
+            if (state is CartCountLoaded) {
+              count = state.count;
+            } else if (state is CartLoaded) {
+              count = state.items.fold(0, (sum, item) => sum + item.quantity);
+            }
+            return _buildIconWithBadge(
+              context,
+              icon: Icons.shopping_cart_outlined,
+              badgeCount: count > 0 ? count.toString() : '',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CartFilledPage()),
+              ),
+            );
+          },
         ),
       ],
     );
