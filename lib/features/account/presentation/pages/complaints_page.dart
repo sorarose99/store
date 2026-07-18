@@ -61,210 +61,218 @@ class _ComplaintsViewState extends State<_ComplaintsView> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF5F6FA),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios,
-                color: AppColors.textDark, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          centerTitle: true,
-          title: const Text(
-            'الشكاوى والاقتراحات',
-            style: TextStyle(
-                color: AppColors.textDark,
-                fontSize: 16,
-                fontWeight: FontWeight.bold),
-          ),
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    return Scaffold(
+      backgroundColor: context.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: context.surfaceColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: context.textDark, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        body: BlocConsumer<AccountBloc, AccountState>(
-          listener: (context, state) {
-            if (state is AccountActionSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                      'تم إرسال رسالتك بنجاح. سنقوم بالرد عليك في أقرب وقت ممكن.'),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+        centerTitle: true,
+        title: Text(
+          isArabic ? 'الشكاوى والاقتراحات' : 'Complaints & Suggestions',
+          style: TextStyle(
+              color: context.textDark,
+              fontSize: 16,
+              fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: BlocConsumer<AccountBloc, AccountState>(
+        listener: (context, state) {
+          if (state is AccountActionSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  isArabic
+                      ? 'تم إرسال رسالتك بنجاح. سنقوم بالرد عليك في أقرب وقت ممكن.'
+                      : 'Your message has been sent successfully. We will reply as soon as possible.',
                 ),
-              );
-              Navigator.of(context).pop();
-            } else if (state is AccountActionError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-              );
-            }
-          },
-          builder: (context, state) {
-            final isLoading = state is AccountActionLoading;
-            return Column(
-              children: [
-                // ── Gradient header ────────────────────────────────
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 20, horizontal: 24),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryDark],
-                      begin: Alignment.centerRight,
-                      end: Alignment.centerLeft,
-                    ),
-                  ),
-                  child: const Text(
-                    'أرسل لنا رسالة',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-                // ── Form ───────────────────────────────────────────
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _label('الاسم الكامل'),
-                          const SizedBox(height: 8),
-                          _field(
-                            controller: _nameController,
-                            hint: 'الاسم الكامل',
-                            validator: (v) => v == null || v.trim().isEmpty
-                                ? 'يرجى إدخال الاسم الكامل'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                          _label('البريد الإلكتروني'),
-                          const SizedBox(height: 8),
-                          _field(
-                            controller: _emailController,
-                            hint: 'البريد الإلكتروني',
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'يرجى إدخال البريد الإلكتروني';
-                              }
-                              if (!v.contains('@')) return 'البريد غير صالح';
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          _label('الهاتف'),
-                          const SizedBox(height: 8),
-                          _field(
-                            controller: _phoneController,
-                            hint: 'الهاتف',
-                            keyboardType: TextInputType.phone,
-                            validator: (v) => v == null || v.trim().isEmpty
-                                ? 'يرجى إدخال رقم الهاتف'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                          _label('نوع الاستفسار'),
-                          const SizedBox(height: 8),
-                          _dropdownField(),
-                          const SizedBox(height: 16),
-                          _label('الموضوع'),
-                          const SizedBox(height: 8),
-                          _field(
-                            controller: _subjectController,
-                            hint: 'موضوع الرسالة',
-                            validator: (v) => v == null || v.trim().isEmpty
-                                ? 'يرجى إدخال الموضوع'
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                          _label('الرسالة'),
-                          const SizedBox(height: 8),
-                          _field(
-                            controller: _messageController,
-                            hint: 'اكتب رسالتك هنا...',
-                            maxLines: 5,
-                            validator: (v) => v == null || v.trim().isEmpty
-                                ? 'يرجى كتابة تفاصيل الرسالة'
-                                : null,
-                          ),
-                          const SizedBox(height: 32),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // ── Send button ────────────────────────────────────
-                Container(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                  color: Colors.white,
-                  child: SizedBox(
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: isLoading ? null : _submit,
-                      icon: isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2),
-                            )
-                          : const Icon(Icons.send_rounded,
-                              size: 20, color: Colors.white),
-                      label: Text(
-                        isLoading ? 'جاري الإرسال...' : 'إرسال',
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        disabledBackgroundColor:
-                            AppColors.primary.withValues(alpha: 0.5),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                backgroundColor: context.primaryColor,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
             );
-          },
-        ),
+            Navigator.of(context).pop();
+          } else if (state is AccountActionError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: context.errorColor,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          }
+        },
+        builder: (context, state) {
+          final isLoading = state is AccountActionLoading;
+          return Column(
+            children: [
+              // ── Gradient header ────────────────────────────────
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    vertical: 20, horizontal: 24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [context.primaryColor, context.primaryDark],
+                    begin: Alignment.centerRight,
+                    end: Alignment.centerLeft,
+                  ),
+                ),
+                child: Text(
+                  isArabic ? 'أرسل لنا رسالة' : 'Send us a message',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+
+              // ── Form ───────────────────────────────────────────
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _label(isArabic ? 'الاسم الكامل' : 'Full Name', context),
+                        const SizedBox(height: 8),
+                        _field(
+                          controller: _nameController,
+                          hint: isArabic ? 'الاسم الكامل' : 'Full Name',
+                          context: context,
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? (isArabic ? 'يرجى إدخال الاسم الكامل' : 'Please enter full name')
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        _label(isArabic ? 'البريد الإلكتروني' : 'Email Address', context),
+                        const SizedBox(height: 8),
+                        _field(
+                          controller: _emailController,
+                          hint: isArabic ? 'البريد الإلكتروني' : 'Email Address',
+                          context: context,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return isArabic ? 'يرجى إدخال البريد الإلكتروني' : 'Please enter email address';
+                            }
+                            if (!v.contains('@')) return isArabic ? 'البريد غير صالح' : 'Invalid email';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _label(isArabic ? 'الهاتف' : 'Phone Number', context),
+                        const SizedBox(height: 8),
+                        _field(
+                          controller: _phoneController,
+                          hint: isArabic ? 'الهاتف' : 'Phone Number',
+                          context: context,
+                          keyboardType: TextInputType.phone,
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? (isArabic ? 'يرجى إدخال رقم الهاتف' : 'Please enter phone number')
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        _label(isArabic ? 'نوع الاستفسار' : 'Inquiry Type', context),
+                        const SizedBox(height: 8),
+                        _dropdownField(isArabic, context),
+                        const SizedBox(height: 16),
+                        _label(isArabic ? 'الموضوع' : 'Subject', context),
+                        const SizedBox(height: 8),
+                        _field(
+                          controller: _subjectController,
+                          hint: isArabic ? 'موضوع الرسالة' : 'Subject',
+                          context: context,
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? (isArabic ? 'يرجى إدخال الموضوع' : 'Please enter subject')
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        _label(isArabic ? 'الرسالة' : 'Message', context),
+                        const SizedBox(height: 8),
+                        _field(
+                          controller: _messageController,
+                          hint: isArabic ? 'اكتب رسالتك هنا...' : 'Write your message here...',
+                          context: context,
+                          maxLines: 5,
+                          validator: (v) => v == null || v.trim().isEmpty
+                              ? (isArabic ? 'يرجى كتابة تفاصيل الرسالة' : 'Please enter message details')
+                              : null,
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ── Send button ────────────────────────────────────
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                color: context.surfaceColor,
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: isLoading ? null : _submit,
+                    icon: isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send_rounded,
+                            size: 20, color: Colors.white),
+                    label: Text(
+                      isLoading
+                          ? (isArabic ? 'جاري الإرسال...' : 'Sending...')
+                          : (isArabic ? 'إرسال' : 'Send'),
+                      style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.primaryColor,
+                      disabledBackgroundColor:
+                          context.primaryColor.withValues(alpha: 0.5),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _label(String text) => Text(
+  Widget _label(String text, BuildContext context) => Text(
         text,
-        textAlign: TextAlign.right,
-        style: const TextStyle(
+        style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textDark),
+            color: context.textDark),
       );
 
   Widget _field({
     required TextEditingController controller,
     required String hint,
+    required BuildContext context,
     TextInputType? keyboardType,
     int maxLines = 1,
     String? Function(String?)? validator,
@@ -273,55 +281,56 @@ class _ComplaintsViewState extends State<_ComplaintsView> {
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
-      textAlign: TextAlign.right,
+      style: TextStyle(color: context.textDark),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textGrey, fontSize: 13),
-        hintTextDirection: TextDirection.rtl,
+        hintStyle: TextStyle(color: context.textGrey, fontSize: 13),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.surfaceColor,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFECEEF5)),
+          borderSide: BorderSide(color: context.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFECEEF5)),
+          borderSide: BorderSide(color: context.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: context.primaryColor, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.error),
+          borderSide: BorderSide(color: context.errorColor),
         ),
       ),
       validator: validator,
     );
   }
 
-  Widget _dropdownField() {
+  Widget _dropdownField(bool isArabic, BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFECEEF5)),
+        border: Border.all(color: context.border),
       ),
       child: DropdownButton<String>(
         value: _selectedType,
         isExpanded: true,
+        dropdownColor: context.surfaceColor,
+        style: TextStyle(color: context.textDark, fontSize: 14),
         underline: const SizedBox.shrink(),
-        icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textGrey),
-        items: const [
-          DropdownMenuItem(value: 'general',    child: Text('استفسار عام')),
-          DropdownMenuItem(value: 'complaint',  child: Text('شكوى')),
-          DropdownMenuItem(value: 'suggestion', child: Text('اقتراح')),
-          DropdownMenuItem(value: 'order',      child: Text('طلب')),
-          DropdownMenuItem(value: 'return',     child: Text('إرجاع أو استبدال')),
+        icon: Icon(Icons.keyboard_arrow_down, color: context.textGrey),
+        items: [
+          DropdownMenuItem(value: 'general',    child: Text(isArabic ? 'استفسار عام' : 'General Inquiry')),
+          DropdownMenuItem(value: 'complaint',  child: Text(isArabic ? 'شكوى' : 'Complaint')),
+          DropdownMenuItem(value: 'suggestion', child: Text(isArabic ? 'اقتراح' : 'Suggestion')),
+          DropdownMenuItem(value: 'order',      child: Text(isArabic ? 'طلب' : 'Order')),
+          DropdownMenuItem(value: 'return',     child: Text(isArabic ? 'إرجاع أو استبدال' : 'Return or Exchange')),
         ],
         onChanged: (val) {
           if (val != null) setState(() => _selectedType = val);

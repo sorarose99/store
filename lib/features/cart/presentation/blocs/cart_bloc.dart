@@ -70,6 +70,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       event.productId,
       event.quantity,
       imageId: event.imageId,
+      options: event.options,
     );
     await result.fold(
       (failure) async => emit(CartError(failure.message)),

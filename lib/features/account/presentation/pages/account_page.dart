@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import '../../../../core/di/injection_container.dart' as di;
+import '../../../../core/network/token_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../../../core/theme/theme_cubit.dart';
 import '../../../../core/theme/language_cubit.dart';
@@ -44,7 +45,7 @@ class _AccountPageState extends State<AccountPage> {
   void initState() {
     super.initState();
     // Only fetch account data if the user is actually signed in
-    if (FirebaseAuth.instance.currentUser != null) {
+    if (di.sl<TokenService>().hasToken) {
       final state = context.read<AccountBloc>().state;
       if (state is AccountInitial || state is AccountError) {
         context.read<AccountBloc>().add(const AccountProfileRequested());

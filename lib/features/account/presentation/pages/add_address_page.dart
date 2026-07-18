@@ -45,6 +45,30 @@ class _AddAddressPageState extends State<AddAddressPage> {
       _countries.firstWhere((c) => c['code'] == _selectedCountry,
           orElse: () => _countries.first)['dial']!;
 
+  String _getCleanPhone(String phone, String dialCode) {
+    String cleanDial = dialCode.replaceAll('+', '').trim();
+    String digits = phone.replaceAll(RegExp(r'\D'), '').trim();
+    if (digits.startsWith(cleanDial)) {
+      digits = digits.substring(cleanDial.length);
+    }
+    while (digits.startsWith('0')) {
+      digits = digits.substring(1);
+    }
+    return digits;
+  }
+
+  String _formatPhoneNumber(String phone, String dialCode) {
+    String digits = phone.replaceAll(RegExp(r'\D'), '').trim();
+    String cleanDial = dialCode.replaceAll('+', '').trim();
+    if (digits.startsWith(cleanDial)) {
+      digits = digits.substring(cleanDial.length);
+    }
+    while (digits.startsWith('0')) {
+      digits = digits.substring(1);
+    }
+    return '$dialCode$digits';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -52,12 +76,12 @@ class _AddAddressPageState extends State<AddAddressPage> {
       final addr = widget.addressToEdit!;
       _titleController.text = addr.title;
       _fullNameController.text = addr.fullName;
-      _phoneController.text = addr.phone;
       _emailController.text = addr.email;
       _cityController.text = addr.city;
       _zipCodeController.text = addr.zipCode;
       _detailedAddressController.text = addr.detailedAddress;
       _selectedCountry = addr.country.isNotEmpty ? addr.country : 'SA';
+      _phoneController.text = _getCleanPhone(addr.phone, _selectedDial);
       _isDefault = addr.isDefault;
     }
   }
@@ -105,7 +129,7 @@ class _AddAddressPageState extends State<AddAddressPage> {
       id: widget.addressToEdit?.id ?? '',
       title: _titleController.text.trim(),
       fullName: _fullNameController.text.trim(),
-      phone: _phoneController.text.trim(),
+      phone: _formatPhoneNumber(_phoneController.text.trim(), _selectedDial),
       email: _emailController.text.trim(),
       country: _selectedCountry,
       city: _cityController.text.trim(),

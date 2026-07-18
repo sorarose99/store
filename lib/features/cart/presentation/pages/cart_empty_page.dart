@@ -35,49 +35,142 @@ class CartEmptyPage extends StatelessWidget {
                 color: context.textDark,
                 fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
+                fontFamily: 'Tajawal',
               ),
             ),
           ),
           body: SingleChildScrollView(
             child: Column(
               children: [
-                SizedBox(height: 48.h),
-                // Custom Illustration (Shopping basket with X)
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(
-                      Icons.shopping_basket_outlined,
-                      size: 80,
-                      color: context.primaryColor,
-                    ),
-                    Positioned(
-                      bottom: 0.h,
-                      right: 0.w,
-                      child: Container(
-                        padding: EdgeInsets.all(4.w),
+                SizedBox(height: 50.h),
+
+                // Custom Illustration (browser window with X mark and shopping basket icon overlay)
+                Center(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Browser window outline
+                      Container(
+                        width: 110.w,
+                        height: 110.h,
                         decoration: BoxDecoration(
                           color: context.backgroundColor,
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: context.primaryColor, width: 1.5.w),
                         ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Browser header bar
+                            Container(
+                              height: 18.h,
+                              decoration: BoxDecoration(
+                                color: context.primaryColor,
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(14),
+                                  topRight: Radius.circular(14),
+                                ),
+                              ),
+                              padding: EdgeInsets.symmetric(horizontal: 8.w),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 5.w,
+                                    height: 5.h,
+                                    decoration: BoxDecoration(
+                                      color: context.backgroundColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Container(
+                                    width: 5.w,
+                                    height: 5.h,
+                                    decoration: BoxDecoration(
+                                      color: context.backgroundColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Container(
+                                    width: 5.w,
+                                    height: 5.h,
+                                    decoration: BoxDecoration(
+                                      color: context.backgroundColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Center(
+                                child: Icon(
+                                  Icons.shopping_basket_outlined,
+                                  size: 40,
+                                  color: context.primaryColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Basket overlay at top-right
+                      Positioned(
+                        top: -10,
+                        right: -10,
                         child: Container(
-                          padding: EdgeInsets.all(2.w),
+                          width: 32.w,
+                          height: 32.h,
                           decoration: BoxDecoration(
+                            color: context.backgroundColor,
                             shape: BoxShape.circle,
-                            border: Border.all(
-                                color: context.primaryColor, width: 2.w),
+                            boxShadow: [
+                              BoxShadow(
+                                color: context.textDark.withValues(alpha: 0.12),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Icon(
-                            Icons.close,
-                            size: 16,
+                            Icons.shopping_basket,
                             color: context.primaryColor,
+                            size: 16,
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      // X mark overlay at bottom-left
+                      Positioned(
+                        bottom: -10,
+                        left: -10,
+                        child: Container(
+                          width: 32.w,
+                          height: 32.h,
+                          decoration: BoxDecoration(
+                            color: context.backgroundColor,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: context.textDark.withValues(alpha: 0.12),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: context.textGrey,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(height: 32.h),
+                SizedBox(height: 36.h),
 
                 // Empty State Text
                 Text(
@@ -86,6 +179,7 @@ class CartEmptyPage extends StatelessWidget {
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
                     color: context.textDark,
+                    fontFamily: 'Tajawal',
                   ),
                 ),
                 SizedBox(height: 24.h),
@@ -117,6 +211,7 @@ class CartEmptyPage extends StatelessWidget {
                         fontSize: 13.sp,
                         fontWeight: FontWeight.bold,
                         color: context.backgroundColor,
+                        fontFamily: 'Tajawal',
                       ),
                     ),
                   ),
@@ -137,6 +232,7 @@ class CartEmptyPage extends StatelessWidget {
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.bold,
                                 color: context.textDark,
+                                fontFamily: 'Tajawal',
                               ),
                             ),
                           ),

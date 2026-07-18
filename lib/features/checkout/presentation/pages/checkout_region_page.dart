@@ -38,7 +38,7 @@ class _CheckoutRegionPageState extends State<CheckoutRegionPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'يرجى اختيار منطقة الشحن أولاً',
+            'select_shipping_region_first'.tr(),
             style: TextStyle(
               color: Theme.of(context).colorScheme.onError,
               fontFamily: 'Tajawal',
@@ -81,7 +81,7 @@ class _CheckoutRegionPageState extends State<CheckoutRegionPage> {
         }
 
         return Directionality(
-          textDirection: ui.TextDirection.rtl,
+          textDirection: Directionality.of(context),
           child: Scaffold(
             backgroundColor: context.backgroundColor,
             appBar: AppBar(
@@ -100,7 +100,7 @@ class _CheckoutRegionPageState extends State<CheckoutRegionPage> {
               ),
               centerTitle: true,
               title: Text(
-                'اختيار منطقة الشحن',
+                'select_shipping_region'.tr(),
                 style: TextStyle(
                   color: context.textDark,
                   fontSize: 16.sp,
@@ -115,7 +115,7 @@ class _CheckoutRegionPageState extends State<CheckoutRegionPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'اختر دولتك أو منطقة الشحن الخاصة بك للمتابعة:',
+                    'select_country_or_region_prompt'.tr(),
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.bold,
@@ -129,7 +129,7 @@ class _CheckoutRegionPageState extends State<CheckoutRegionPage> {
                       child: Padding(
                         padding: EdgeInsets.only(top: 32.h),
                         child: Text(
-                          'لا تتوفر مناطق شحن إضافية حالياً',
+                          'no_additional_shipping_regions'.tr(),
                           style: TextStyle(
                             fontSize: 14.sp,
                             color: context.textDark54,
@@ -288,7 +288,7 @@ class _CheckoutRegionPageState extends State<CheckoutRegionPage> {
                       elevation: 0,
                     ),
                     child: Text(
-                      'متابعة',
+                      'continue_action'.tr(),
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,

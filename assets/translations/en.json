@@ -840,5 +840,20 @@
   "licenses_updated": "Last updated: January 15, 2026",
   "license_1": "1. We are committed to providing high-quality products and reliable service, and we always strive to provide a safe and professional shopping experience in accordance with the applicable regulations in the Kingdom of Saudi Arabia.",
   "license_2": "2. We at KDX store are proud that we operate in accordance with the approved regulations in the Kingdom of Saudi Arabia, as we hold an official commercial register issued by the Saudi Ministry of Commerce under number (7042897913).",
-  "license_3": "3. Our store is also authenticated on the Maroof platform under number (372703), which enhances the level of trust and credibility with our customers."
+  "license_3": "3. Our store is also authenticated on the Maroof platform under number (372703), which enhances the level of trust and credibility with our customers.",
+  "verifying_payment": "Verifying payment...",
+  "please_wait_a_moment": "Please wait a moment",
+  "payment_processing": "Payment is being processed",
+  "order_number_is": "Your order number is {0}. Payment status will be updated within minutes.",
+  "track_my_order": "Track My Order",
+  "order_number_label": "Order Number: {0}",
+  "item_count_unit": "{0} products",
+  "continue_with": "Continue / {0}",
+  "district_region": "District / Region",
+  "building_floor": "Building / Floor No.",
+  "select_shipping_region_first": "Please select shipping region first",
+  "select_shipping_region": "Select Shipping Region",
+  "select_country_or_region_prompt": "Select your country or shipping region to continue:",
+  "no_additional_shipping_regions": "No additional shipping regions available currently",
+  "continue_action": "Continue"
 }

@@ -22,10 +22,18 @@ class HomeRepositoryImpl implements HomeRepository {
       developer.log('HomeData received, beginning parsing...',
           name: 'HomeRepository');
 
-      final bannerObj = data['banner'];
-      final banners = bannerObj != null
-          ? [BannerModel.fromJson(bannerObj as Map<String, dynamic>)]
-          : <BannerModel>[];
+      final rawBanners = data['banners'] as List<dynamic>?;
+      final List<BannerModel> banners = [];
+      if (rawBanners != null && rawBanners.isNotEmpty) {
+        banners.addAll(rawBanners
+            .map((e) => BannerModel.fromJson(e as Map<String, dynamic>))
+            .toList());
+      } else {
+        final bannerObj = data['banner'];
+        if (bannerObj != null) {
+          banners.add(BannerModel.fromJson(bannerObj as Map<String, dynamic>));
+        }
+      }
 
       final categories = (data['categories'] as List<dynamic>?)
               ?.map(

@@ -5,11 +5,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 import '../../../../core/constants/colors.dart';
 import '../../../cart/presentation/blocs/cart_bloc.dart';
 import '../../../cart/presentation/blocs/cart_event.dart';
 import 'checkout_success_page.dart';
+import '../../../../core/di/injection_container.dart' as di;
+import '../../data/services/payment_redirect_service.dart';
+
 
 
 enum PaymentFlowResult { success, cancelled, failed }
@@ -88,16 +92,11 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
       final prefs = await SharedPreferences.getInstance();
       final lang = prefs.getString('app_language') ?? 'ar';
 
-      // Payment URLs should NEVER get the Authorization header.
-      // Even our own backend payment endpoints (/payments/paytabs/pay etc.)
-      // return JSON when they see an Authorization header — they expect
-      // a browser redirect flow, not an authenticated API call.
-      // Always load with plain browser headers only.
-      final Map<String, String> headers = {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': lang,
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-      };
+      // ── Use PaymentRedirectService to inject the Bearer token ──
+      // This is mandatory for backend routes protected by the auth:sanctum middleware.
+      final headers = await di.sl<PaymentRedirectService>().buildHeaders(lang);
+      headers['User-Agent'] =
+          'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
 
       await _controller.loadRequest(
         Uri.parse(widget.paymentUrl),
@@ -116,34 +115,34 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
   Future<void> _checkIfPageIsJson(String url) async {
     if (!url.contains('kdx-sa.com')) return;
     try {
-      final bodyText = await _controller
-          .runJavaScriptReturningResult('document.body.innerText');
-      final raw = bodyText.toString().replaceAll(r'\"', '"');
-      developer.log('[PaymentWebView] Page body (first 500): ${raw.substring(0, raw.length.clamp(0, 500))}');
+      final jsResult = await _controller.runJavaScriptReturningResult('document.body.innerText');
+      String innerText = jsResult.toString();
 
-      // Look for redirect_url / payment_url in the JSON body
-      final patterns = [
-        RegExp(r'"redirect_url"\s*:\s*"([^"]+)"'),
-        RegExp(r'"payment_url"\s*:\s*"([^"]+)"'),
-        RegExp(r'"url"\s*:\s*"(https?://[^"]+)"'),
-      ];
+      // runJavaScriptReturningResult returns a JSON-serialized string (surrounded by quotes and escaped).
+      // We decode it once to get the actual plain text of the document body.
+      try {
+        final decoded = jsonDecode(innerText);
+        if (decoded is String) {
+          innerText = decoded;
+        }
+      } catch (_) {}
 
-      for (final pattern in patterns) {
-        final match = pattern.firstMatch(raw);
-        if (match != null) {
-          var redirectUrl = match.group(1)!
-              .replaceAll(r'\/', '/')
-              .replaceAll('\\u0026', '&');
-          developer.log('[PaymentWebView] Found redirect URL in JSON: $redirectUrl');
-          if (mounted) {
-            await _controller.loadRequest(
-              Uri.parse(redirectUrl),
-              headers: {
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-              },
-            );
-          }
-          return;
+      developer.log('[PaymentWebView] Page body (first 500): ${innerText.substring(0, innerText.length.clamp(0, 500))}');
+
+      // Now parse the inner text as JSON
+      final Map<String, dynamic> data = jsonDecode(innerText) as Map<String, dynamic>;
+      final redirectUrl = data['redirect_url'] ?? data['payment_url'] ?? data['url'];
+
+      if (redirectUrl != null) {
+        final cleanUrl = redirectUrl.toString().trim();
+        developer.log('[PaymentWebView] Found redirect URL in JSON: $cleanUrl');
+        if (mounted) {
+          await _controller.loadRequest(
+            Uri.parse(cleanUrl),
+            headers: {
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            },
+          );
         }
       }
     } catch (e) {
@@ -181,10 +180,16 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
   }
 
   void _onPaymentSuccess() {
-    context.read<CartBloc>().add(const CartCleared());
+    final needsPolling = widget.gateway == 'tabby' || widget.gateway == 'tamara';
+    if (!needsPolling) {
+      context.read<CartBloc>().add(const CartCleared());
+    }
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => CheckoutSuccessPage(orderNumber: widget.orderNumber),
+        builder: (_) => CheckoutSuccessPage(
+          orderNumber: widget.orderNumber,
+          requiresPolling: needsPolling,
+        ),
       ),
       (route) => route.isFirst,
     );

@@ -25,7 +25,7 @@ class ApiEndpoints {
   static const String sendRegisterOtp = '/api-auth/register/send-otp';
   static const String register = '/api-auth/register';
   static const String login = '/api-auth/login';
-  static const String socialLogin = '/api-auth/social-login';
+  static const String socialLogin = '/auth/firebase-sync';
   static const String logout = '/api-auth/logout';
   static const String sendForgotOtp = '/api-auth/forgot-password/send-otp';
   static const String resetPassword = '/api-auth/forgot-password/reset';

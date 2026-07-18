@@ -56,7 +56,7 @@ class OrderSuccessDialog extends StatelessWidget {
             ),
             SizedBox(height: 8.h),
             Text(
-              'رقم الطلب: $orderNumber',
+              'order_number_label'.tr(args: [orderNumber]),
               style: TextStyle(
                 fontSize: 13.sp,
                 color: context.textGrey,
@@ -74,7 +74,7 @@ class OrderSuccessDialog extends StatelessWidget {
               child: Column(
                 children: [
                   _summaryRow(
-                      context, 'number_of_products'.tr(), '$itemCount منتج'),
+                      context, 'number_of_products'.tr(), 'item_count_unit'.tr(args: [itemCount.toString()])),
                   SizedBox(height: 8.h),
                   _summaryRow(context, 'total_1'.tr(), '$total ﷼',
                       isHighlight: true),

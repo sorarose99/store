@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/colors.dart';
 import '../../data/repositories/contact_us_repository.dart';
 
-// ── Contact constants — change once, update everywhere ────────────
 const _kWhatsApp  = '966542139388';
 const _kEmail     = 'support@kdx-sa.com';
 const _kSnapchat  = 'https://www.snapchat.com/add/kdx_sa';
@@ -28,20 +26,13 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
   final _phoneController = TextEditingController();
   final _subjectController = TextEditingController();
   final _messageController = TextEditingController();
-  String _selectedType = 'استفسار عام';
-
-  final List<String> _inquiryTypes = [
-    'استفسار عام',
-    'استفسار عن طلب',
-    'شكوى',
-    'اقتراح',
-    'دعم فني'
-  ];
+  
+  String _selectedType = 'general';
 
   bool _isLoading = false;
   final _repository = ContactUsRepository();
 
-  Future<void> _submitForm() async {
+  Future<void> _submitForm(bool isArabic) async {
     if (!_formKey.currentState!.validate()) return;
     
     setState(() => _isLoading = true);
@@ -58,8 +49,8 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم إرسال رسالتك بنجاح!'),
+          SnackBar(
+            content: Text(isArabic ? 'تم إرسال رسالتك بنجاح!' : 'Your message was sent successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -86,25 +77,31 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
   }
 
   // ── URL launchers ─────────────────────────────────────────────────
-  Future<void> _openWhatsApp(BuildContext context) async {
+  Future<void> _openWhatsApp(BuildContext context, bool isArabic) async {
     final uri = Uri.parse('https://wa.me/$_kWhatsApp');
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (context.mounted) _snack(context, 'تعذّر فتح واتساب');
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (context.mounted) _snack(context, isArabic ? 'تعذّر فتح واتساب' : 'Could not open WhatsApp');
     }
   }
 
-  Future<void> _openEmail(BuildContext context) async {
+  Future<void> _openEmail(BuildContext context, bool isArabic) async {
     final String subject = Uri.encodeComponent('استفسار من تطبيق KDX');
     final uri = Uri.parse('mailto:$_kEmail?subject=$subject');
-    if (!await launchUrl(uri)) {
-      if (context.mounted) _snack(context, 'تعذّر فتح تطبيق البريد');
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (context.mounted) _snack(context, isArabic ? 'تعذّر فتح تطبيق البريد' : 'Could not open email application');
     }
   }
 
-  Future<void> _openUrl(BuildContext context, String url) async {
+  Future<void> _openUrl(BuildContext context, String url, bool isArabic) async {
     final uri = Uri.parse(url);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (context.mounted) _snack(context, 'تعذّر فتح الرابط');
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (context.mounted) _snack(context, isArabic ? 'تعذّر فتح الرابط' : 'Could not open link');
     }
   }
 
@@ -131,329 +128,103 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF9F9FC),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: AppColors.textDark, size: 20),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          centerTitle: true,
-          title: const Text(
-            'اتصل بنا',
-            style: TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-        ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Branded Hero Card ─────────────────────────────────
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  height: 160,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF0ABFBE), Color(0xFF018E8E)],
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Logo watermark in background
-                      Positioned(
-                        left: -20,
-                        bottom: -20,
-                        child: Opacity(
-                          opacity: 0.12,
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            width: 160,
-                            height: 160,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: -10,
-                        top: -30,
-                        child: Opacity(
-                          opacity: 0.07,
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                      // Content
-                      Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.headset_mic_rounded,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'فريق دعم KDX',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Tajawal',
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'نحن هنا لمساعدتك على مدار الساعة',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontFamily: 'Tajawal',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-              
-              // Contact Form (أرسل لنا رسالة)
-              Container(
+    return Scaffold(
+      backgroundColor: context.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: context.surfaceColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: context.textDark, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        centerTitle: true,
+        title: Text(
+          isArabic ? 'اتصل بنا' : 'Contact Us',
+          style: TextStyle(color: context.textDark, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Branded Hero Card ─────────────────────────────────
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                height: 160,
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFEEEEEE)),
-                  boxShadow: AppColors.cardShadow,
+                  gradient: LinearGradient(
+                    colors: [context.primaryColor, context.primaryDark],
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  ),
                 ),
-                child: Column(
+                child: Stack(
                   children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                      ),
-                      child: const Text(
-                        'أرسل لنا رسالة',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                    // Logo watermark in background
+                    Positioned(
+                      left: -20,
+                      bottom: -20,
+                      child: Opacity(
+                        opacity: 0.12,
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: 160,
+                          height: 160,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildLabel('الاسم الكامل'),
-                            _buildTextField(_nameController, required: true),
-                            const SizedBox(height: 16),
-                            
-                            _buildLabel('البريد الإلكتروني'),
-                            _buildTextField(_emailController, required: true, isEmail: true),
-                            const SizedBox(height: 16),
-                            
-                            _buildLabel('الهاتف'),
-                            _buildTextField(_phoneController, required: false, isPhone: true),
-                            const SizedBox(height: 16),
-                            
-                            _buildLabel('نوع الاستفسار'),
-                            _buildDropdown(),
-                            const SizedBox(height: 16),
-                            
-                            _buildLabel('الموضوع'),
-                            _buildTextField(_subjectController, required: true, hint: 'موضوع الرسالة'),
-                            const SizedBox(height: 16),
-                            
-                            _buildLabel('الرسالة'),
-                            _buildTextField(
-                              _messageController,
-                              required: true,
-                              maxLines: 4,
-                              hint: 'اكتب رسالتك هنا...',
-                            ),
-                            const SizedBox(height: 24),
-                            
-                            SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: ElevatedButton.icon(
-                                onPressed: _isLoading ? null : _submitForm,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                icon: _isLoading
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                  : const Icon(Icons.send, color: Colors.white, size: 18),
-                                label: Text(
-                                  _isLoading ? 'جاري الإرسال...' : 'إرسال',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                    Positioned(
+                      right: -10,
+                      top: -30,
+                      child: Opacity(
+                        opacity: 0.07,
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 32),
-              
-              // Contact Info (معلومات الاتصال)
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFEEEEEE)),
-                  boxShadow: AppColors.cardShadow,
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                      ),
-                      child: const Text(
-                        'معلومات الاتصال',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(20),
+                    // Content
+                    Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildInfoRow(Icons.location_on, 'العنوان', 'Saudi Arabia'),
-                          const Divider(height: 32, color: Color(0xFFEEEEEE)),
-                          
-                          // Force WhatsApp
-                          GestureDetector(
-                            onTap: () => _openWhatsApp(context),
-                            child: _buildInfoRow(Icons.phone, 'الهاتف', '+966542139388', isClickable: true),
-                          ),
-                          const Divider(height: 32, color: Color(0xFFEEEEEE)),
-                          
-                          GestureDetector(
-                            onTap: () => _openEmail(context),
-                            child: _buildInfoRow(Icons.email, 'البريد الإلكتروني', 'support@kdx-sa.com', isClickable: true),
-                          ),
-                          const SizedBox(height: 32),
-                          
-                          // Social Media
-                          const Text(
-                            'تابعنا على وسائل التواصل',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.headset_mic_rounded,
+                              color: Colors.white,
+                              size: 30,
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          GridView.count(
-                            crossAxisCount: 3,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 1.1,
-                            children: [
-                              _buildBrandedSocialTile(
-                                label: 'تيك توك',
-                                logoUrl: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/tiktok.svg',
-                                fallbackIcon: Icons.music_note,
-                                bgColor: Colors.black,
-                                iconColor: Colors.white,
-                                onTap: () => _openUrl(context, _kTikTok),
-                              ),
-                              _buildBrandedSocialTile(
-                                label: 'انستقرام',
-                                logoUrl: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/instagram.svg',
-                                fallbackIcon: Icons.photo_camera_rounded,
-                                bgColor: const Color(0xFFE1306C),
-                                iconColor: Colors.white,
-                                onTap: () => _openUrl(context, _kInstagram),
-                              ),
-                              _buildBrandedSocialTile(
-                                label: 'سناب شات',
-                                logoUrl: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/snapchat.svg',
-                                fallbackIcon: Icons.camera_alt_rounded,
-                                bgColor: const Color(0xFFFFFC00),
-                                iconColor: Colors.black,
-                                onTap: () => _openUrl(context, _kSnapchat),
-                              ),
-                              _buildBrandedSocialTile(
-                                label: 'يوتيوب',
-                                logoUrl: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/youtube.svg',
-                                fallbackIcon: Icons.play_circle_fill,
-                                bgColor: const Color(0xFFFF0000),
-                                iconColor: Colors.white,
-                                onTap: () => _openUrl(context, _kYoutube),
-                              ),
-                              _buildBrandedSocialTile(
-                                label: 'فيسبوك',
-                                logoUrl: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/facebook.svg',
-                                fallbackIcon: Icons.facebook,
-                                bgColor: const Color(0xFF1877F2),
-                                iconColor: Colors.white,
-                                onTap: () => _openUrl(context, _kFacebook),
-                              ),
-                              _buildBrandedSocialTile(
-                                label: 'تويتر / X',
-                                logoUrl: 'https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/x.svg',
-                                fallbackIcon: Icons.close_rounded,
-                                bgColor: const Color(0xFF14171A),
-                                iconColor: Colors.white,
-                                onTap: () => _openUrl(context, _kTwitter),
-                              ),
-                            ],
+                          const SizedBox(height: 10),
+                          Text(
+                            isArabic ? 'فريق دعم KDX' : 'KDX Support Team',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isArabic ? 'نحن هنا لمساعدتك على مدار الساعة' : 'We are here to help you 24/7',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -461,86 +232,315 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 40),
-            ],
-          ),
+            ),
+            const SizedBox(height: 24),
+
+            // Contact Form
+            Container(
+              decoration: BoxDecoration(
+                color: context.surfaceColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: context.border),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: context.primaryColor,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    ),
+                    child: Text(
+                      isArabic ? 'أرسل لنا رسالة' : 'Send us a message',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildLabel(isArabic ? 'الاسم الكامل' : 'Full Name', context),
+                          _buildTextField(_nameController, context, required: true, isArabic: isArabic),
+                          const SizedBox(height: 16),
+                          
+                          _buildLabel(isArabic ? 'البريد الإلكتروني' : 'Email Address', context),
+                          _buildTextField(_emailController, context, required: true, isEmail: true, isArabic: isArabic),
+                          const SizedBox(height: 16),
+                          
+                          _buildLabel(isArabic ? 'الهاتف' : 'Phone Number', context),
+                          _buildTextField(_phoneController, context, required: false, isPhone: true, isArabic: isArabic),
+                          const SizedBox(height: 16),
+                          
+                          _buildLabel(isArabic ? 'نوع الاستفسار' : 'Inquiry Type', context),
+                          _buildDropdown(isArabic, context),
+                          const SizedBox(height: 16),
+                          
+                          _buildLabel(isArabic ? 'الموضوع' : 'Subject', context),
+                          _buildTextField(_subjectController, context, required: true, hint: isArabic ? 'موضوع الرسالة' : 'Subject', isArabic: isArabic),
+                          const SizedBox(height: 16),
+                          
+                          _buildLabel(isArabic ? 'الرسالة' : 'Message', context),
+                          _buildTextField(
+                            _messageController,
+                            context,
+                            required: true,
+                            maxLines: 4,
+                            hint: isArabic ? 'اكتب رسالتك هنا...' : 'Write your message here...',
+                            isArabic: isArabic,
+                          ),
+                          const SizedBox(height: 24),
+                          
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              onPressed: _isLoading ? null : () => _submitForm(isArabic),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: context.primaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 0,
+                              ),
+                              icon: _isLoading
+                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Icon(Icons.send, color: Colors.white, size: 18),
+                              label: Text(
+                                _isLoading
+                                  ? (isArabic ? 'جاري الإرسال...' : 'Sending...')
+                                  : (isArabic ? 'إرسال' : 'Send'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 32),
+            
+            // Contact Info
+            Container(
+              decoration: BoxDecoration(
+                color: context.surfaceColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: context.border),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: context.primaryColor,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    ),
+                    child: Text(
+                      isArabic ? 'معلومات الاتصال' : 'Contact Information',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildInfoRow(context, Icons.location_on, isArabic ? 'العنوان' : 'Address', isArabic ? 'المملكة العربية السعودية' : 'Saudi Arabia'),
+                        Divider(height: 32, color: context.border),
+                        
+                        GestureDetector(
+                          onTap: () => _openWhatsApp(context, isArabic),
+                          child: _buildInfoRow(context, Icons.phone, isArabic ? 'الهاتف' : 'Phone', '+966542139388', isClickable: true),
+                        ),
+                        Divider(height: 32, color: context.border),
+                        
+                        GestureDetector(
+                          onTap: () => _openEmail(context, isArabic),
+                          child: _buildInfoRow(context, Icons.email, isArabic ? 'البريد الإلكتروني' : 'Email Address', 'support@kdx-sa.com', isClickable: true),
+                        ),
+                        const SizedBox(height: 32),
+                        
+                        // Social Media
+                        Text(
+                          isArabic ? 'تابعنا على وسائل التواصل' : 'Follow Us on Social Media',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: context.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        GridView.count(
+                          crossAxisCount: 3,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 1.1,
+                          children: [
+                            _buildBrandedSocialTile(
+                              label: isArabic ? 'تيك توك' : 'TikTok',
+                              fallbackIcon: Icons.music_note,
+                              bgColor: Colors.black,
+                              iconColor: Colors.white,
+                              onTap: () => _openUrl(context, _kTikTok, isArabic),
+                            ),
+                            _buildBrandedSocialTile(
+                              label: isArabic ? 'انستقرام' : 'Instagram',
+                              fallbackIcon: Icons.photo_camera_rounded,
+                              bgColor: const Color(0xFFE1306C),
+                              iconColor: Colors.white,
+                              onTap: () => _openUrl(context, _kInstagram, isArabic),
+                            ),
+                            _buildBrandedSocialTile(
+                              label: isArabic ? 'سناب شات' : 'Snapchat',
+                              fallbackIcon: Icons.camera_alt_rounded,
+                              bgColor: const Color(0xFFFFFC00),
+                              iconColor: Colors.black,
+                              onTap: () => _openUrl(context, _kSnapchat, isArabic),
+                            ),
+                            _buildBrandedSocialTile(
+                              label: isArabic ? 'يوتيوب' : 'YouTube',
+                              fallbackIcon: Icons.play_circle_fill,
+                              bgColor: const Color(0xFFFF0000),
+                              iconColor: Colors.white,
+                              onTap: () => _openUrl(context, _kYoutube, isArabic),
+                            ),
+                            _buildBrandedSocialTile(
+                              label: isArabic ? 'فيسبوك' : 'Facebook',
+                              fallbackIcon: Icons.facebook,
+                              bgColor: const Color(0xFF1877F2),
+                              iconColor: Colors.white,
+                              onTap: () => _openUrl(context, _kFacebook, isArabic),
+                            ),
+                            _buildBrandedSocialTile(
+                              label: isArabic ? 'تويتر / X' : 'Twitter / X',
+                              fallbackIcon: Icons.close_rounded,
+                              bgColor: const Color(0xFF14171A),
+                              iconColor: Colors.white,
+                              onTap: () => _openUrl(context, _kTwitter, isArabic),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
   }
 
-  // ── UI Helpers ────────────────────────────────────────────────────
-  
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(String text, BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 13, color: AppColors.textDark),
+        style: TextStyle(fontSize: 13, color: context.textDark),
       ),
     );
   }
   
   Widget _buildTextField(
-    TextEditingController controller, {
+    TextEditingController controller,
+    BuildContext context, {
     bool required = false,
     bool isEmail = false,
     bool isPhone = false,
     int maxLines = 1,
     String? hint,
+    required bool isArabic,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      style: TextStyle(color: context.textDark),
       keyboardType: isEmail
         ? TextInputType.emailAddress
         : isPhone
           ? TextInputType.phone
           : TextInputType.text,
       validator: required ? (v) {
-        if (v == null || v.trim().isEmpty) return 'هذا الحقل مطلوب';
-        if (isEmail && !v.contains('@')) return 'البريد الإلكتروني غير صحيح';
+        if (v == null || v.trim().isEmpty) return isArabic ? 'هذا الحقل مطلوب' : 'This field is required';
+        if (isEmail && !v.contains('@')) return isArabic ? 'البريد الإلكتروني غير صحيح' : 'Invalid email address';
         return null;
       } : null,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textGreyLight, fontSize: 13),
+        hintStyle: TextStyle(color: context.textGrey, fontSize: 13),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+          borderSide: BorderSide(color: context.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
+          borderSide: BorderSide(color: context.border),
         ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-          borderSide: BorderSide(color: AppColors.primary),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
+          borderSide: BorderSide(color: context.primaryColor),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.surfaceColor,
       ),
     );
   }
   
-  Widget _buildDropdown() {
+  Widget _buildDropdown(bool isArabic, BuildContext context) {
+    final inquiryTypes = isArabic
+        ? ['استفسار عام', 'استفسار عن طلب', 'شكوى', 'اقتراح', 'دعم فني']
+        : ['General Inquiry', 'Order Inquiry', 'Complaint', 'Suggestion', 'Technical Support'];
+    
+    // Ensure default matches list
+    if (!inquiryTypes.contains(_selectedType)) {
+      _selectedType = inquiryTypes.first;
+    }
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFEEEEEE)),
-        color: Colors.white,
+        border: Border.all(color: context.border),
+        color: context.surfaceColor,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedType,
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textGrey),
-          items: _inquiryTypes.map((type) {
+          dropdownColor: context.surfaceColor,
+          style: TextStyle(color: context.textDark, fontSize: 14),
+          icon: Icon(Icons.keyboard_arrow_down, color: context.textGrey),
+          items: inquiryTypes.map((type) {
             return DropdownMenuItem<String>(
               value: type,
-              child: Text(type, style: const TextStyle(fontSize: 14)),
+              child: Text(type),
             );
           }).toList(),
           onChanged: (val) {
@@ -551,14 +551,14 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, {bool isClickable = false}) {
+  Widget _buildInfoRow(BuildContext context, IconData icon, String label, String value, {bool isClickable = false}) {
     return Row(
       children: [
         Container(
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: context.primaryColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: Colors.white, size: 24),
@@ -567,13 +567,13 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: context.textDark)),
             const SizedBox(height: 4),
             Text(
               value,
               style: TextStyle(
                 fontSize: 13,
-                color: isClickable ? AppColors.textDark : AppColors.textGrey,
+                color: isClickable ? context.textDark : context.textGrey,
                 fontWeight: isClickable ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -585,7 +585,6 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
   
   Widget _buildBrandedSocialTile({
     required String label,
-    required String logoUrl,
     required IconData fallbackIcon,
     required Color bgColor,
     required Color iconColor,
@@ -610,7 +609,6 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
                 color: iconColor,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                fontFamily: 'Tajawal',
               ),
             ),
           ],
@@ -618,5 +616,4 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
       ),
     );
   }
-
 }

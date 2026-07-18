@@ -27,18 +27,11 @@ class NativePaymentService {
     }
   }
 
-  Future<void> initTamara() async {
-    final tamaraToken = Env.tamaraApiToken;
-    if (tamaraToken.isNotEmpty) {
-      try {
-        // Example initialization; adjust to exact SDK signature if needed
-        // TamaraSdk.initSdk(...);
-      } catch (e) {
-        debugPrint('Failed to initialize Tamara SDK: $e');
-      }
-    }
-  }
-
+  /// Creates a Tamara checkout session directly via the Tamara API.
+  ///
+  /// Returns the Tamara `checkout_url` (Tamara's own hosted page — NOT a kdx URL).
+  /// All `merchant_url` callbacks use `kdxstore://` deep links so the WebView
+  /// never navigates back to any kdx-sa.com web page.
   Future<String?> createTamaraSession({
     required String orderNumber,
     required double amount,
@@ -120,10 +113,15 @@ class NativePaymentService {
       },
       'shipping_address': addressBlock,
       'billing_address': addressBlock, // required by Tamara production
+      // ── All merchant_url callbacks use deep links ─────────────────────────
+      // This ensures the WebView NEVER loads any kdx-sa.com web page.
+      // Flutter's AppLinks listener in CheckoutReviewPage handles these URIs.
       'merchant_url': {
         'success': 'kdxstore://payment/success',
         'failure': 'kdxstore://payment/failure',
         'cancel': 'kdxstore://payment/cancel',
+        // The notification URL must be a public HTTPS endpoint — Tamara POSTs
+        // the webhook here server-to-server, it does NOT open in the WebView.
         'notification': 'https://kdx-sa.com/api/payments/tamara/webhook',
       },
     };
@@ -169,12 +167,24 @@ class NativePaymentService {
     }
   }
 
+  /// Creates a Tabby checkout session using the Tabby Flutter in-app SDK.
+  ///
+  /// [registeredSince]  ISO-8601 string of customer's account creation date.
+  ///                    Fetch the real value from the user profile / orders API
+  ///                    and pass it here — do NOT hardcode.
+  /// [loyaltyLevel]     Number of previously paid/completed orders for this user.
+  ///                    Fetch from GET /api/orders and count paid orders.
+  ///
+  /// Both parameters drive Tabby's pre-scoring model. Hardcoded values cause
+  /// inaccurate risk assessment and may lead to incorrect rejections/approvals.
   Future<TabbySession?> createTabbySession({
     required String orderNumber,
     required double amount,
     required SavedAddressEntity address,
     required String customerEmail,
     required List<CartItemEntity> items,
+    required String registeredSince,   // real ISO-8601 from user profile
+    required int loyaltyLevel,         // real count of past paid orders
   }) async {
     try {
       final session = await TabbySDK().createSession(TabbyCheckoutPayload(
@@ -193,11 +203,11 @@ class NativePaymentService {
             dob: '2000-01-01',
           ),
           buyerHistory: BuyerHistory(
-            registeredSince: '2020-01-01T00:00:00Z',
-            loyaltyLevel: 0,
+            registeredSince: registeredSince,   // ← real value from caller
+            loyaltyLevel: loyaltyLevel,         // ← real value from caller
           ),
           orderHistory: [
-            // optional
+            // optional — can be extended later
           ],
           shippingAddress: ShippingAddress(
             city: address.city,
@@ -316,8 +326,11 @@ class NativePaymentService {
         final transactionDetails = event['data'];
         if (transactionDetails != null &&
             transactionDetails['isSuccess'] == true) {
-          final transactionRef =
-              event['trace'] ?? event['transactionRef'] ?? orderNumber;
+          final transactionRef = event['data']?['pt_transaction_reference'] ??
+              event['data']?['transactionReference'] ??
+              event['trace'] ??
+              event['transactionRef'] ??
+              orderNumber;
           onSuccess(transactionRef.toString());
         } else {
           onError('payment_declined'.tr());
@@ -407,8 +420,11 @@ class NativePaymentService {
         final transactionDetails = event['data'];
         if (transactionDetails != null &&
             transactionDetails['isSuccess'] == true) {
-          final transactionRef =
-              event['trace'] ?? event['transactionRef'] ?? orderNumber;
+          final transactionRef = event['data']?['pt_transaction_reference'] ??
+              event['data']?['transactionReference'] ??
+              event['trace'] ??
+              event['transactionRef'] ??
+              orderNumber;
           onSuccess(transactionRef.toString());
         } else {
           onError('payment_declined'.tr());

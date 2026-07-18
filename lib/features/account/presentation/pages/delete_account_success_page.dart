@@ -21,97 +21,98 @@ class DeleteAccountSuccessPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          centerTitle: true,
-          title: const Text(
-            'حذف الحساب',
-            style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    return Scaffold(
+      backgroundColor: context.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: context.surfaceColor,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        title: Text(
+          isArabic ? 'حذف الحساب' : 'Delete Account',
+          style: TextStyle(
+            color: context.textDark,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Spacer(),
-                // Success Illustration / Icon
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              // Success Illustration / Icon
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: context.primaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: context.primaryColor,
+                    size: 80,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // Title
+              Text(
+                isArabic ? 'تم تقديم الطلب بنجاح' : 'Request Submitted Successfully',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: context.textDark,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Description
+              Text(
+                isArabic
+                    ? 'سيتم تعطيل حسابك مؤقتاً وسيتم حذفه نهائياً بعد مرور 30 يوماً. إذا رغبت في إلغاء طلب حذف حسابك، يمكنك تسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور لإلغاء طلب الحذف.'
+                    : 'Your account will be temporarily disabled and permanently deleted after 30 days. If you wish to cancel this request, you can log back in with your email and password to cancel.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.6,
+                  color: context.textMid,
+                ),
+              ),
+              const Spacer(),
+              
+              // Confirm Button
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => _handleConfirm(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
-                      Icons.check_circle_outline_rounded,
-                      color: AppColors.primary,
-                      size: 80,
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    isArabic ? 'تأكيد' : 'Confirm',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
-                
-                // Title
-                const Text(
-                  'تم تقديم الطلب بنجاح',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Description
-                const Text(
-                  'سيتم تعطيل حسابك مؤقتاً وسيتم حذفه نهائياً بعد مرور 30 يوماً. إذا رغبت في إلغاء طلب حذف حسابك، يمكنك تسجيل الدخول باستخدام بريدك الإلكتروني وكلمة المرور لإلغاء طلب الحذف.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    height: 1.6,
-                    color: AppColors.textMid,
-                  ),
-                ),
-                const Spacer(),
-                
-                // Confirm Button
-                SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () => _handleConfirm(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'تأكيد',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-            ),
+              ),
+              const SizedBox(height: 12),
+            ],
           ),
         ),
       ),

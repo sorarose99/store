@@ -22,6 +22,7 @@ class ProductModel extends ProductEntity {
     required super.categoryId,
     super.featured,
     super.requiresShipping,
+    super.deliveryNote,
   });
 
   static ProductModel? fromJsonSafe(Map<String, dynamic> json) {
@@ -121,6 +122,7 @@ class ProductModel extends ProductEntity {
       categoryId: json['category_id']?.toString() ?? '',
       featured: parseBool(json['featured']),
       requiresShipping: parseBool(json['requires_shipping']),
+      deliveryNote: json['delivery_note'] as String? ?? 'normal',
     );
   }
 
@@ -143,6 +145,7 @@ class ProductModel extends ProductEntity {
       'category_id': categoryId,
       'featured': featured,
       'requires_shipping': requiresShipping,
+      'delivery_note': deliveryNote,
     };
   }
 }

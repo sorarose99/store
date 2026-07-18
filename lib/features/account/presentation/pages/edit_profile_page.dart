@@ -35,6 +35,42 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _picker = ImagePicker();
 
   // ── Init ─────────────────────────────────────────────────────────
+  String _getDisplayProfilePhone(String phone) {
+    String digits = phone.replaceAll(RegExp(r'\D'), '').trim();
+    if (digits.startsWith('966')) {
+      String rest = digits.substring(3);
+      return '0$rest';
+    }
+    if (phone.startsWith('0')) {
+      return phone;
+    }
+    if (phone.length == 9 && phone.startsWith('5')) {
+      return '0$phone';
+    }
+    return phone;
+  }
+
+  String _formatProfilePhoneNumber(String phone) {
+    String digits = phone.replaceAll(RegExp(r'\D'), '').trim();
+    if (digits.startsWith('00966')) {
+      digits = digits.substring(5);
+    } else if (digits.startsWith('966')) {
+      digits = digits.substring(3);
+    } else if (digits.startsWith('05')) {
+      digits = digits.substring(1);
+    } else if (digits.startsWith('5')) {
+      // normal
+    }
+    
+    if (digits.length == 9 && digits.startsWith('5')) {
+      return '+966$digits';
+    }
+    if (phone.startsWith('+')) {
+      return phone;
+    }
+    return '+966$digits';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -43,7 +79,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final user = state.user;
       _nameController  = TextEditingController(text: user.name);
       _emailController = TextEditingController(text: user.email);
-      _phoneController = TextEditingController(text: user.phone);
+      _phoneController = TextEditingController(text: _getDisplayProfilePhone(user.phone));
       _selectedGender  = _genderLabel(user.gender);
       final dob        = user.dateOfBirth;
       _selectedDob     = '${dob.day}-${dob.month}-${dob.year}';
@@ -188,7 +224,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       'last_name':  lastName,
       'name':       _nameController.text.trim(),
       'email':      _emailController.text.trim(),
-      'phone':      _phoneController.text.trim(),
+      'phone':      _formatProfilePhoneNumber(_phoneController.text.trim()),
       'gender':     genderApi,
       'birth_date': _selectedDobApi,
     };

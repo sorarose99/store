@@ -7,151 +7,162 @@ class DeleteAccountStep2Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios,
-              color: AppColors.textDark,
-              size: 20,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    return Scaffold(
+      backgroundColor: context.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: context.surfaceColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: context.textDark,
+            size: 20,
           ),
-          centerTitle: true,
-          title: const Text(
-            'حذف الحساب',
-            style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        centerTitle: true,
+        title: Text(
+          isArabic ? 'حذف الحساب' : 'Delete Account',
+          style: TextStyle(
+            color: context.textDark,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'تقديم طلب لحذف الحساب',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textDark,
-                        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isArabic ? 'تقديم طلب لحذف الحساب' : 'Submit Account Deletion Request',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: context.textDark,
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'لإتمام حذف حسابك، يجب تلبية الشروط التالية للتحقق من أمان حسابك.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textMid,
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      isArabic
+                          ? 'لإتمام حذف حسابك، يجب تلبية الشروط التالية للتحقق من أمان حسابك.'
+                          : 'To complete deletion of your account, the following security requirements must be met.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.textMid,
                       ),
-                      const SizedBox(height: 20),
+                    ),
+                    const SizedBox(height: 20),
 
-                      // Warning Alert
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF5F5), // Light red
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFFFE3E3)),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.error_outline_rounded,
-                              color: AppColors.accent,
-                              size: 22,
-                            ),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'تنبيه: لن يكون الحساب قابلاً للاستعادة بمجرد حذفه',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.accent,
-                                ),
+                    // Warning Alert
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: context.errorColor.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: context.errorColor.withValues(alpha: 0.15)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline_rounded,
+                            color: context.errorColor,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              isArabic
+                                  ? 'تنبيه: لن يكون الحساب قابلاً للاستعادة بمجرد حذفه'
+                                  : 'Warning: The account cannot be recovered once deleted',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: context.errorColor,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
+                    ),
+                    const SizedBox(height: 24),
 
-                      // Check Cards
-                      _buildCheckCard(
-                        icon: Icons.shield_outlined,
-                        title: 'الحساب في حالة أمنة',
-                        subtitle: 'الحساب غير معرض لأي مخاطر أمنية',
+                    // Check Cards
+                    _buildCheckCard(
+                      context,
+                      icon: Icons.shield_outlined,
+                      title: isArabic ? 'الحساب في حالة أمنة' : 'Account is Secure',
+                      subtitle: isArabic ? 'الحساب غير معرض لأي مخاطر أمنية' : 'The account is not exposed to security risks',
+                    ),
+                    _buildCheckCard(
+                      context,
+                      icon: Icons.assignment_outlined,
+                      title: isArabic ? 'طلبات الحساب مكتملة' : 'Account Orders are Complete',
+                      subtitle: isArabic
+                          ? 'لا توجد طلبات مسترجعة أو معلقة أو معاملات جارية في المتجر'
+                          : 'No returns, pending orders, or ongoing transactions in the store',
+                    ),
+                    _buildCheckCard(
+                      context,
+                      icon: Icons.account_balance_wallet_outlined,
+                      title: isArabic ? 'رصيد المحفظة فارغ' : 'Wallet Balance is Empty',
+                      subtitle: isArabic
+                          ? 'يجب أن لا يكون هناك رصيد معلق أو مبالغ مالية متبقية في محفظتك'
+                          : 'There must be no pending balance or remaining funds in your wallet',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Action Button
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const DeleteAccountPasswordPage(),
                       ),
-                      _buildCheckCard(
-                        icon: Icons.assignment_outlined,
-                        title: 'طلبات الحساب مكتملة',
-                        subtitle: 'لا توجد طلبات مسترجعة أو معلقة أو معاملات جارية في المتجر',
-                      ),
-                      _buildCheckCard(
-                        icon: Icons.account_balance_wallet_outlined,
-                        title: 'يقصد بالإعلانات تلقي الأنشطة',
-                        subtitle: 'يجب أن لا يكون هناك رصيد معلق أو مبالغ مالية متبقية في محفظتك',
-                      ),
-                    ],
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: context.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    isArabic ? 'متابعة' : 'Continue',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
-
-              // Action Button
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const DeleteAccountPasswordPage(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'متابعة',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildCheckCard({
+  Widget _buildCheckCard(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String subtitle,
@@ -160,29 +171,22 @@ class DeleteAccountStep2Page extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF0F0F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: context.border),
       ),
       child: Row(
         children: [
           // Icon wrapper
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF9F9F9),
+            decoration: BoxDecoration(
+              color: context.cardBackground,
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
-              color: AppColors.textGrey,
+              color: context.textGrey,
               size: 24,
             ),
           ),
@@ -194,18 +198,18 @@ class DeleteAccountStep2Page extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+                    color: context.textDark,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textGrey,
+                    color: context.textGrey,
                     height: 1.4,
                   ),
                 ),
@@ -214,9 +218,9 @@ class DeleteAccountStep2Page extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           // Passed checkmark
-          const Icon(
+          Icon(
             Icons.check_circle_rounded,
-            color: AppColors.success,
+            color: context.successColor,
             size: 22,
           ),
         ],

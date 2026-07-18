@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/network/token_service.dart';
 import '../../domain/usecases/get_profile_usecase.dart';
 import '../../domain/usecases/update_profile_usecase.dart';
 import '../../domain/usecases/change_password_usecase.dart';
@@ -44,8 +45,8 @@ class AccountBloc extends Bloc<AccountEvent, AccountState> {
     // Dedup: skip if a fetch is already in-flight
     if (state is AccountLoading) return;
 
-    // Guard: only call authenticated endpoints when a Firebase user exists
-    if (FirebaseAuth.instance.currentUser == null) {
+    // Guard: only call authenticated endpoints when user is logged in
+    if (!sl<TokenService>().hasToken) {
       emit(const AccountError('يرجى تسجيل الدخول أولاً'));
       return;
     }

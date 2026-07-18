@@ -14,6 +14,7 @@ class CartItemModel extends CartItemEntity {
     super.isAvailable = true,
     super.breakdown,
     super.productSizes,
+    super.options,
   });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
@@ -52,6 +53,9 @@ class CartItemModel extends CartItemEntity {
               .where((name) => name.isNotEmpty)
               .toList() ??
           [],
+      options: json['options'] != null
+          ? Map<String, dynamic>.from(json['options'] as Map)
+          : const {},
     );
   }
 }

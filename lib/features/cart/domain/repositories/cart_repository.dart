@@ -5,7 +5,7 @@ import '../entities/cart_summary_entity.dart';
 abstract class CartRepository {
   Future<Either<Failure, CartSummaryEntity>> getCart();
   Future<Either<Failure, void>> addToCart(String productId, int quantity,
-      {int? imageId});
+      {int? imageId, Map<String, dynamic>? options});
   Future<Either<Failure, void>> updateCart(String productId, int quantity,
       {List<Map<String, dynamic>>? breakdown});
   Future<Either<Failure, void>> updateBreakdown(

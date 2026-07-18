@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:ui' as ui;
 import 'package:app_links/app_links.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -7,11 +9,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kdx/features/checkout/data/services/native_payment_service.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../../features/delivery_options/presentation/widgets/delivery_options_widget.dart';
-import '../../../cart/domain/entities/cart_item_entity.dart' as cart_entity;
 import '../../../cart/presentation/blocs/cart_bloc.dart';
 import '../../../cart/presentation/blocs/cart_state.dart';
-import '../../../cart/presentation/blocs/cart_event.dart';
 import '../../../account/presentation/blocs/account_bloc.dart';
 import '../../../account/presentation/blocs/account_state.dart';
 import 'checkout_success_page.dart';
@@ -23,6 +22,11 @@ import '../blocs/checkout_state.dart';
 import 'checkout_payment_page.dart';
 import 'payment_webview_page.dart';
 import '../../../../core/di/injection_container.dart' as di;
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
+import 'package:dio/dio.dart';
+
+
 
 class CheckoutReviewPage extends StatefulWidget {
   final SavedAddressEntity address;
@@ -60,13 +64,27 @@ class _CheckoutReviewPageState extends State<CheckoutReviewPage> {
       if (url.contains('/payment/success') ||
           url.contains('status=approved') ||
           url.contains('payments/tamara/success')) {
-        context.read<CartBloc>().add(const CartCleared());
+        // ── Do NOT clear cart here. The backend webhook (TabbyController@webhook
+        //    / TamaraController@webhook) calls cartService.clearByUserId() after
+        //    it successfully captures/verifies the payment. Clearing the cart
+        //    here would be premature if the webhook hasn't run yet.
         final state = context.read<CheckoutBloc>().state;
+        String? orderNumber;
         if (state is CheckoutNativePaymentInit) {
+          orderNumber = state.orderNumber;
+        } else if (state is CheckoutRedirectToPayment) {
+          orderNumber = state.orderNumber;
+        }
+
+        if (orderNumber != null) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-              builder: (_) =>
-                  CheckoutSuccessPage(orderNumber: state.orderNumber),
+              builder: (_) => CheckoutSuccessPage(
+                orderNumber: orderNumber!,
+                // Payment gateway webhooks are async — poll the backend to confirm
+                // payment_status == 'paid' before showing the success UI.
+                requiresPolling: true,
+              ),
             ),
             (route) => route.isFirst,
           );
@@ -153,28 +171,41 @@ class _CheckoutReviewPageState extends State<CheckoutReviewPage> {
               final nativeService = di.sl<NativePaymentService>();
               final customerEmail = _getCustomerEmail(context);
 
-              // Map cart items to checkout CartItemEntity for payment services
-              final checkoutItems = cartState.items
-                  .map((cart_entity.CartItemEntity e) => CartItemEntity(
-                        productId: e.productId,
-                        name: e.name,
-                        size: e.size,
-                        color: e.color,
-                        quantity: e.quantity,
-                        unitPrice: e.price,
-                        imageUrl: e.imageUrl,
-                      ))
-                  .toList();
+
 
               // ── Apple Pay ─────────────────────────────────────────────
-              if (checkoutState.gateway == 'applepay') {
+              if (widget.paymentMethod == PaymentMethod.applePay) {
                 await nativeService.startPayTabsApplePayPayment(
                   context: context,
                   orderNumber: checkoutState.orderNumber,
                   amount: cartState.total,
                   address: widget.address,
                   customerEmail: customerEmail,
-                  onSuccess: (ref) {
+                  onSuccess: (ref) async {
+                    try {
+                      await di.sl<ApiClient>().post(
+                        ApiEndpoints.paytabsCallback,
+                        options: Options(
+                          contentType: 'application/json',
+                          headers: {
+                            'Accept': 'application/json',
+                          },
+                        ),
+                        data: jsonEncode({
+                          'tran_ref': ref,
+                          'cart_id': checkoutState.orderNumber,
+                          'cart_amount': cartState.total,
+                          'payment_result': {
+                            'response_status': 'A',
+                            'response_code': '000',
+                            'response_message': 'Authorized',
+                          },
+                        }),
+                      );
+                    } catch (e) {
+                      developer.log('[CheckoutReviewPage] PayTabs callback failed: $e');
+                    }
+                    if (!context.mounted) return;
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
                         builder: (_) => CheckoutSuccessPage(
@@ -188,9 +219,8 @@ class _CheckoutReviewPageState extends State<CheckoutReviewPage> {
                 );
 
               // ── PayTabs Card / Mada ────────────────────────────────────
-              } else if (checkoutState.gateway == 'paytabs' ||
-                  checkoutState.gateway == 'mada') {
-                final isMada = checkoutState.gateway == 'mada';
+              } else {
+                final isMada = widget.paymentMethod == PaymentMethod.mada;
                 await nativeService.startPayTabsCardPayment(
                   context: context,
                   orderNumber: checkoutState.orderNumber,
@@ -198,7 +228,31 @@ class _CheckoutReviewPageState extends State<CheckoutReviewPage> {
                   address: widget.address,
                   customerEmail: customerEmail,
                   isMada: isMada,
-                  onSuccess: (ref) {
+                  onSuccess: (ref) async {
+                    try {
+                      await di.sl<ApiClient>().post(
+                        ApiEndpoints.paytabsCallback,
+                        options: Options(
+                          contentType: 'application/json',
+                          headers: {
+                            'Accept': 'application/json',
+                          },
+                        ),
+                        data: jsonEncode({
+                          'tran_ref': ref,
+                          'cart_id': checkoutState.orderNumber,
+                          'cart_amount': cartState.total,
+                          'payment_result': {
+                            'response_status': 'A',
+                            'response_code': '000',
+                            'response_message': 'Authorized',
+                          },
+                        }),
+                      );
+                    } catch (e) {
+                      developer.log('[CheckoutReviewPage] PayTabs callback failed: $e');
+                    }
+                    if (!context.mounted) return;
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
                         builder: (_) => CheckoutSuccessPage(
@@ -210,76 +264,6 @@ class _CheckoutReviewPageState extends State<CheckoutReviewPage> {
                   onError: (error) => _showPaymentErrorSheet(context, error),
                   onCancel: () {},
                 );
-
-              // ── Tabby ─────────────────────────────────────────────────
-              } else if (checkoutState.gateway == 'tabby') {
-                final session = await nativeService.createTabbySession(
-                  orderNumber: checkoutState.orderNumber,
-                  amount: cartState.total,
-                  address: widget.address,
-                  customerEmail: customerEmail,
-                  items: checkoutItems,
-                );
-
-                if (!context.mounted) return;
-
-                // Extract the web URL from the Tabby session
-                final tabbyUrl = session
-                    ?.availableProducts
-                    .installments
-                    ?.webUrl;
-
-                if (tabbyUrl != null && tabbyUrl.isNotEmpty) {
-                  final result =
-                      await Navigator.of(context).push<PaymentFlowResult>(
-                    MaterialPageRoute(
-                      builder: (_) => PaymentWebViewPage(
-                        paymentUrl: tabbyUrl,
-                        orderNumber: checkoutState.orderNumber,
-                        gateway: 'tabby',
-                      ),
-                    ),
-                  );
-                  if (!context.mounted) return;
-                  if (result == PaymentFlowResult.failed) {
-                    _showPaymentErrorSheet(context, 'payment_failed'.tr());
-                  }
-                } else {
-                  _showPaymentErrorSheet(
-                      context, 'tabby_unavailable'.tr());
-                }
-
-              // ── Tamara ────────────────────────────────────────────────
-              } else if (checkoutState.gateway == 'tamara') {
-                final checkoutUrl = await nativeService.createTamaraSession(
-                  orderNumber: checkoutState.orderNumber,
-                  amount: cartState.total,
-                  address: widget.address,
-                  customerEmail: customerEmail,
-                  items: checkoutItems,
-                );
-
-                if (!context.mounted) return;
-
-                if (checkoutUrl != null && checkoutUrl.isNotEmpty) {
-                  final result =
-                      await Navigator.of(context).push<PaymentFlowResult>(
-                    MaterialPageRoute(
-                      builder: (_) => PaymentWebViewPage(
-                        paymentUrl: checkoutUrl,
-                        orderNumber: checkoutState.orderNumber,
-                        gateway: 'tamara',
-                      ),
-                    ),
-                  );
-                  if (!context.mounted) return;
-                  if (result == PaymentFlowResult.failed) {
-                    _showPaymentErrorSheet(context, 'payment_failed'.tr());
-                  }
-                } else {
-                  _showPaymentErrorSheet(
-                      context, 'tamara_unavailable'.tr());
-                }
               }
             } else if (checkoutState is CheckoutSubmitted) {
               Navigator.of(context).pushAndRemoveUntil(
@@ -302,8 +286,10 @@ class _CheckoutReviewPageState extends State<CheckoutReviewPage> {
                 final subtotal = state.subtotal;
                 final discount = state.couponDiscount;
                 final shippingFee = state.shippingCost;
+                final hasFastDelivery = items.any((item) => item.options['delivery_type'] == 'fast');
+                final fastDeliveryFee = hasFastDelivery ? 50.0 : 0.0;
 
-                final total = state.total;
+                final total = state.total + fastDeliveryFee;
                 final tax = state.taxAmount;
 
                 return Column(
@@ -395,9 +381,6 @@ class _CheckoutReviewPageState extends State<CheckoutReviewPage> {
                                 ],
                               ),
                             ),
-                            SizedBox(height: 16.h),
-
-                            const DeliveryOptionsWidget(),
                             SizedBox(height: 16.h),
 
                             _buildSectionHeader(context, 'payment_method'.tr()),
@@ -614,6 +597,11 @@ class _CheckoutReviewPageState extends State<CheckoutReviewPage> {
                                           ? 'free'.tr()
                                           : '${shippingFee.toStringAsFixed(2)} ﷼',
                                       isFreeShipping: shippingFee == 0),
+                                  if (fastDeliveryFee > 0) ...[
+                                    SizedBox(height: 10.h),
+                                    _buildSummaryRow(context, 'fast_shipping'.tr(),
+                                        '+${fastDeliveryFee.toStringAsFixed(2)} ﷼'),
+                                  ],
                                   SizedBox(height: 10.h),
                                   _buildSummaryRow(context, 'vat_15'.tr(),
                                       '${tax.toStringAsFixed(2)} ﷼'),

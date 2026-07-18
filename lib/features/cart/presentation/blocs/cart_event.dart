@@ -16,16 +16,18 @@ class CartItemAdded extends CartEvent {
   final int quantity;
   final int? imageId;
   final String? sizeName;
+  final Map<String, dynamic>? options;
 
   const CartItemAdded({
     required this.productId,
     required this.quantity,
     this.imageId,
     this.sizeName,
+    this.options,
   });
 
   @override
-  List<Object?> get props => [productId, quantity, imageId, sizeName];
+  List<Object?> get props => [productId, quantity, imageId, sizeName, options];
 }
 
 class CartItemUpdated extends CartEvent {

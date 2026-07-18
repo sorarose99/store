@@ -19,7 +19,6 @@ import '../../../cart/presentation/widgets/tamara_bottom_sheet.dart';
 import '../../../cart/presentation/widgets/tabby_bottom_sheet.dart';
 import '../../../../core/widgets/bnpl_payment_banners.dart';
 import '../../../cart/presentation/blocs/cart_bloc.dart';
-import '../../../delivery_options/presentation/widgets/delivery_options_widget.dart';
 import '../../../cart/presentation/blocs/cart_event.dart';
 import '../../../wishlist/presentation/blocs/wishlist_bloc.dart';
 import '../../../wishlist/presentation/blocs/wishlist_event.dart';
@@ -58,6 +57,7 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
   int? _selectedSizeIndex;
   int _quantity = 1;
   bool _triedToAdd = false; // tracks if user tapped Add to Cart without selecting
+  String _selectedDeliveryType = 'standard';
 
   @override
   void dispose() {
@@ -115,6 +115,12 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                   _selectedVariantIndex = 0;
                 } else {
                   _selectedVariantIndex = null;
+                }
+                final note = state.productDetails.baseProduct.deliveryNote;
+                if (note == 'free') {
+                  _selectedDeliveryType = 'free';
+                } else {
+                  _selectedDeliveryType = 'standard';
                 }
               });
             }
@@ -175,6 +181,12 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                 } else {
                   _selectedVariantIndex = null;
                 }
+                final note = _productDetails!.baseProduct.deliveryNote;
+                if (note == 'free') {
+                  _selectedDeliveryType = 'free';
+                } else {
+                  _selectedDeliveryType = 'standard';
+                }
               }
             }
 
@@ -215,7 +227,7 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                                 _buildSizePicker(context),
                               ],
                               SizedBox(height: 24.h),
-                              const DeliveryOptionsWidget(),
+                              _buildProductDeliveryOptions(context),
                               SizedBox(height: 24.h),
                               // Only show the description section + its dividers
                               // when there is something to display
@@ -994,6 +1006,216 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
     );
   }
 
+  Widget _buildProductDeliveryOptions(BuildContext context) {
+    if (_productDetails == null) return const SizedBox.shrink();
+    final deliveryNote = _productDetails!.baseProduct.deliveryNote;
+
+    if (deliveryNote == 'fast') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'delivery_options_title'.tr(),
+            style: TextStyle(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.bold,
+              color: context.textDark,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+          SizedBox(height: 12.h),
+          _buildDeliveryOptionTile(
+            title: 'standard_shipping_normal'.tr(),
+            description: 'delivery_options_free_desc'.tr(),
+            priceLabel: 'free_delivery'.tr(),
+            isSelected: _selectedDeliveryType == 'standard',
+            onTap: () => setState(() => _selectedDeliveryType = 'standard'),
+          ),
+          SizedBox(height: 10.h),
+          _buildDeliveryOptionTile(
+            title: 'delivery_options_fast_title'.tr(),
+            description: 'delivery_options_fast_desc'.tr(),
+            priceLabel: '50 ${'sar'.tr()}',
+            isSelected: _selectedDeliveryType == 'fast',
+            onTap: () => setState(() => _selectedDeliveryType = 'fast'),
+          ),
+        ],
+      );
+    } else if (deliveryNote == 'free') {
+      return Container(
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: context.primaryColor.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.primaryColor.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.local_shipping_outlined, color: context.primaryColor, size: 22),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'delivery_options_free_title'.tr(),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: context.textDark,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    'delivery_options_free_desc'.tr(),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: AppColors.accent,
+                      height: 1.4,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: context.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.border),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.local_shipping_outlined, color: context.textGrey, size: 22),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'standard_shipping_normal'.tr(),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: context.textDark,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    'delivery_options_free_desc'.tr(),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: context.textGrey,
+                      height: 1.4,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildDeliveryOptionTile({
+    required String title,
+    required String description,
+    required String priceLabel,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? context.primaryColor.withValues(alpha: 0.06)
+              : context.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? context.primaryColor : context.border,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: context.primaryColor.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              color: isSelected ? context.primaryColor : context.textGrey,
+              size: 20.w,
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                          color: context.textDark,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                      Text(
+                        priceLabel,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? context.primaryColor : context.textGrey,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (description.isNotEmpty) ...[
+                    SizedBox(height: 6.h),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: AppColors.accent,
+                        height: 1.4,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomBar(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -1105,6 +1327,7 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                           quantity: _quantity,
                           imageId: imageId,
                           sizeName: sizeName,
+                          options: {'delivery_type': _selectedDeliveryType},
                         ));
                     if (!mounted) return;
                     showDialog(

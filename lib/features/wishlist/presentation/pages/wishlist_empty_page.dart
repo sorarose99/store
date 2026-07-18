@@ -55,7 +55,7 @@ class WishlistEmptyPage extends StatelessWidget {
                         width: 110.w,
                         height: 110.h,
                         decoration: BoxDecoration(
-                          color: context.primaryColor,
+                          color: context.backgroundColor,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                               color: context.primaryColor, width: 1.5.w),
@@ -80,7 +80,7 @@ class WishlistEmptyPage extends StatelessWidget {
                                     width: 5.w,
                                     height: 5.h,
                                     decoration: BoxDecoration(
-                                      color: context.primaryColor,
+                                      color: context.backgroundColor,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -89,7 +89,7 @@ class WishlistEmptyPage extends StatelessWidget {
                                     width: 5.w,
                                     height: 5.h,
                                     decoration: BoxDecoration(
-                                      color: context.primaryColor,
+                                      color: context.backgroundColor,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -98,7 +98,7 @@ class WishlistEmptyPage extends StatelessWidget {
                                     width: 5.w,
                                     height: 5.h,
                                     decoration: BoxDecoration(
-                                      color: context.primaryColor,
+                                      color: context.backgroundColor,
                                       shape: BoxShape.circle,
                                     ),
                                   ),

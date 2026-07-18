@@ -3,6 +3,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/di/injection_container.dart' as di;
+import '../../../../core/network/token_service.dart';
 import '../../../../core/constants/colors.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/utils/ui_helpers.dart';
@@ -82,6 +84,70 @@ class _WishlistContentViewState extends State<_WishlistContentView> {
             ),
           );
         } else if (state is WishlistError) {
+          final isUnauthorized = state.message.contains('تسجيل') || 
+                              state.message.contains('الجلسة') ||
+                              state.message.contains('Unauthorized') ||
+                              state.message.contains('401');
+          if (isUnauthorized) {
+            return Scaffold(
+              backgroundColor: context.surfaceColor,
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.favorite_border_rounded, size: 80, color: context.primaryColor),
+                      const SizedBox(height: 24),
+                      Text(
+                        'يرجى تسجيل الدخول لعرض قائمة الأمنيات',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: context.textDark,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'قم بتسجيل الدخول لتتمكن من إضافة المنتجات المفضلة وعرض قائمتك',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.textGrey,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final tokenService = di.sl<TokenService>();
+                          await tokenService.clearAll();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.primaryColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'تسجيل الدخول',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
           return Scaffold(
             backgroundColor: context.surfaceColor,
             body: Center(child: Text(state.message)),

@@ -1,8 +1,15 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/di/injection_container.dart' as di;
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
+import '../../../cart/presentation/blocs/cart_bloc.dart';
+import '../../../cart/presentation/blocs/cart_event.dart';
 import '../../../orders/presentation/pages/orders_list_page.dart';
 
 class ConfettiParticle {
@@ -62,9 +69,20 @@ class ConfettiPainter extends CustomPainter {
 class CheckoutSuccessPage extends StatefulWidget {
   final String orderNumber;
 
+  /// When [requiresPolling] is true the page polls
+  /// `GET /api/orders/{orderNumber}` until `payment_status == 'paid'`
+  /// before revealing the success UI.
+  ///
+  /// Set to `true` for Tabby / Tamara whose backend webhooks arrive
+  /// asynchronously after Flutter detects the authorized result.
+  /// Set to `false` (default) for PayTabs whose `/callback` is synchronous —
+  /// the order is already marked paid before Flutter navigates here.
+  final bool requiresPolling;
+
   const CheckoutSuccessPage({
     super.key,
     required this.orderNumber,
+    this.requiresPolling = false,
   });
 
   @override
@@ -84,6 +102,15 @@ class _CheckoutSuccessPageState extends State<CheckoutSuccessPage>
     const Color(0xFF073B4C),
   ];
 
+  // ── Payment-status polling state ──────────────────────────────────────────
+  bool _isPolling = false;
+  bool _pollTimedOut = false;
+  Timer? _pollTimer;
+  int _pollAttempts = 0;
+  static const int _maxPollAttempts = 12;  // 12 × 1.5 s ≈ 18 s
+  static const Duration _pollInterval = Duration(milliseconds: 1500);
+  // ─────────────────────────────────────────────────────────────────────────
+
   @override
   void initState() {
     super.initState();
@@ -97,7 +124,64 @@ class _CheckoutSuccessPageState extends State<CheckoutSuccessPage>
         setState(() {});
       });
 
-    // Generate particles
+    if (widget.requiresPolling) {
+      // Start polling before showing confetti — we wait for the webhook.
+      setState(() => _isPolling = true);
+      _startPolling();
+    } else {
+      // PayTabs: order is already confirmed server-side. Go straight to success.
+      _launchConfetti();
+    }
+  }
+
+  /// Polls `GET /api/orders/{orderNumber}` every [_pollInterval] up to
+  /// [_maxPollAttempts] times waiting for `payment_status == 'paid'`.
+  void _startPolling() {
+    _pollTimer = Timer.periodic(_pollInterval, (_) async {
+      if (!mounted) {
+        _pollTimer?.cancel();
+        return;
+      }
+
+      _pollAttempts++;
+
+      try {
+        final response = await di.sl<ApiClient>().get(
+          ApiEndpoints.orderDetail(widget.orderNumber),
+        );
+
+        final data = response.data;
+        final orderMap = data is Map ? (data['order'] ?? data['data'] ?? data) : null;
+        final paymentStatus =
+            (orderMap is Map ? orderMap['payment_status'] : null) as String?;
+
+        if (paymentStatus == 'paid') {
+          _pollTimer?.cancel();
+          // Backend webhook has confirmed payment — clear cart and show success.
+          if (!mounted) return;
+          context.read<CartBloc>().add(const CartCleared());
+          setState(() {
+            _isPolling = false;
+          });
+          _launchConfetti();
+          return;
+        }
+      } catch (e) {
+        debugPrint('[SuccessPage] Polling error: $e');
+      }
+
+      if (_pollAttempts >= _maxPollAttempts) {
+        _pollTimer?.cancel();
+        if (!mounted) return;
+        setState(() {
+          _isPolling = false;
+          _pollTimedOut = true;
+        });
+      }
+    });
+  }
+
+  void _launchConfetti() {
     final random = math.Random();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -120,17 +204,133 @@ class _CheckoutSuccessPageState extends State<CheckoutSuccessPage>
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // ── Polling: waiting for backend webhook to confirm payment ───────────────
+    if (_isPolling) {
+      return Directionality(
+        textDirection: Directionality.of(context),
+        child: Scaffold(
+          backgroundColor: context.surfaceColor,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: context.primaryColor),
+                SizedBox(height: 24.h),
+                Text(
+                  'verifying_payment'.tr(),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontFamily: 'Tajawal',
+                    color: context.textDark,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'please_wait_a_moment'.tr(),
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontFamily: 'Tajawal',
+                    color: context.textGrey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ── Timeout: webhook didn't arrive in time ─────────────────────────────
+    if (_pollTimedOut) {
+      return Directionality(
+        textDirection: Directionality.of(context),
+        child: Scaffold(
+          backgroundColor: context.surfaceColor,
+          body: Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.w),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.hourglass_bottom_rounded,
+                    size: 72,
+                    color: context.primaryColor,
+                  ),
+                  SizedBox(height: 24.h),
+                  Text(
+                    'payment_processing'.tr(),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontFamily: 'Tajawal',
+                      fontWeight: FontWeight.bold,
+                      color: context.textDark,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
+                  Text(
+                    'order_number_is'.tr(args: [widget.orderNumber]),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontFamily: 'Tajawal',
+                      color: context.textGrey,
+                      height: 1.5.h,
+                    ),
+                  ),
+                  SizedBox(height: 32.h),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52.h,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                              builder: (_) => const OrdersListPage()),
+                          (route) => route.isFirst,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: context.primaryColor,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: Text(
+                        'track_my_order'.tr(),
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ── Success UI (payment confirmed) ─────────────────────────────────────
     return Directionality(
       textDirection: Directionality.of(context),
       child: Scaffold(
         backgroundColor: context.surfaceColor,
         body: Stack(
+
           children: [
             SingleChildScrollView(
               child: Column(
@@ -208,7 +408,7 @@ class _CheckoutSuccessPageState extends State<CheckoutSuccessPage>
                             borderRadius: BorderRadius.circular(30),
                           ),
                           child: Text(
-                            'رقم الطلب: ${widget.orderNumber}',
+                            'order_number_label'.tr(args: [widget.orderNumber]),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 13.sp,

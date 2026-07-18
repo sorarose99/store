@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/di/injection_container.dart' as di;
+import '../../../../core/network/token_service.dart';
 import '../blocs/cart_bloc.dart';
 import '../blocs/cart_event.dart';
 import '../blocs/cart_state.dart';
@@ -13,7 +15,6 @@ import '../widgets/tabby_bottom_sheet.dart';
 import 'bnpl_promo_page.dart';
 import '../../../checkout/presentation/pages/checkout_saved_address_page.dart';
 import '../../../checkout/presentation/pages/checkout_region_page.dart';
-import '../../../delivery_options/presentation/widgets/delivery_options_widget.dart';
 import '../../../shell/presentation/pages/main_shell.dart' as kdx_shell;
 
 class CartFilledPage extends StatefulWidget {
@@ -43,7 +44,12 @@ class _CartFilledPageState extends State<CartFilledPage> {
   double get _discount => _couponDiscount;
   double get _giftWrapFee => (_giftDetails?['wrap'] ?? false) ? 15.0 : 0.0;
   double get _shippingFee => _cartLoadedState?.shippingCost ?? 0.0;
-  double get _total => (_subtotal + _giftWrapFee + _shippingFee - _discount).clamp(0.0, double.infinity);
+  double get _fastDeliveryFee {
+    final items = _cartLoadedState?.items ?? [];
+    bool hasFastDelivery = items.any((item) => item.options['delivery_type'] == 'fast');
+    return hasFastDelivery ? 50.0 : 0.0;
+  }
+  double get _total => (_subtotal + _giftWrapFee + _shippingFee + _fastDeliveryFee - _discount).clamp(0.0, double.infinity);
 
   @override
   void initState() {
@@ -310,6 +316,70 @@ class _CartFilledPageState extends State<CartFilledPage> {
           );
         }
         if (state is CartError) {
+          final isUnauthorized = state.message.contains('تسجيل') || 
+                              state.message.contains('الجلسة') ||
+                              state.message.contains('Unauthorized') ||
+                              state.message.contains('401');
+          if (isUnauthorized) {
+            return Scaffold(
+              backgroundColor: context.surfaceColor,
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.lock_outline_rounded, size: 80, color: context.primaryColor),
+                      const SizedBox(height: 24),
+                      Text(
+                        'يرجى تسجيل الدخول لعرض السلة',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: context.textDark,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'قم بتسجيل الدخول لتتمكن من إضافة المنتجات وعرض سلة التسوق الخاصة بك',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.textGrey,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final tokenService = di.sl<TokenService>();
+                          await tokenService.clearAll();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: context.primaryColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'تسجيل الدخول',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: 'Tajawal',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
           return Scaffold(
             backgroundColor: context.surfaceColor,
             body: Center(
@@ -729,10 +799,10 @@ class _CartFilledPageState extends State<CartFilledPage> {
                             const SizedBox(height: 10),
                             _buildSummaryRow('gift_wrap'.tr(), '+15.0 ﷼'),
                           ],
-                          const SizedBox(height: 10),
-                          
-                          // Delivery Options
-                          const DeliveryOptionsWidget(),
+                          if (_fastDeliveryFee > 0) ...[
+                            const SizedBox(height: 10),
+                            _buildSummaryRow('fast_shipping'.tr(), '+50.0 ﷼'),
+                          ],
                           const SizedBox(height: 10),
 
                           // Distinct Grand Total row in order summary

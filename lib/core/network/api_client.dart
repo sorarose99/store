@@ -5,6 +5,8 @@ import '../error/exceptions.dart';
 import 'api_endpoints.dart';
 import 'token_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get_it/get_it.dart';
+import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 /// ─────────────────────────────────────────────────────────────────
 ///  KDX Store — Dio HTTP Client
 ///
@@ -38,6 +40,7 @@ class ApiClient {
             final lang = prefs.getString('app_language') ?? 'ar';
             options.headers['Accept-Language'] = lang;
             options.headers['X-Firebase-Locale'] = lang; // Just in case it needs it
+            options.headers['Cookie'] = 'locale=$lang';
           } catch (_) {}
 
           // Always try to attach the sanctum token first
@@ -112,10 +115,57 @@ class ApiClient {
           }
 
           // Global 401 Unauthorized handling:
-          // Since Firebase is the single source of truth, a 401 from the legacy backend
-          // should NOT force a Firebase sign out. We simply pass the error along.
           if (e.response?.statusCode == 401) {
-            // Do not call _tokenService.clearAll() here anymore.
+            final currentUser = FirebaseAuth.instance.currentUser;
+            if (currentUser != null) {
+              try {
+                // Clear the invalid Sanctum token
+                await _tokenService.saveSanctumToken('');
+                
+                final token = await currentUser.getIdToken(true); // force refresh
+                if (token != null && token.isNotEmpty) {
+                  final name = currentUser.displayName ?? '';
+                  final email = currentUser.email ?? '';
+                  final provider = currentUser.providerData.isNotEmpty 
+                      ? currentUser.providerData.first.providerId 
+                      : 'google';
+                  
+                  // Lazily get AuthRemoteDataSource to avoid circular dependency
+                  final authDataSource = GetIt.instance<AuthRemoteDataSource>();
+                  final sanctumToken = await authDataSource.socialLogin(
+                    provider: provider.contains('apple') ? 'apple' : 'google',
+                    token: token,
+                    name: name,
+                    email: email,
+                    firebaseUid: currentUser.uid,
+                  );
+                  
+                  await _tokenService.saveSanctumToken(sanctumToken);
+                  
+                  // Retry the original failed request with the new token
+                  final options = e.requestOptions;
+                  options.headers['Authorization'] = 'Bearer $sanctumToken';
+                  
+                  final cloneDio = Dio();
+                  cloneDio.options.baseUrl = options.baseUrl;
+                  final response = await cloneDio.request(
+                    options.path,
+                    data: options.data,
+                    queryParameters: options.queryParameters,
+                    options: Options(
+                      method: options.method,
+                      headers: options.headers,
+                    ),
+                  );
+                  return handler.resolve(response);
+                }
+              } catch (syncErr) {
+                developer.log('Auto-sync failed on 401: $syncErr', name: 'ApiClient');
+              }
+            } else {
+              // No Firebase user: they are a regular auth user and their session has expired.
+              await _tokenService.clearAll();
+            }
           }
 
           return handler.next(e);

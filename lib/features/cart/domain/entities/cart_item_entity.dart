@@ -12,6 +12,7 @@ class CartItemEntity {
     final List<String> productSizes;
     final bool isAvailable;
     final bool requiresShipping;
+    final Map<String, dynamic> options;
   
     const CartItemEntity({
       required this.id,
@@ -27,6 +28,7 @@ class CartItemEntity {
       this.breakdown = const [],
       this.productSizes = const [],
       this.requiresShipping = true,
+      this.options = const {},
     });
   
     CartItemEntity copyWith({
@@ -43,6 +45,7 @@ class CartItemEntity {
       List<Map<String, dynamic>>? breakdown,
       List<String>? productSizes,
       bool? requiresShipping,
+      Map<String, dynamic>? options,
     }) {
       return CartItemEntity(
         id: id ?? this.id,
@@ -58,6 +61,7 @@ class CartItemEntity {
       breakdown: breakdown ?? this.breakdown,
       productSizes: productSizes ?? this.productSizes,
       requiresShipping: requiresShipping ?? this.requiresShipping,
+      options: options ?? this.options,
     );
   }
 }

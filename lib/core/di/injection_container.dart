@@ -99,11 +99,6 @@ import '../../features/checkout/domain/usecases/checkout_usecases.dart';
 import '../../features/checkout/presentation/blocs/checkout_bloc.dart';
 import '../services/push_notification_service.dart';
 
-import '../../features/delivery_options/data/repositories/delivery_options_repository_impl.dart';
-import '../../features/delivery_options/domain/repositories/delivery_options_repository.dart';
-import '../../features/delivery_options/domain/usecases/get_delivery_options.dart';
-import '../../features/delivery_options/presentation/cubit/delivery_options_cubit.dart';
-
 final sl = GetIt.instance;
 
 Future<void> init() async {
@@ -218,9 +213,6 @@ Future<void> init() async {
   sl.registerLazySingleton<CheckoutRepository>(
     () => CheckoutRepositoryImpl(remoteDataSource: sl()),
   );
-  sl.registerLazySingleton<DeliveryOptionsRepository>(
-    () => DeliveryOptionsRepositoryImpl(),
-  );
 
   // ==========================================
   // DOMAIN LAYER (USECASES)
@@ -272,7 +264,6 @@ Future<void> init() async {
   sl.registerLazySingleton(() => SubmitCheckoutUseCase(sl()));
   sl.registerLazySingleton(() => GetCheckoutDataUseCase(sl()));
   sl.registerLazySingleton(() => EditAddressUseCase(sl()));
-  sl.registerLazySingleton(() => GetDeliveryOptions(sl()));
 
   // ==========================================
   // PRESENTATION LAYER (BLOCs)
@@ -346,6 +337,4 @@ Future<void> init() async {
         getCheckoutDataUseCase: sl(),
         editAddressUseCase: sl(),
       ));
-      
-  sl.registerFactory(() => DeliveryOptionsCubit(getDeliveryOptions: sl()));
 }

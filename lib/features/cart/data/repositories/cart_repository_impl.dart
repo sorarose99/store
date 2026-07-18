@@ -94,9 +94,9 @@ class CartRepositoryImpl implements CartRepository {
 
   @override
   Future<Either<Failure, void>> addToCart(String productId, int quantity,
-      {int? imageId}) async {
+      {int? imageId, Map<String, dynamic>? options}) async {
     try {
-      await remoteDataSource.addToCart(productId, quantity, imageId: imageId);
+      await remoteDataSource.addToCart(productId, quantity, imageId: imageId, options: options);
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(e.toString()));

@@ -37,6 +37,7 @@ abstract class AuthRemoteDataSource {
     required String token,
     required String name,
     required String email,
+    String? firebaseUid,
   });
 }
 
@@ -176,6 +177,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String token,
     required String name,
     required String email,
+    String? firebaseUid,
   }) async {
     try {
       final dio = Dio();
@@ -184,18 +186,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         'Content-Type': 'application/json',
       };
       
+      final String uid = firebaseUid ?? token;
+      
       final response = await dio.post(
         '${ApiEndpoints.baseUrl}${ApiEndpoints.socialLogin}',
         data: {
-          'provider': provider,
-          'token': token,
-          'name': name,
           'email': email,
+          'name': name,
+          'firebase_uid': uid,
         },
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        return response.data['access_token'] as String;
+        return response.data['token'] as String;
       }
       throw ServerException(
           message: response.data['message'] ?? 'Failed to sync with backend');

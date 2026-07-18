@@ -22,8 +22,8 @@ class AddToCartUseCase {
   AddToCartUseCase(this.repository);
 
   Future<Either<Failure, void>> call(String productId, int quantity,
-      {int? imageId}) async {
-    return repository.addToCart(productId, quantity, imageId: imageId);
+      {int? imageId, Map<String, dynamic>? options}) async {
+    return repository.addToCart(productId, quantity, imageId: imageId, options: options);
   }
 }
 

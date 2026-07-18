@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/di/injection_container.dart';
-import '../../../delivery_options/presentation/widgets/delivery_options_widget.dart';
 import '../../domain/entities/order_entity.dart';
 import '../blocs/orders_bloc.dart';
 import '../blocs/orders_event.dart';
@@ -462,8 +461,6 @@ class _OrderDetailContentView extends StatelessWidget {
                           ],
                         ),
                       ),
-                      SizedBox(height: 16.h),
-                      const DeliveryOptionsWidget(),
                       SizedBox(height: 16.h),
                     ],
 

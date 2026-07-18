@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,13 +9,21 @@ class TokenService {
   static const String _userIdKey = 'CACHED_USER_ID';
 
   final SharedPreferences _prefs;
+  final StreamController<bool> _authStateController = StreamController<bool>.broadcast();
 
-  TokenService(this._prefs);
+  TokenService(this._prefs) {
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      _authStateController.add(hasToken);
+    });
+  }
+
+  Stream<bool> get authStateChanges => _authStateController.stream;
 
   // ── Sanctum Token ─────────────────────────────────────────────────────────
 
   Future<void> saveSanctumToken(String token) async {
     await _prefs.setString(_sanctumTokenKey, token);
+    _authStateController.add(hasToken);
   }
 
   String? getSanctumToken() {
@@ -43,14 +52,15 @@ class TokenService {
   }
 
   bool get hasToken {
-    // Firebase Auth is the single source of truth.
-    // The app shows MainShell if and only if a Firebase user is signed in.
-    return FirebaseAuth.instance.currentUser != null;
+    final sanctumToken = getSanctumToken();
+    return FirebaseAuth.instance.currentUser != null ||
+        (sanctumToken != null && sanctumToken.isNotEmpty);
   }
 
   Future<void> clearToken() async {
     await FirebaseAuth.instance.signOut();
     await _prefs.remove(_sanctumTokenKey);
+    _authStateController.add(hasToken);
   }
 
   // ── User Info ─────────────────────────────────────────────────────
@@ -68,5 +78,6 @@ class TokenService {
     await FirebaseAuth.instance.signOut();
     await _prefs.remove(_userIdKey);
     await _prefs.remove(_sanctumTokenKey);
+    _authStateController.add(hasToken);
   }
 }

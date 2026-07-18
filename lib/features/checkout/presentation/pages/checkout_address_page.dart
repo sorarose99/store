@@ -186,7 +186,7 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
                       SizedBox(height: 14.h),
 
                       // Area field
-                      _buildLabel(context, 'الحي / المنطقة'),
+                      _buildLabel(context, 'district_region'.tr()),
                       _buildTextField(
                         controller: _areaController,
                         hintText: 'example_al_nakheel_neighborhood'.tr(),
@@ -218,7 +218,7 @@ class _CheckoutAddressPageState extends State<CheckoutAddressPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel(context, 'رقم المبنى / الدور'),
+                                _buildLabel(context, 'building_floor'.tr()),
                                 _buildTextField(
                                   controller: _buildingController,
                                   hintText: 'example_building_14_2nd'.tr(),

@@ -19,6 +19,7 @@ class ProductEntity extends Equatable {
 
   final bool featured;
   final bool requiresShipping;
+  final String deliveryNote;
 
   const ProductEntity({
     required this.id,
@@ -38,6 +39,7 @@ class ProductEntity extends Equatable {
     required this.categoryId,
     this.featured = false,
     this.requiresShipping = false,
+    this.deliveryNote = 'normal',
   });
 
   int? get discountPercent {
@@ -64,5 +66,6 @@ class ProductEntity extends Equatable {
         categoryId,
         featured,
         requiresShipping,
+        deliveryNote,
       ];
 }

@@ -18,59 +18,61 @@ class QuickLinksSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionHeader(title: 'روابط سريعة'),
+        _SectionHeader(title: isArabic ? 'روابط سريعة' : 'Quick Links'),
         _SectionBox(
           children: [
             _QuickLinkTile(
               icon: Icons.storefront_outlined,
-              label: 'من نحن',
+              label: isArabic ? 'من نحن' : 'About Us',
               onTap: () => _push(context, const AboutUsPage()),
             ),
-            _divider(),
+            _divider(context),
             _QuickLinkTile(
               icon: Icons.headset_mic_outlined,
-              label: 'اتصل بنا',
+              label: isArabic ? 'اتصل بنا' : 'Contact Us',
               onTap: () => _push(context, const ContactInfoPage()),
             ),
-            _divider(),
+            _divider(context),
             _QuickLinkTile(
               icon: Icons.description_outlined,
-              label: 'الشروط والأحكام',
+              label: isArabic ? 'الشروط والأحكام' : 'Terms & Conditions',
               onTap: () => _push(context, const TermsPage()),
             ),
-            _divider(),
+            _divider(context),
             _QuickLinkTile(
               icon: Icons.privacy_tip_outlined,
-              label: 'سياسة الخصوصية',
+              label: isArabic ? 'سياسة الخصوصية' : 'Privacy Policy',
               onTap: () => _push(context, const PrivacyPage()),
             ),
-            _divider(),
+            _divider(context),
             _QuickLinkTile(
               icon: Icons.swap_horizontal_circle_outlined,
-              label: 'سياسات الاستبدال والاسترجاع',
+              label: isArabic ? 'سياسات الاستبدال والاسترجاع' : 'Returns & Exchanges',
               onTap: () => _push(context, const ReturnsPage()),
             ),
-            _divider(),
+            _divider(context),
             _QuickLinkTile(
               icon: Icons.chat_bubble_outline_rounded,
-              label: 'الشكاوى والاقتراحات',
+              label: isArabic ? 'الشكاوى والاقتراحات' : 'Complaints & Suggestions',
               onTap: () => _push(context, const ComplaintsPage()),
             ),
-            _divider(),
+            _divider(context),
             _QuickLinkTile(
               icon: Icons.help_outline_rounded,
-              label: 'الأسئلة الشائعة',
+              label: isArabic ? 'الأسئلة الشائعة' : 'FAQs',
               onTap: () => _push(context, const FaqPage()),
             ),
-            _divider(),
+            _divider(context),
             _QuickLinkTile(
               icon: Icons.delete_outline_rounded,
-              label: 'حذف الحساب',
-              labelColor: Colors.red,
-              iconColor: Colors.red,
+              label: isArabic ? 'حذف الحساب' : 'Delete Account',
+              labelColor: context.errorColor,
+              iconColor: context.errorColor,
               onTap: () => _push(context, const DeleteAccountStep1Page()),
             ),
           ],
@@ -83,10 +85,10 @@ class QuickLinksSection extends StatelessWidget {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 
-  Widget _divider() => const Divider(
+  Widget _divider(BuildContext context) => Divider(
         height: 1,
         thickness: 0.5,
-        color: Color(0xFFECEEF5),
+        color: context.border,
         indent: 50,
       );
 }
@@ -149,6 +151,8 @@ class _QuickLinkTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -173,8 +177,8 @@ class _QuickLinkTile extends StatelessWidget {
               ),
             ),
             Icon(
-              Icons.arrow_back_ios_new,
-              size: 14,
+              isArabic ? Icons.chevron_left : Icons.chevron_right,
+              size: 18,
               color: context.textGrey,
             ),
           ],

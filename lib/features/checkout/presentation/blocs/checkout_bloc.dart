@@ -88,13 +88,21 @@ class CheckoutBloc extends Bloc<CheckoutEvent, CheckoutState> {
         developer.log('[CheckoutBloc] Response type field: ${response['type']}');
 
         // ── Resolve order number ──────────────────────────────────────
-        final orderNumber = response['order_number']?.toString() ??
-            response['data']?['order_number']?.toString() ??
-            (rawUrl != null
-                ? Uri.tryParse(rawUrl)
-                    ?.queryParameters['order_number']
-                : null) ??
-            '#KDX-UNKNOWN';
+        String? orderNumber = response['order_number']?.toString() ??
+            response['data']?['order_number']?.toString();
+
+        if (orderNumber == null && rawUrl != null && rawUrl.isNotEmpty) {
+          final uri = Uri.tryParse(rawUrl);
+          if (uri != null) {
+            orderNumber = uri.queryParameters['order_number'];
+            if (orderNumber == null && uri.pathSegments.isNotEmpty) {
+              // The backend routes define order_number as a path parameter,
+              // e.g. /api/payments/tamara/pay/{order_number}
+              orderNumber = uri.pathSegments.last;
+            }
+          }
+        }
+        orderNumber ??= '#KDX-UNKNOWN';
 
         developer.log('[CheckoutBloc] Order number: $orderNumber');
 
@@ -105,17 +113,16 @@ class CheckoutBloc extends Bloc<CheckoutEvent, CheckoutState> {
         //   (b) a URL is present (backend may not always set type field)
         final isRedirect =
             response['type'] == 'redirect' || hasRedirectUrl;
-
-        // Gateways that are handled natively in the app (no browser WebView
-        // needed for the actual gateway page) use a native:// signal URL.
-        const nativeGateways = {'paytabs', 'mada', 'tabby', 'tamara', 'applepay'};
-        final isNativeGateway = nativeGateways.contains(gateway) &&
-            rawUrl != null &&
-            rawUrl.startsWith('native://');
+        // Only PayTabs, Mada, and Apple Pay are handled natively via the SDKs in the mobile app.
+        // Tabby and Tamara sessions are created securely on the server-side via the backend's
+        // pay() controllers, so they are redirect flows.
+        final isNativeGateway = gateway == 'paytabs' ||
+            gateway == 'mada' ||
+            gateway == 'applepay';
 
         if (isNativeGateway) {
           emit(CheckoutNativePaymentInit(
-            paymentUrl: rawUrl,
+            paymentUrl: rawUrl ?? 'native://$gateway',
             orderNumber: orderNumber,
             gateway: gateway,
           ));

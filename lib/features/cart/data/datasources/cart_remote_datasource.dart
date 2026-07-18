@@ -4,7 +4,7 @@ import '../../../../core/network/api_endpoints.dart';
 abstract class CartRemoteDataSource {
   Future<Map<String, dynamic>> getCart();
   Future<Map<String, dynamic>> addToCart(String productId, int quantity,
-      {int? imageId});
+      {int? imageId, Map<String, dynamic>? options});
   Future<Map<String, dynamic>> updateCart(String productId, int quantity,
       {List<Map<String, dynamic>>? breakdown});
   Future<Map<String, dynamic>> updateBreakdown(
@@ -33,13 +33,16 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> addToCart(String productId, int quantity,
-      {int? imageId}) async {
+      {int? imageId, Map<String, dynamic>? options}) async {
     final payload = <String, dynamic>{
       'product_id': int.tryParse(productId) ?? productId,
       'quantity': quantity,
     };
     if (imageId != null) {
       payload['image_id'] = imageId;
+    }
+    if (options != null) {
+      payload['options'] = options;
     }
     final response = await apiClient.post(ApiEndpoints.cartAdd, data: payload);
     return response.data as Map<String, dynamic>? ?? {};

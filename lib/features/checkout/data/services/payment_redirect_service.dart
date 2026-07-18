@@ -14,6 +14,7 @@ class PaymentRedirectService {
     final headers = <String, String>{
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       'Accept-Language': language,
+      'Cookie': 'locale=$language',
     };
 
     final sanctum = _tokenService.getSanctumToken();

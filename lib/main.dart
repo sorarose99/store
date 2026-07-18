@@ -50,7 +50,6 @@ void main() async {
   await di.sl<PushNotificationService>().init();
 
   final prefs = await SharedPreferences.getInstance();
-
   final bool onboardingDone = prefs.getBool('onboarding_done') ?? false;
   final bool languageSelected = prefs.getString('app_language') != null;
 
@@ -87,6 +86,7 @@ void main() async {
             token: token,
             name: name,
             email: email,
+            firebaseUid: currentUser.uid,
           );
           await tokenService.saveSanctumToken(sanctumToken);
         }
@@ -171,17 +171,11 @@ class MyApp extends StatelessWidget {
                         child: child!,
                       );
                     },
-                     home: StreamBuilder<User?>(
-                      stream: FirebaseAuth.instance.authStateChanges(),
+                     home: StreamBuilder<bool>(
+                      stream: di.sl<TokenService>().authStateChanges,
+                      initialData: di.sl<TokenService>().hasToken,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Scaffold(
-                            body: Center(child: CircularProgressIndicator()),
-                          );
-                        }
-                        
-                        final hasToken = di.sl<TokenService>().hasToken;
+                        final hasToken = snapshot.data ?? false;
 
                         if (hasToken) {
                           return const MainShell();

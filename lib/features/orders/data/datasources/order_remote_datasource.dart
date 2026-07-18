@@ -35,7 +35,9 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
   Future<Map<String, dynamic>> getOrderDetail(String orderNumber) async {
     final response = await apiClient.get(ApiEndpoints.orderDetail(orderNumber));
     if (response.data is Map<String, dynamic>) {
-      if (response.data.containsKey('data')) {
+      if (response.data.containsKey('order')) {
+        return response.data['order'] as Map<String, dynamic>;
+      } else if (response.data.containsKey('data')) {
         return response.data['data'] as Map<String, dynamic>;
       }
       return response.data as Map<String, dynamic>;

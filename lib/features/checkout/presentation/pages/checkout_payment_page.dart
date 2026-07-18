@@ -175,7 +175,8 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
       if (m != null) activeMethods.add(m);
     }
 
-    return PaymentMethod.checkoutOptions.where((m) => activeMethods.contains(m)).toList();
+    final result = PaymentMethod.checkoutOptions.where((m) => activeMethods.contains(m)).toList();
+    return result.isEmpty ? PaymentMethod.checkoutOptions : result;
   }
 
   @override
@@ -249,7 +250,7 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ── Payment Methods List ─────────────────────────────────
-                    ...PaymentMethod.checkoutOptions
+                    ..._availableMethods
                         .map((method) => _buildMethodRow(context, method)),
 
                     // Removed raw credit card inputs as payment gateways handle this directly
@@ -354,7 +355,7 @@ class _CheckoutPaymentPageState extends State<CheckoutPaymentPage> {
                         : Icon(Icons.lock_outline_rounded,
                             color: context.backgroundColor, size: 18),
                     label: Text(
-                      'المتابعة / ${_selectedMethod.label}',
+                      'continue_with'.tr(args: [_selectedMethod.label]),
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.bold,

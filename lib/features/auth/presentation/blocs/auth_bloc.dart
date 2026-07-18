@@ -62,6 +62,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         token: token,
         name: name,
         email: email,
+        firebaseUid: firebaseUser.uid,
       );
       
       await _tokenService.saveSanctumToken(sanctumToken);
