@@ -70,7 +70,13 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
     final response =
         await apiClient.get(ApiEndpoints.orderInvoice(orderNumber));
     if (response.data is Map && response.data['success'] == true) {
-      return response.data['url'] as String? ?? '';
+      final rawUrl = response.data['url'] as String? ?? '';
+      if (rawUrl.isNotEmpty && !rawUrl.startsWith('http')) {
+        final domain = ApiEndpoints.baseUrl.replaceAll('/api', '');
+        final cleanPath = rawUrl.startsWith('/') ? rawUrl : '/$rawUrl';
+        return '$domain$cleanPath';
+      }
+      return rawUrl;
     }
     return '';
   }

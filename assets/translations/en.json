@@ -855,5 +855,7 @@
   "select_shipping_region": "Select Shipping Region",
   "select_country_or_region_prompt": "Select your country or shipping region to continue:",
   "no_additional_shipping_regions": "No additional shipping regions available currently",
-  "continue_action": "Continue"
+  "continue_action": "Continue",
+  "download_invoice": "Download Invoice",
+  "cancel_order": "Cancel Order"
 }

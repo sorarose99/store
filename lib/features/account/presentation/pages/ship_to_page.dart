@@ -75,26 +75,26 @@ class _ShipToPageState extends State<ShipToPage> with SingleTickerProviderStateM
     final activeCountry = _shippingCountries.firstWhere((c) => c.code == _selectedCountryCode);
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9F9FC),
+        backgroundColor: context.surfaceColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: context.surfaceColor,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
-              color: AppColors.textDark,
+              color: context.textDark,
               size: 20,
             ),
             onPressed: () => Navigator.of(context).pop(),
           ),
           centerTitle: true,
-          title: const Text(
-            'الشحن والتوصيل',
+          title: Text(
+            'shipping_and_delivery'.tr(),
             style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 16,
+              color: context.textDark,
+              fontSize: 16.sp,
               fontWeight: FontWeight.bold,
               fontFamily: 'Tajawal',
             ),

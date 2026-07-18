@@ -11,6 +11,8 @@ import '../blocs/orders_bloc.dart';
 import '../blocs/orders_event.dart';
 import '../blocs/orders_state.dart';
 import '../../../../core/widgets/app_shimmer.dart';
+import '../../../account/presentation/pages/contact_info_page.dart';
+import '../../../account/presentation/pages/returns_page.dart';
 
 // Timeline step model helper
 class TrackingStep {
@@ -682,10 +684,8 @@ class _OrderDetailContentView extends StatelessWidget {
                             Expanded(
                               child: OutlinedButton.icon(
                                 onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text('you_will_be_directed'.tr(),
-                                            style: const TextStyle(fontFamily: 'Tajawal'))),
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const ContactInfoPage()),
                                   );
                                 },
                                 icon: Icon(Icons.support_agent_rounded,
@@ -709,10 +709,8 @@ class _OrderDetailContentView extends StatelessWidget {
                             Expanded(
                               child: OutlinedButton.icon(
                                 onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text('you_can_return_the'.tr(),
-                                            style: const TextStyle(fontFamily: 'Tajawal'))),
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const ReturnsPage()),
                                   );
                                 },
                                 icon: Icon(Icons.assignment_return_outlined,

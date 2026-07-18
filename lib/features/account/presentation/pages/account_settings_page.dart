@@ -35,23 +35,24 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: ui.TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9F9F9),
+        backgroundColor: context.surfaceColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: context.surfaceColor,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 20),
+            icon: Icon(Icons.arrow_back_ios_new, color: context.textDark, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
           centerTitle: true,
-          title: const Text(
-            'الإعدادات',
+          title: Text(
+            'settings'.tr(),
             style: TextStyle(
-              color: AppColors.textDark,
-              fontSize: 18,
+              color: context.textDark,
+              fontSize: 18.sp,
               fontWeight: FontWeight.w800,
+              fontFamily: 'Tajawal',
             ),
           ),
         ),
@@ -66,16 +67,16 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                   children: [
                     // ── Profile Summary ─────────────────────────────────────────
                     Container(
-                      color: Colors.white,
+                      color: context.backgroundColor,
                       padding: const EdgeInsets.symmetric(vertical: 32),
                       child: Column(
                         children: [
                           Container(
                             width: 80,
                             height: 80,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Color(0xFFF2F2F7),
+                              color: context.surfaceColor,
                             ),
                             child: user.avatar != null && user.avatar!.isNotEmpty
                                 ? ClipOval(
@@ -84,32 +85,34 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                                       fit: BoxFit.cover,
                                       width: 80,
                                       height: 80,
-                                      errorBuilder: (_, __, ___) => const Icon(
+                                      errorBuilder: (_, __, ___) => Icon(
                                           Icons.person,
                                           size: 44,
-                                          color: AppColors.textGrey),
+                                          color: context.textGrey),
                                     ),
                                   )
-                                : const Center(
+                                : Center(
                                     child: Icon(Icons.person,
-                                        size: 44, color: AppColors.textGrey),
+                                        size: 44, color: context.textGrey),
                                   ),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             user.name,
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: TextStyle(
+                              fontSize: 16.sp,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textDark,
+                              color: context.textDark,
+                              fontFamily: 'Tajawal',
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             user.email,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textGrey,
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: context.textGrey,
+                              fontFamily: 'Tajawal',
                             ),
                           ),
                         ],
@@ -118,14 +121,15 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                     const SizedBox(height: 16),
 
                     // ── Security Level (مستوى الأمان) ───────────────────────────
-                    _buildSectionHeader('مستوى الأمان'),
+                    _buildSectionHeader(context, 'security_level'.tr()),
                     Container(
-                      color: Colors.white,
+                      color: context.backgroundColor,
                       child: Column(
                         children: [
                           _buildNavigationTile(
+                            context: context,
                             icon: Icons.lock_outline,
-                            title: 'تغيير كلمة المرور',
+                            title: 'change_password'.tr(),
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -139,28 +143,31 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                     const SizedBox(height: 16),
 
                     // ── App Settings (إعدادات التطبيق) ──────────────────────────
-                    _buildSectionHeader('إعدادات التطبيق'),
+                    _buildSectionHeader(context, 'app_settings'.tr()),
                     Container(
-                      color: Colors.white,
+                      color: context.backgroundColor,
                       child: Column(
                         children: [
                           _buildNavigationTile(
+                            context: context,
                             icon: Icons.language_outlined,
-                            title: 'اللغة',
-                            trailingText: 'العربية',
+                            title: 'language'.tr(),
+                            trailingText: context.locale.languageCode == 'ar' ? 'العربية' : 'English',
                             onTap: () {},
                           ),
-                          _buildDivider(),
+                          _buildDivider(context),
                           _buildNavigationTile(
+                            context: context,
                             icon: Icons.monetization_on_outlined,
-                            title: 'العملة',
+                            title: 'currency'.tr(),
                             trailingText: '﷼',
                             onTap: () {},
                           ),
-                          _buildDivider(),
+                          _buildDivider(context),
                           _buildNavigationTile(
+                            context: context,
                             icon: Icons.notifications_none_outlined,
-                            title: 'الإشعارات',
+                            title: 'notifications'.tr(),
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -169,8 +176,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                               );
                             },
                           ),
-                          _buildDivider(),
+                          _buildDivider(context),
                           _buildNavigationTile(
+                            context: context,
                             icon: Icons.verified_outlined,
                             title: 'licenses'.tr(),
                             onTap: () {
@@ -188,14 +196,15 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
 
                     // ── Danger Zone ─────────────────────────────────────────────
                     Container(
-                      color: Colors.white,
+                      color: context.backgroundColor,
                       child: Column(
                         children: [
                           _buildNavigationTile(
+                            context: context,
                             icon: Icons.delete_outline_rounded,
-                            title: 'حذف الحساب',
-                            titleColor: Colors.red,
-                            iconColor: Colors.red,
+                            title: 'delete_account'.tr(),
+                            titleColor: context.errorColor,
+                            iconColor: context.errorColor,
                             hideChevron: true,
                             onTap: () {
                               Navigator.of(context).push(
@@ -204,12 +213,13 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                               );
                             },
                           ),
-                          _buildDivider(),
+                          _buildDivider(context),
                           _buildNavigationTile(
+                            context: context,
                             icon: Icons.logout_rounded,
-                            title: 'تسجيل الخروج',
-                            titleColor: Colors.red,
-                            iconColor: Colors.red,
+                            title: 'logout'.tr(),
+                            titleColor: context.errorColor,
+                            iconColor: context.errorColor,
                             hideChevron: true,
                             onTap: _handleLogout,
                           ),
@@ -231,21 +241,23 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 12,
+        style: TextStyle(
+          fontSize: 12.sp,
           fontWeight: FontWeight.w500,
-          color: AppColors.textGrey,
+          color: context.textGrey,
+          fontFamily: 'Tajawal',
         ),
       ),
     );
   }
 
   Widget _buildNavigationTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required VoidCallback onTap,
@@ -260,30 +272,32 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: iconColor ?? AppColors.textGrey),
+            Icon(icon, size: 22, color: iconColor ?? context.textGrey),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 title,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.w700,
-                  color: titleColor ?? AppColors.textDark,
+                  color: titleColor ?? context.textDark,
+                  fontFamily: 'Tajawal',
                 ),
               ),
             ),
             if (trailingText != null)
               Text(
                 trailingText,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textGrey,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: context.textGrey,
+                  fontFamily: 'Tajawal',
                 ),
               ),
             if (trailingText != null) const SizedBox(width: 8),
             if (!hideChevron)
-              const Icon(Icons.arrow_back_ios_new,
-                  size: 16, color: Color(0xFFCCCCCC)),
+              Icon(Icons.arrow_back_ios_new,
+                  size: 16, color: context.textGrey),
           ],
         ),
       ),

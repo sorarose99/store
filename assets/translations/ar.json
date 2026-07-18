@@ -855,5 +855,7 @@
   "select_shipping_region": "اختيار منطقة الشحن",
   "select_country_or_region_prompt": "اختر دولتك أو منطقة الشحن الخاصة بك للمتابعة:",
   "no_additional_shipping_regions": "لا تتوفر مناطق شحن إضافية حالياً",
-  "continue_action": "متابعة"
+  "continue_action": "متابعة",
+  "download_invoice": "تحميل الفاتورة",
+  "cancel_order": "إلغاء الطلب"
 }
