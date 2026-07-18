@@ -211,24 +211,59 @@ class _ProductCardState extends State<ProductCard>
 
                   SizedBox(height: 8.h),
 
-                  // Today badge
-                  Container(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                    decoration: BoxDecoration(
-                      color: context.primaryColor, // Namshi bright green/yellow
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'today'.tr(),
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
-                        color: context.onPrimary,
-                        fontFamily: 'Tajawal',
+                  // Dynamic delivery badge (Free Shipping / Fast Delivery / Today)
+                  if (product.isFreeDelivery || product.deliveryNote == 'free') ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: context.primaryColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'free_shipping'.tr(),
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                          color: context.onPrimary,
+                          fontFamily: 'Tajawal',
+                        ),
                       ),
                     ),
-                  ),
+                  ] else if (product.featured || product.deliveryNote == 'fast') ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: context.accentColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'fast_delivery'.tr(),
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                          color: context.backgroundColor,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: context.primaryColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'today'.tr(),
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.bold,
+                          color: context.primaryColor,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ),
+                  ],
 
                   // Add to Cart Button for Wishlist & Product Cards
                   if (widget.showAddToCartButton || widget.onAddToCart != null) ...[

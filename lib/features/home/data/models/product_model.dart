@@ -113,6 +113,7 @@ class ProductModel extends ProductEntity {
       isNew: parseBool(json['new']) || parseBool(json['is_new']),
       isSale: salePrice != null,
       isFreeDelivery: parseBool(json['is_free_delivery']) ||
+          parseBool(json['free_shipping']) ||
           (!parseBool(json['requires_shipping']) &&
               json['requires_shipping'] != null),
       rating: ratingVal,
@@ -122,7 +123,12 @@ class ProductModel extends ProductEntity {
       categoryId: json['category_id']?.toString() ?? '',
       featured: parseBool(json['featured']),
       requiresShipping: parseBool(json['requires_shipping']),
-      deliveryNote: json['delivery_note'] as String? ?? 'normal',
+      deliveryNote: json['delivery_note'] as String? ??
+          (parseBool(json['is_fast_delivery']) || parseBool(json['fast_shipping'])
+              ? 'fast'
+              : parseBool(json['is_free_delivery']) || parseBool(json['free_shipping'])
+                  ? 'free'
+                  : 'normal'),
     );
   }
 
