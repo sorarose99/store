@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/network/token_service.dart';
 
@@ -35,9 +37,41 @@ class PaymentRedirectService {
     return headers;
   }
 
-  /// Returns the payment URL unchanged.
-  /// The WebView is responsible for following all redirects.
+  /// Resolves the payment URL if it's an API route requiring authentication.
+  /// Pre-fetches the initial redirect so third-party payment gateways (Tabby/Tamara)
+  /// receive clean requests in the WebView without internal backend Bearer tokens.
   Future<String> resolveCheckoutUrl(String paymentUrl) async {
+    if (!paymentUrl.contains('kdx-sa.com') || !paymentUrl.contains('/api/payments/')) {
+      return paymentUrl;
+    }
+
+    try {
+      developer.log('[PaymentRedirectService] Resolving initial payment URL: $paymentUrl');
+      final headers = await buildHeaders('ar');
+
+      final dio = Dio(BaseOptions(
+        followRedirects: true,
+        maxRedirects: 5,
+        validateStatus: (status) => status != null && status < 500,
+      ));
+
+      final response = await dio.get(
+        paymentUrl,
+        options: Options(
+          headers: headers,
+        ),
+      );
+
+      final realUri = response.realUri.toString();
+      developer.log('[PaymentRedirectService] Resolved real URI: $realUri (status: ${response.statusCode})');
+
+      if (realUri.isNotEmpty && realUri != paymentUrl && !realUri.contains('kdx-sa.com/api/payments/')) {
+        return realUri;
+      }
+    } catch (e) {
+      developer.log('[PaymentRedirectService] Error resolving URL: $e');
+    }
+
     return paymentUrl;
   }
 }

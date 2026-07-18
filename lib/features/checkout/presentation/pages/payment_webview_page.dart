@@ -49,38 +49,61 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
   Future<void> _initWebView() async {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setOnConsoleMessage((JavaScriptConsoleMessage consoleMessage) {
+        developer.log(
+            '[TabbyWebView JS Console] [${consoleMessage.level.name}] ${consoleMessage.message}');
+      })
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
             developer.log('[PaymentWebView] Loading: $url');
-            setState(() => _loading = true);
+            if (mounted) setState(() => _loading = true);
           },
           onPageFinished: (String url) {
             developer.log('[PaymentWebView] Finished: $url');
-            setState(() => _loading = false);
+            if (mounted) setState(() => _loading = false);
 
             // ── If the WebView lands on a JSON-returning API endpoint,
             //    the page content will be raw JSON. We detect this by
             //    evaluating the document body and looking for JSON.
             _checkIfPageIsJson(url);
           },
+          onHttpError: (HttpResponseError error) {
+            developer.log(
+                '[PaymentWebView HttpError] Status ${error.response?.statusCode} for ${error.response?.uri}');
+          },
           onWebResourceError: (WebResourceError error) {
             developer.log(
-                '[PaymentWebView] Error ${error.errorCode}: ${error.description} at ${error.url}');
+                '[PaymentWebView ResourceError] Code: ${error.errorCode}, Type: ${error.errorType}, Desc: ${error.description}, URL: ${error.url}');
           },
           onNavigationRequest: (NavigationRequest request) {
-            final url = request.url.toLowerCase();
-            developer.log('[PaymentWebView] Navigation request: ${request.url}');
+            final url = request.url;
+            final urlLower = url.toLowerCase();
+            developer.log(
+                '[PaymentWebView Nav] MainFrame: ${request.isMainFrame} -> $url');
 
-            if (_isSuccessUrl(url)) {
+            if (_isSuccessUrl(urlLower)) {
+              developer.log('[PaymentWebView] Detected SUCCESS URL: $url');
               _onPaymentSuccess();
               return NavigationDecision.prevent;
-            } else if (_isCancelUrl(url)) {
+            } else if (_isCancelUrl(urlLower)) {
+              developer.log('[PaymentWebView] Detected CANCEL URL: $url');
               _onPaymentCancelled();
               return NavigationDecision.prevent;
-            } else if (_isFailureUrl(url)) {
+            } else if (_isFailureUrl(urlLower)) {
+              developer.log('[PaymentWebView] Detected FAILURE URL: $url');
               _onPaymentFailed('payment_failed'.tr());
               return NavigationDecision.prevent;
+            }
+
+            final Uri? parsedUri = Uri.tryParse(url);
+            if (parsedUri != null) {
+              final scheme = parsedUri.scheme.toLowerCase();
+              if (scheme != 'http' && scheme != 'https' && scheme != 'about') {
+                developer.log(
+                    '[PaymentWebView Nav] Non-web scheme detected ($scheme): $url');
+                return NavigationDecision.prevent;
+              }
             }
 
             return NavigationDecision.navigate;
@@ -92,14 +115,27 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
       final prefs = await SharedPreferences.getInstance();
       final lang = prefs.getString('app_language') ?? 'ar';
 
-      // ── Use PaymentRedirectService to inject the Bearer token ──
-      // This is mandatory for backend routes protected by the auth:sanctum middleware.
-      final headers = await di.sl<PaymentRedirectService>().buildHeaders(lang);
+      // ── Resolve the target payment URL first ──────────────────────────────
+      // Pre-fetching resolves kdx-sa.com API 302 redirects to Tabby/Tamara
+      // on the client side, avoiding leaking Sanctum Bearer tokens to checkout.tabby.ai
+      final redirectService = di.sl<PaymentRedirectService>();
+      final targetUrl = await redirectService.resolveCheckoutUrl(widget.paymentUrl);
+      developer.log('[PaymentWebView] Pre-resolved checkout URL: $targetUrl');
+
+      Map<String, String> headers;
+      if (targetUrl.contains('kdx-sa.com')) {
+        headers = await redirectService.buildHeaders(lang);
+      } else {
+        headers = {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': lang,
+        };
+      }
       headers['User-Agent'] =
-          'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+          'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
 
       await _controller.loadRequest(
-        Uri.parse(widget.paymentUrl),
+        Uri.parse(targetUrl),
         headers: headers,
       );
     } catch (e) {
@@ -157,7 +193,9 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
         url.contains('/payments/tabby/success') ||
         url.contains('/payments/paytabs/success') ||
         url.contains('status=approved') ||
-        url.contains('payment_status=success');
+        url.contains('status=authorized') ||
+        url.contains('payment_status=success') ||
+        url.contains('kdxstore://payment/success');
   }
 
   bool _isCancelUrl(String url) {
@@ -166,17 +204,22 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
         url.contains('/payments/tamara/cancel') ||
         url.contains('/payments/tabby/cancel') ||
         url.contains('/payments/paytabs/cancel') ||
-        url.contains('status=cancel');
+        url.contains('status=cancel') ||
+        url.contains('kdxstore://payment/cancel');
   }
 
   bool _isFailureUrl(String url) {
     return url.contains('/orders/fail') ||
+        url.contains('/orders/failed') ||
         url.contains('/payment/fail') ||
         url.contains('/payments/tamara/fail') ||
         url.contains('/payments/tabby/fail') ||
         url.contains('/payments/paytabs/fail') ||
         url.contains('status=failed') ||
-        url.contains('status=declined');
+        url.contains('status=declined') ||
+        url.contains('status=rejected') ||
+        url.contains('status=expired') ||
+        url.contains('kdxstore://payment/failure');
   }
 
   void _onPaymentSuccess() {
