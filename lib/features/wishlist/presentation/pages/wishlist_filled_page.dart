@@ -430,6 +430,13 @@ class _WishlistContentViewState extends State<_WishlistContentView> {
         return CompactWishlistCard(
           product: product,
           onWishlistTap: () => _removeItem(context, product.id),
+          onAddToCart: () {
+            context.read<CartBloc>().add(CartItemAdded(
+                  productId: product.id,
+                  quantity: 1,
+                ));
+            KdxToast.showSuccess(context, 'the_product_has_been'.tr());
+          },
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -501,12 +508,14 @@ class CompactWishlistCard extends StatelessWidget {
   final ProductEntity product;
   final VoidCallback onWishlistTap;
   final VoidCallback onTap;
+  final VoidCallback? onAddToCart;
 
   const CompactWishlistCard({
     super.key,
     required this.product,
     required this.onWishlistTap,
     required this.onTap,
+    this.onAddToCart,
   });
 
   @override
@@ -652,30 +661,53 @@ class CompactWishlistCard extends StatelessWidget {
                       ],
                     ),
 
-                    // Price Tag
+                    // Price Tag & Add to Cart button
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '${product.price.toInt()} ﷼',
-                          style: TextStyle(
-                            fontSize: 10.5.sp,
-                            fontWeight: FontWeight.w900,
-                            color: context.primaryColor,
-                            fontFamily: 'Tajawal',
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Text(
+                                '${product.price.toInt()} ﷼',
+                                style: TextStyle(
+                                  fontSize: 10.5.sp,
+                                  fontWeight: FontWeight.w900,
+                                  color: context.primaryColor,
+                                  fontFamily: 'Tajawal',
+                                ),
+                              ),
+                              if (hasDiscount) ...[
+                                SizedBox(width: 2.w),
+                                Text(
+                                  '${product.originalPrice!.toInt()}',
+                                  style: TextStyle(
+                                    fontSize: 8.5.sp,
+                                    color: context.textGrey,
+                                    decoration: TextDecoration.lineThrough,
+                                    fontFamily: 'Tajawal',
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
-                        if (hasDiscount) ...[
-                          SizedBox(width: 4.w),
-                          Text(
-                            '${product.originalPrice!.toInt()}',
-                            style: TextStyle(
-                              fontSize: 8.5.sp,
-                              color: context.textGrey,
-                              decoration: TextDecoration.lineThrough,
-                              fontFamily: 'Tajawal',
+                        if (onAddToCart != null)
+                          GestureDetector(
+                            onTap: onAddToCart,
+                            child: Container(
+                              padding: EdgeInsets.all(4.w),
+                              decoration: BoxDecoration(
+                                color: context.primaryColor,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Icon(
+                                Icons.shopping_bag_outlined,
+                                color: context.backgroundColor,
+                                size: 12.sp,
+                              ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ],

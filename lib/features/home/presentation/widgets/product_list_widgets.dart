@@ -1,8 +1,12 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/auth_guard.dart';
+import '../../../../core/utils/kdx_toast.dart';
 import '../../domain/entities/product_entity.dart';
+import '../../../cart/presentation/blocs/cart_bloc.dart';
+import '../../../cart/presentation/blocs/cart_event.dart';
 import '../../../product/presentation/pages/product_details_page.dart';
 import '../../../wishlist/presentation/blocs/wishlist_bloc.dart';
 import '../../../wishlist/presentation/blocs/wishlist_event.dart';
@@ -42,6 +46,14 @@ class ProductHorizontalRow extends StatelessWidget {
                   product: product,
                   isWishlisted: isWishlisted,
                   heroTag: heroTag,
+                  showAddToCartButton: true,
+                  onAddToCart: () {
+                    context.read<CartBloc>().add(CartItemAdded(
+                          productId: product.id,
+                          quantity: 1,
+                        ));
+                    KdxToast.showSuccess(context, 'the_product_has_been'.tr());
+                  },
                   onWishlistTap: () async {
                     if (!await AuthGuard.requireLogin(context)) return;
                     if (!context.mounted) return;

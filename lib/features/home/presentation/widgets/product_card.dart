@@ -2,8 +2,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/utils/kdx_toast.dart';
+import '../../../cart/presentation/blocs/cart_bloc.dart';
+import '../../../cart/presentation/blocs/cart_event.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Namshe-style ProductCard
@@ -13,6 +17,7 @@ class ProductCard extends StatefulWidget {
   final ProductEntity product;
   final VoidCallback? onWishlistTap;
   final VoidCallback? onTap;
+  final VoidCallback? onAddToCart;
   final bool showAddToCartButton;
   final bool isWishlisted;
   final String? heroTag;
@@ -22,6 +27,7 @@ class ProductCard extends StatefulWidget {
     required this.product,
     this.onWishlistTap,
     this.onTap,
+    this.onAddToCart,
     this.showAddToCartButton = false,
     this.isWishlisted = false,
     this.heroTag,
@@ -224,21 +230,23 @@ class _ProductCardState extends State<ProductCard>
                     ),
                   ),
 
-                  // Add to Cart Button for Wishlist
-                  if (widget.showAddToCartButton) ...[
+                  // Add to Cart Button for Wishlist & Product Cards
+                  if (widget.showAddToCartButton || widget.onAddToCart != null) ...[
                     SizedBox(height: 8.h),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('the_product_has_been'.tr(),
-                                  style:
-                                      const TextStyle(fontWeight: FontWeight.bold)),
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
+                          if (widget.onAddToCart != null) {
+                            widget.onAddToCart!();
+                          } else {
+                            context.read<CartBloc>().add(CartItemAdded(
+                                  productId: widget.product.id,
+                                  quantity: 1,
+                                ));
+                            KdxToast.showSuccess(
+                                context, 'the_product_has_been'.tr());
+                          }
                         },
                         icon: Icon(Icons.shopping_bag_outlined,
                             size: 14, color: context.backgroundColor),
