@@ -211,7 +211,7 @@ class _ProductCardState extends State<ProductCard>
 
                   SizedBox(height: 8.h),
 
-                  // Dynamic delivery badge (Free Shipping / Fast Delivery / Today)
+                  // Dynamic delivery badge (Free Shipping / Today)
                   if (product.isFreeDelivery || product.deliveryNote == 'free') ...[
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
@@ -225,23 +225,6 @@ class _ProductCardState extends State<ProductCard>
                           fontSize: 10.sp,
                           fontWeight: FontWeight.bold,
                           color: context.onPrimary,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                    ),
-                  ] else if (product.featured || product.deliveryNote == 'fast') ...[
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                      decoration: BoxDecoration(
-                        color: context.accentColor,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'fast_delivery'.tr(),
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.bold,
-                          color: context.backgroundColor,
                           fontFamily: 'Tajawal',
                         ),
                       ),

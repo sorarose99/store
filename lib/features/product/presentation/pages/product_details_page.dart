@@ -116,11 +116,11 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                 } else {
                   _selectedVariantIndex = null;
                 }
-                final note = state.productDetails.baseProduct.deliveryNote;
-                if (note == 'free') {
-                  _selectedDeliveryType = 'free';
+                final base = state.productDetails.baseProduct;
+                if (base.deliveryNote == 'fast' || base.featured) {
+                  _selectedDeliveryType = 'fast';
                 } else {
-                  _selectedDeliveryType = 'standard';
+                  _selectedDeliveryType = 'free';
                 }
               });
             }
@@ -181,11 +181,11 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
                 } else {
                   _selectedVariantIndex = null;
                 }
-                final note = _productDetails!.baseProduct.deliveryNote;
-                if (note == 'free') {
-                  _selectedDeliveryType = 'free';
+                final base = _productDetails!.baseProduct;
+                if (base.deliveryNote == 'fast' || base.featured) {
+                  _selectedDeliveryType = 'fast';
                 } else {
-                  _selectedDeliveryType = 'standard';
+                  _selectedDeliveryType = 'free';
                 }
               }
             }
@@ -1008,176 +1008,129 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
 
   Widget _buildProductDeliveryOptions(BuildContext context) {
     if (_productDetails == null) return const SizedBox.shrink();
-    final deliveryNote = _productDetails!.baseProduct.deliveryNote;
 
-    if (deliveryNote == 'fast') {
-      return Column(
+    const amberGoldColor = Color(0xFFD4A359);
+
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: context.cardBackground,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: context.border, width: 0.8.w),
+        boxShadow: [
+          BoxShadow(
+            color: context.shadowColor.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'delivery_options_title'.tr(),
-            style: TextStyle(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.bold,
-              color: context.textDark,
-              fontFamily: 'Tajawal',
-            ),
+          // Header: Truck Icon + "خيارات التوصيل"
+          Row(
+            children: [
+              Icon(
+                Icons.local_shipping_rounded,
+                color: context.primaryColor,
+                size: 22.sp,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                'delivery_options_title'.tr(),
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: context.textDark,
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 12.h),
-          _buildDeliveryOptionTile(
-            title: 'standard_shipping_normal'.tr(),
+          SizedBox(height: 16.h),
+
+          // Option 1: Free Delivery ("توصيل مجاني")
+          _buildDeliveryOptionRadioTile(
+            context,
+            title: 'delivery_options_free_title'.tr(),
             description: 'delivery_options_free_desc'.tr(),
-            priceLabel: 'free_delivery'.tr(),
-            isSelected: _selectedDeliveryType == 'standard',
-            onTap: () => setState(() => _selectedDeliveryType = 'standard'),
+            isSelected: _selectedDeliveryType == 'free' || _selectedDeliveryType == 'standard',
+            amberGoldColor: amberGoldColor,
+            onTap: () => setState(() => _selectedDeliveryType = 'free'),
           ),
-          SizedBox(height: 10.h),
-          _buildDeliveryOptionTile(
+
+          SizedBox(height: 16.h),
+
+          // Option 2: Fast Delivery ("توصيل سريع")
+          _buildDeliveryOptionRadioTile(
+            context,
             title: 'delivery_options_fast_title'.tr(),
             description: 'delivery_options_fast_desc'.tr(),
-            priceLabel: '50 ${'sar'.tr()}',
             isSelected: _selectedDeliveryType == 'fast',
+            amberGoldColor: amberGoldColor,
             onTap: () => setState(() => _selectedDeliveryType = 'fast'),
           ),
         ],
-      );
-    } else if (deliveryNote == 'free') {
-      return Container(
-        padding: EdgeInsets.all(14.w),
-        decoration: BoxDecoration(
-          color: context.primaryColor.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.primaryColor.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.local_shipping_outlined, color: context.primaryColor, size: 22),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'delivery_options_free_title'.tr(),
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      color: context.textDark,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  Text(
-                    'delivery_options_free_desc'.tr(),
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: AppColors.accent,
-                      height: 1.4,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    } else {
-      return Container(
-        padding: EdgeInsets.all(14.w),
-        decoration: BoxDecoration(
-          color: context.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.border),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.local_shipping_outlined, color: context.textGrey, size: 22),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'standard_shipping_normal'.tr(),
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      color: context.textDark,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  Text(
-                    'delivery_options_free_desc'.tr(),
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: context.textGrey,
-                      height: 1.4,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+      ),
+    );
   }
 
-  Widget _buildDeliveryOptionTile({
+  Widget _buildDeliveryOptionRadioTile(
+    BuildContext context, {
     required String title,
     required String description,
-    required String priceLabel,
     required bool isSelected,
+    required Color amberGoldColor,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.all(14.w),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? context.primaryColor.withValues(alpha: 0.06)
-              : context.cardBackground,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? context.primaryColor : context.border,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: context.primaryColor.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: 2.h),
+            child: Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
               color: isSelected ? context.primaryColor : context.textGrey,
-              size: 20.w,
+              size: 20.sp,
             ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
+          ),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.bold,
+                    color: context.textDark,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: amberGoldColor,
+                    height: 1.5,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
                           fontSize: 14.sp,
                           fontWeight: FontWeight.bold,
                           color: context.textDark,
