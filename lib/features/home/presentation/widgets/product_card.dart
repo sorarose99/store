@@ -5,7 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../../core/utils/kdx_toast.dart';
+import '../../../../core/utils/ui_helpers.dart';
 import '../../../cart/presentation/blocs/cart_bloc.dart';
 import '../../../cart/presentation/blocs/cart_event.dart';
 

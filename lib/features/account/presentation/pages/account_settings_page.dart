@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/colors.dart';
 import '../blocs/account_bloc.dart';
@@ -336,8 +337,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     );
   }
 
-  Widget _buildDivider() {
-    return const Divider(
-        height: 1, thickness: 0.5, color: Color(0xFFEEEEEE), indent: 50);
+  Widget _buildDivider(BuildContext context) {
+    return Divider(
+        height: 1, thickness: 0.5, color: context.border, indent: 50);
   }
 }
