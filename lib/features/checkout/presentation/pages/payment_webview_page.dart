@@ -174,7 +174,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
       final redirectUrl = data['redirect_url'] ?? data['payment_url'] ?? data['url'];
 
       if (redirectUrl != null) {
-        final cleanUrl = redirectUrl.toString().trim();
+        final cleanUrl = redirectUrl.toString().trim().replaceAll('lang=ara', 'lang=ar').replaceAll('lang=arb', 'lang=ar');
         developer.log('[PaymentWebView] Found redirect URL in JSON: $cleanUrl');
         if (mounted) {
           await _controller.loadRequest(

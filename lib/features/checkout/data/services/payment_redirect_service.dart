@@ -67,7 +67,7 @@ class PaymentRedirectService {
       developer.log('[PaymentRedirectService] Resolved real URI: $realUri (status: ${response.statusCode})');
 
       if (realUri.isNotEmpty && realUri != paymentUrl && !realUri.contains('kdx-sa.com/api/payments/')) {
-        return realUri;
+        return realUri.replaceAll('lang=ara', 'lang=ar').replaceAll('lang=arb', 'lang=ar');
       }
 
       // ── Parse JSON response if backend returned a JSON object with payment_url/redirect_url ──
@@ -80,7 +80,8 @@ class PaymentRedirectService {
       if (data is Map) {
         final extractedUrl = data['payment_url'] ?? data['redirect_url'] ?? data['url'];
         if (extractedUrl != null && extractedUrl.toString().trim().isNotEmpty) {
-          final cleanUrl = extractedUrl.toString().trim();
+          String cleanUrl = extractedUrl.toString().trim();
+          cleanUrl = cleanUrl.replaceAll('lang=ara', 'lang=ar').replaceAll('lang=arb', 'lang=ar');
           developer.log('[PaymentRedirectService] Extracted payment URL from JSON response: $cleanUrl');
           return cleanUrl;
         }
