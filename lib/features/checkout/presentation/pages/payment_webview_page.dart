@@ -47,8 +47,12 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
 
 
   Future<void> _initWebView() async {
+    const userAgent =
+        'Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent(userAgent)
       ..setOnConsoleMessage((JavaScriptConsoleMessage consoleMessage) {
         developer.log(
             '[TabbyWebView JS Console] [${consoleMessage.level.name}] ${consoleMessage.message}');

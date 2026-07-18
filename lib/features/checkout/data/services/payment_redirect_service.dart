@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/network/token_service.dart';
@@ -67,6 +68,22 @@ class PaymentRedirectService {
 
       if (realUri.isNotEmpty && realUri != paymentUrl && !realUri.contains('kdx-sa.com/api/payments/')) {
         return realUri;
+      }
+
+      // ── Parse JSON response if backend returned a JSON object with payment_url/redirect_url ──
+      dynamic data = response.data;
+      if (data is String) {
+        try {
+          data = jsonDecode(data);
+        } catch (_) {}
+      }
+      if (data is Map) {
+        final extractedUrl = data['payment_url'] ?? data['redirect_url'] ?? data['url'];
+        if (extractedUrl != null && extractedUrl.toString().trim().isNotEmpty) {
+          final cleanUrl = extractedUrl.toString().trim();
+          developer.log('[PaymentRedirectService] Extracted payment URL from JSON response: $cleanUrl');
+          return cleanUrl;
+        }
       }
     } catch (e) {
       developer.log('[PaymentRedirectService] Error resolving URL: $e');
