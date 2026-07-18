@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -56,8 +57,14 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
       ..setOnConsoleMessage((JavaScriptConsoleMessage consoleMessage) {
         developer.log(
             '[TabbyWebView JS Console] [${consoleMessage.level.name}] ${consoleMessage.message}');
-      })
-      ..setNavigationDelegate(
+      });
+
+    if (_controller.platform is AndroidWebViewController) {
+      final androidController = _controller.platform as AndroidWebViewController;
+      androidController.setMediaPlaybackRequiresUserGesture(false);
+    }
+
+    _controller.setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
             developer.log('[PaymentWebView] Loading: $url');
