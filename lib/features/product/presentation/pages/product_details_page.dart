@@ -1131,43 +1131,7 @@ class _ProductDetailsViewState extends State<_ProductDetailsView> {
       ),
     );
   }
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.bold,
-                          color: context.textDark,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                      Text(
-                        priceLabel,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? context.primaryColor : context.textGrey,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (description.isNotEmpty) ...[
-                    SizedBox(height: 6.h),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: AppColors.accent,
-                        height: 1.4,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildBottomBar(BuildContext context) {
     return Container(
