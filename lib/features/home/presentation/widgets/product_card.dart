@@ -110,6 +110,55 @@ class _ProductCardState extends State<ProductCard>
                             ),
                     ),
                   ),
+                  // Top-Left Dynamic Badges Overlay (Discount %, New label)
+                  Positioned(
+                    top: 8.h,
+                    left: 8.w,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (product.isSale && product.originalPrice != null && product.originalPrice! > product.price) ...[
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: context.errorColor,
+                              borderRadius: BorderRadius.circular(4.r),
+                            ),
+                            child: Text(
+                              '-${((1 - (product.price / product.originalPrice!)) * 100).round()}%',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Tajawal',
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 4.h),
+                        ],
+                        if (product.isNew) ...[
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: context.primaryColor,
+                              borderRadius: BorderRadius.circular(4.r),
+                            ),
+                            child: Text(
+                              'new'.tr(),
+                              style: TextStyle(
+                                color: context.onPrimary,
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Tajawal',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
                   // Wishlist Icon Overlay
                   Positioned(
                     top: 8.h,
