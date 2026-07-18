@@ -21,6 +21,8 @@ import 'features/wishlist/presentation/blocs/wishlist_bloc.dart';
 import 'features/wishlist/presentation/blocs/wishlist_event.dart';
 import 'features/account/presentation/blocs/account_bloc.dart';
 import 'features/account/presentation/blocs/address_bloc.dart';
+import 'features/notifications/presentation/blocs/notifications_bloc.dart';
+import 'features/notifications/presentation/blocs/notifications_event.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -131,6 +133,9 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider<AddressBloc>(
           create: (_) => di.sl<AddressBloc>(),
+        ),
+        BlocProvider<NotificationsBloc>(
+          create: (_) => di.sl<NotificationsBloc>()..add(const NotificationsRequested()),
         ),
       ],
       child: BlocBuilder<ThemeCubit, ThemeMode>(

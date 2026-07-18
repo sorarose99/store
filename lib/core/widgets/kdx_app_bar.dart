@@ -105,44 +105,78 @@ class KdxAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
         SizedBox(width: 12.w),
         // Notification
-        BlocBuilder<NotificationsBloc, NotificationsState>(
-          builder: (context, state) {
-            int count = 0;
-            if (state is NotificationsLoaded) {
-              count = state.notifications.length;
-            }
-            return _buildIconWithBadge(
-              context,
-              icon: Icons.notifications_outlined,
-              badgeCount: count > 0 ? count.toString() : '',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const NotificationsPage()),
-              ),
-            );
-          },
-        ),
+        _buildNotificationBadge(context),
         SizedBox(width: 12.w),
         // Cart
-        BlocBuilder<CartBloc, CartState>(
-          builder: (context, state) {
-            int count = 0;
-            if (state is CartCountLoaded) {
-              count = state.count;
-            } else if (state is CartLoaded) {
-              count = state.items.fold(0, (sum, item) => sum + item.quantity);
-            }
-            return _buildIconWithBadge(
-              context,
-              icon: Icons.shopping_cart_outlined,
-              badgeCount: count > 0 ? count.toString() : '',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CartFilledPage()),
-              ),
-            );
-          },
-        ),
+        _buildCartBadge(context),
       ],
     );
+  }
+
+  Widget _buildNotificationBadge(BuildContext context) {
+    try {
+      final bloc = BlocProvider.of<NotificationsBloc>(context, listen: false);
+      return BlocBuilder<NotificationsBloc, NotificationsState>(
+        bloc: bloc,
+        builder: (context, state) {
+          int count = 0;
+          if (state is NotificationsLoaded) {
+            count = state.notifications.length;
+          }
+          return _buildIconWithBadge(
+            context,
+            icon: Icons.notifications_outlined,
+            badgeCount: count > 0 ? count.toString() : '',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const NotificationsPage()),
+            ),
+          );
+        },
+      );
+    } catch (_) {
+      return _buildIconWithBadge(
+        context,
+        icon: Icons.notifications_outlined,
+        badgeCount: '',
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const NotificationsPage()),
+        ),
+      );
+    }
+  }
+
+  Widget _buildCartBadge(BuildContext context) {
+    try {
+      final bloc = BlocProvider.of<CartBloc>(context, listen: false);
+      return BlocBuilder<CartBloc, CartState>(
+        bloc: bloc,
+        builder: (context, state) {
+          int count = 0;
+          if (state is CartCountLoaded) {
+            count = state.count;
+          } else if (state is CartLoaded) {
+            count = state.items.fold(0, (sum, item) => sum + item.quantity);
+          }
+          return _buildIconWithBadge(
+            context,
+            icon: Icons.shopping_cart_outlined,
+            badgeCount: count > 0 ? count.toString() : '',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CartFilledPage()),
+            ),
+          );
+        },
+      );
+    } catch (_) {
+      return _buildIconWithBadge(
+        context,
+        icon: Icons.shopping_cart_outlined,
+        badgeCount: '',
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CartFilledPage()),
+        ),
+      );
+    }
   }
 
   Widget _buildIconWithBadge(BuildContext context,
