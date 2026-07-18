@@ -115,12 +115,164 @@ class _CheckoutReviewPageState extends State<CheckoutReviewPage> {
     super.dispose();
   }
 
-  void _onOrderNow(BuildContext context) {
-    context.read<CheckoutBloc>().add(CheckoutSubmitRequested({
-          'address_id': widget.address.id,
-          'payment_gateway': widget.paymentMethod.gatewayKey,
-          'notes': _commentController.text,
-        }));
+  String _normalizePhone(String rawPhone) {
+    String p = rawPhone.replaceAll(RegExp(r'\s+|-'), '');
+    if (p.startsWith('00966')) {
+      return '+${p.substring(2)}';
+    } else if (p.startsWith('0') && !p.startsWith('+')) {
+      return '+966${p.substring(1)}';
+    } else if (p.startsWith('966') && !p.startsWith('+')) {
+      return '+$p';
+    } else if (!p.startsWith('+')) {
+      return '+966$p';
+    }
+    return p;
+  }
+
+  Future<String?> _showPhoneRequiredSheet(BuildContext context) async {
+    final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: ctx.backgroundColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          ),
+          padding: EdgeInsets.all(20.r),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'enter_phone_number_for_checkout'.tr(),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Tajawal',
+                    color: ctx.textDark,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'phone_number_required_for_tabby'.tr(),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontFamily: 'Tajawal',
+                    color: ctx.textGrey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 16.h),
+                TextFormField(
+                  controller: controller,
+                  keyboardType: TextInputType.phone,
+                  autofocus: true,
+                  textAlign: TextAlign.left,
+                  decoration: InputDecoration(
+                    hintText: '5XXXXXXXX',
+                    prefixIcon: Icon(Icons.phone_iphone, color: ctx.textGrey),
+                    prefixText: '+966 ',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'please_enter_mobile_number'.tr();
+                    }
+                    final clean = v.trim().replaceAll(RegExp(r'\D'), '');
+                    if (clean.length < 8) {
+                      return 'mobile_number_is_incorrect'.tr();
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20.h),
+                ElevatedButton(
+                  onPressed: () {
+                    if (formKey.currentState?.validate() ?? false) {
+                      Navigator.of(ctx).pop(controller.text.trim());
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: ctx.primaryColor,
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
+                  child: Text(
+                    'confirm_and_continue'.tr(),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Tajawal',
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateAddressPhoneOnBackend(SavedAddressEntity address, String phone) async {
+    try {
+      final apiClient = di.sl<ApiClient>();
+      final data = {
+        'phone': phone,
+        'title': address.title.isNotEmpty ? address.title : 'Home',
+        'full_name': address.fullName.isNotEmpty ? address.fullName : 'Customer',
+        'country': address.country.isNotEmpty ? address.country : 'SA',
+        'city': address.city.isNotEmpty ? address.city : 'Riyadh',
+        'zip_code': address.zipCode.isNotEmpty ? address.zipCode : '12211',
+        'address': address.detailedAddress.isNotEmpty ? address.detailedAddress : 'Saudi Arabia',
+        'is_default': address.isDefault ? 1 : 0,
+      };
+
+      final addressId = address.id;
+      if (addressId.isNotEmpty && !addressId.startsWith('addr_')) {
+        await apiClient.post(ApiEndpoints.addressUpdate(addressId), data: data);
+      } else {
+        await apiClient.post(ApiEndpoints.addressStore, data: data);
+      }
+    } catch (e) {
+      developer.log('[CheckoutReview] Phone update error: $e');
+    }
+  }
+
+  void _onOrderNow(BuildContext context) async {
+    String phone = widget.address.phone.trim();
+    if (phone.isEmpty) {
+      final enteredPhone = await _showPhoneRequiredSheet(context);
+      if (enteredPhone == null || enteredPhone.trim().isEmpty) return;
+      phone = enteredPhone;
+    }
+
+    final normalized = _normalizePhone(phone);
+    await _updateAddressPhoneOnBackend(widget.address, normalized);
+
+    if (context.mounted) {
+      context.read<CheckoutBloc>().add(CheckoutSubmitRequested({
+            'address_id': widget.address.id,
+            'payment_gateway': widget.paymentMethod.gatewayKey,
+            'notes': _commentController.text,
+          }));
+    }
   }
 
   @override
