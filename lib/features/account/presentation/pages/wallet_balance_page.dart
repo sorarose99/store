@@ -1,4 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/colors.dart';
 import '../../data/datasources/mock_account_data.dart';
 import 'transactions_page.dart';
@@ -11,9 +13,9 @@ class WalletBalancePage extends StatelessWidget {
     final user = MockAccountDataSource.alternateUser; // Kamal
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9F9F9),
+        backgroundColor: context.surfaceColor,
         body: Column(
           children: [
             // Header Section with Gradient & Stack for overlapping card
@@ -22,18 +24,18 @@ class WalletBalancePage extends StatelessWidget {
               children: [
                 // Curved Teal Gradient Header
                 Container(
-                  height: 240,
+                  height: 240.h,
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
-                  decoration: const BoxDecoration(
+                  padding: EdgeInsets.fromLTRB(20.w, 50.h, 20.w, 20.h),
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.primary, Color(0xFF1F8D98)],
+                      colors: [context.primaryColor, context.primaryDark],
                       begin: Alignment.topRight,
                       end: Alignment.bottomLeft,
                     ),
                     borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30),
+                      bottomLeft: Radius.circular(30.r),
+                      bottomRight: Radius.circular(30.r),
                     ),
                   ),
                   child: Column(
@@ -46,12 +48,13 @@ class WalletBalancePage extends StatelessWidget {
                             icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                             onPressed: () => Navigator.pop(context),
                           ),
-                          const Text(
-                            'رصيد الحساب',
+                          Text(
+                            'wallet_balance'.tr(),
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 18.sp,
                               fontWeight: FontWeight.w800,
+                              fontFamily: 'Tajawal',
                             ),
                           ),
                           const SizedBox(width: 40), // Placeholder to center title
@@ -222,22 +225,22 @@ class WalletBalancePage extends StatelessWidget {
             // Transactions List
             Expanded(
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
+                margin: EdgeInsets.symmetric(horizontal: 20.w),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  color: context.backgroundColor,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: context.textDark.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, -2),
                     ),
                   ],
                 ),
                 child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
                   itemCount: 4,
-                  separatorBuilder: (context, index) => const Divider(height: 1, thickness: 0.5, color: Color(0xFFEEEEEE), indent: 70),
+                  separatorBuilder: (context, index) => Divider(height: 1, thickness: 0.5, color: context.border, indent: 70.w),
                   itemBuilder: (context, index) {
                     final isDeposit = index % 2 == 0;
                     return ListTile(

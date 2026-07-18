@@ -66,9 +66,9 @@ class _EditProfileDobPageState extends State<EditProfileDobPage> {
               textDirection: Directionality.of(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: context.backgroundColor,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
