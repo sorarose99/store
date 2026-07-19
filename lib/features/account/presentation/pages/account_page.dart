@@ -138,6 +138,8 @@ class _AccountPageState extends State<AccountPage> {
               );
             } else if (state is AccountLoaded) {
               return _buildBody(context, state);
+            } else if (context.read<AccountBloc>().lastLoadedState != null) {
+              return _buildBody(context, context.read<AccountBloc>().lastLoadedState!);
             }
             return const SizedBox();
           },

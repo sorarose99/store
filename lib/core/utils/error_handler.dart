@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:kdx/core/constants/colors.dart';
+import 'package:toastification/toastification.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Smart Error Mapper
@@ -10,29 +10,62 @@ import 'package:kdx/core/constants/colors.dart';
 // Every path returns a tr() string — the raw backend message NEVER reaches
 // the user.
 // ─────────────────────────────────────────────────────────────────────────────
-String getLocalizedAuthError(String message) {
+String getLocalizedError(String message) {
   final m = message.toLowerCase();
 
-  // ── Credentials ───────────────────────────────────────────────────────────
+  // ── 1. Social Accounts (Highest Priority) ─────────────────────────────────
+  if (m.contains('user_has_google_account') ||
+      m.contains('google_account') ||
+      m.contains('google_auth') ||
+      m.contains('auth_with_google') ||
+      m.contains('use_google') ||
+      (m.contains('google') && (m.contains('account') || m.contains('registered') || m.contains('sign in')))) {
+    return tr('error_user_has_google_account');
+  }
+
+  if (m.contains('user_has_apple_account') ||
+      m.contains('apple_account') ||
+      m.contains('apple_auth') ||
+      m.contains('auth_with_apple') ||
+      m.contains('use_apple') ||
+      (m.contains('apple') && (m.contains('account') || m.contains('registered') || m.contains('sign in')))) {
+    return tr('error_user_has_apple_account');
+  }
+
+  // ── 2. Unverified / Incomplete Account Check ──────────────────────────────
+  if (m.contains('unverified') ||
+      m.contains('otp_not_verified') ||
+      m.contains('email_not_verified') ||
+      m.contains('not_verified') ||
+      m.contains('account_not_verified') ||
+      m.contains('please verify') ||
+      m.contains('verify your email') ||
+      m.contains('غير مفعّل') ||
+      m.contains('غير مؤكد') ||
+      m.contains('تأكيد البريد')) {
+    return tr('error_account_unverified');
+  }
+
+  // ── 3. Specific Credentials Failure ──────────────────────────────────────
   if (m.contains('invalid_credentials') ||
       m.contains('invalid credential') ||
       m.contains('wrong password') ||
-      m.contains('incorrect') ||
-      m.contains('unauthenticated') ||
-      m.contains('401')) {
+      m.contains('wrong_password') ||
+      m.contains('incorrect password') ||
+      m.contains('بيانات الدخول غير صحيحة') ||
+      m.contains('كلمة المرور غير صحيحة')) {
     return tr('error_invalid_credentials');
   }
 
-  // ── User not found ────────────────────────────────────────────────────────
+  // ── 4. User not found ──────────────────────────────────────────────────────
   if (m.contains('user_not_found') ||
       m.contains('not found') ||
       m.contains('no user') ||
-      m.contains('no account') ||
-      m.contains('404')) {
+      m.contains('no account')) {
     return tr('error_user_not_found');
   }
 
-  // ── Email already in use ──────────────────────────────────────────────────
+  // ── 5. Email already in use ────────────────────────────────────────────────
   if (m.contains('email_already_registered') ||
       m.contains('email_in_use') ||
       m.contains('already exists') ||
@@ -81,7 +114,11 @@ String getLocalizedAuthError(String message) {
       m.contains('invalid code') ||
       m.contains('wrong code') ||
       m.contains('invalid otp') ||
-      m.contains('otp') && m.contains('incorrect')) {
+      (m.contains('otp') && m.contains('incorrect')) ||
+      m.contains('رمز التحقق غير صحيح') ||
+      m.contains('الرمز غير صحيح') ||
+      m.contains('رمز غير صحيح') ||
+      m.contains('رمز التفعيل غير صحيح')) {
     return tr('error_otp_invalid');
   }
 
@@ -103,8 +140,33 @@ String getLocalizedAuthError(String message) {
     return tr('error_session_expired');
   }
 
+  // ── Social / Sync ────────────────────────────────────────────────────────
+  if (m.contains('google_sign_in_failed')) {
+    return tr('error_google_sign_in_failed');
+  }
+  if (m.contains('apple_sign_in_failed')) {
+    return tr('error_apple_sign_in_failed');
+  }
+  if (m.contains('backend_sync_failed') || m.contains('failed to sync with backend')) {
+    return tr('error_backend_sync_failed');
+  }
+  if (m.contains('user_has_google_account_please_auth_with_it')) {
+    return tr('error_user_has_google_account');
+  }
+  if (m.contains('user_has_apple_account_please_auth_with_it')) {
+    return tr('error_user_has_apple_account');
+  }
+
+  // ── Remote DataSource Fallbacks ──────────────────────────────────────────
+  if (m == 'login failed') return tr('error_login_failed');
+  if (m == 'failed to send otp') return tr('error_failed_to_send_otp');
+  if (m == 'registration failed') return tr('error_registration_failed');
+  if (m == 'password reset failed') return tr('error_password_reset_failed');
+  if (m == 'invalid profile response') return tr('error_invalid_profile_response');
+
   // ── Network / connectivity ────────────────────────────────────────────────
-  if (m.contains('network_error') ||
+  if (m == 'error_connection' ||
+      m.contains('network_error') ||
       m.contains('network') ||
       m.contains('connection') ||
       m.contains('socket') ||
@@ -114,16 +176,34 @@ String getLocalizedAuthError(String message) {
     return tr('error_network');
   }
 
-  // ── Server / 5xx ─────────────────────────────────────────────────────────
-  if (m.contains('server_error') ||
-      m.contains('server error') ||
-      m.contains('internal') ||
-      m.contains('500') ||
-      m.contains('503')) {
-    return tr('error_server');
+  // ── Promo / Coupon Codes ──────────────────────────────────────────────────
+  if (m.contains('coupon') || m.contains('promo') || m.contains('code') || m.contains('discount')) {
+    if (m.contains('expired')) return tr('error_promo_code_expired');
+    if (m.contains('already used') || m.contains('used') || m.contains('limit')) return tr('error_promo_code_used');
+    return tr('error_promo_code_invalid');
   }
 
-  // ── Generic fallback — Returns raw backend text so user sees the real issue ──
+  // ── Server / 5xx ─────────────────────────────────────────────────────────
+  if (m == 'error_unexpected' ||
+      m == 'server error' || 
+      m == 'internal server error' || 
+      m == '500' || 
+      m == '503' ||
+      m == 'error_server') {
+    return tr('error_server');
+  }
+  
+  if (m == 'error_forbidden') {
+    return tr('error_forbidden'); // We will add this key to json
+  }
+  
+  if (m == 'unauthenticated' || m == 'unauthenticated.') {
+    return tr('error_session_expired');
+  }
+  
+  if (m == 'the given data was invalid.' || m == 'the given data was invalid') {
+    return 'البيانات المدخلة غير صالحة.';
+  }
   // Do NOT swallow into 'Something went wrong' unless we truly have nothing.
   return message;
 }
@@ -137,56 +217,29 @@ String getLocalizedAuthError(String message) {
 // • Rounded, floating, with leading icon
 // • 4-second duration (sufficient for Arabic text)
 // ─────────────────────────────────────────────────────────────────────────────
-void showAuthSnackBar(
+
+void showCustomSnackBar(
   BuildContext context,
   String message, {
   bool isError = true,
   String? actionLabel,
   VoidCallback? onAction,
 }) {
-  final colorScheme = Theme.of(context).colorScheme;
-  final bgColor = isError ? colorScheme.error : context.primaryColor;
-  final onBgColor = isError ? colorScheme.onError : context.backgroundColor;
-  final icon = isError
-      ? Icons.error_outline_rounded
-      : Icons.check_circle_outline_rounded;
-
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: onBgColor, size: 20),
-            SizedBox(width: 10.w),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  color: onBgColor,
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w500,
-                  height: 1.4.h,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: bgColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        duration: const Duration(seconds: 4),
-        elevation: 4,
-        action: actionLabel != null && onAction != null
-            ? SnackBarAction(
-                label: actionLabel,
-                textColor: context.backgroundColor,
-                onPressed: onAction,
-              )
-            : null,
+  toastification.show(
+    context: context,
+    title: Text(
+      message,
+      style: TextStyle(
+        fontSize: 13.sp,
+        fontWeight: FontWeight.w600,
       ),
-    );
+    ),
+    type: isError ? ToastificationType.error : ToastificationType.success,
+    style: ToastificationStyle.flatColored,
+    alignment: Alignment.topCenter,
+    autoCloseDuration: const Duration(seconds: 4),
+    borderRadius: BorderRadius.circular(12.0),
+    showProgressBar: false,
+    dragToClose: true,
+  );
 }

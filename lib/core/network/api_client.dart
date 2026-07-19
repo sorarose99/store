@@ -128,7 +128,16 @@ class ApiClient {
                   final email = currentUser.email ?? '';
                   final provider = currentUser.providerData.isNotEmpty 
                       ? currentUser.providerData.first.providerId 
-                      : 'google';
+                      : '';
+                  
+                  // Skip auto-sync for email/password users as they need to re-enter their password
+                  if (provider == 'password' || provider.isEmpty) {
+                    await _tokenService.clearAll();
+                    return handler.resolve(Response(
+                      requestOptions: e.requestOptions,
+                      statusCode: 401,
+                    ));
+                  }
                   
                   // Lazily get AuthRemoteDataSource to avoid circular dependency
                   final authDataSource = GetIt.instance<AuthRemoteDataSource>();
@@ -248,15 +257,14 @@ class ApiClient {
         e.type == DioExceptionType.receiveTimeout ||
         e.type == DioExceptionType.sendTimeout ||
         e.type == DioExceptionType.connectionError) {
-      return ConnectionException(
-          message: 'تعذّر الاتصال بالخادم. تحقق من الإنترنت وحاول مجدداً.');
+      return ConnectionException(message: 'error_connection');
     }
 
     final statusCode = e.response?.statusCode;
     final data = e.response?.data;
 
     // Extract error message from Laravel JSON response
-    String message = 'حدث خطأ غير متوقع';
+    String message = 'error_unexpected';
     if (data is Map) {
       message = data['message']?.toString() ??
           data['error']?.toString() ??
@@ -268,8 +276,7 @@ class ApiClient {
       case 401:
         return UnauthorizedException(message: message);
       case 403:
-        return ServerException(
-            message: 'ليس لديك صلاحية للوصول إلى هذه الصفحة.');
+        return ServerException(message: 'error_forbidden');
       case 404:
         return NotFoundException(message: message);
       case 422:
@@ -280,13 +287,11 @@ class ApiClient {
         return ValidationException(
             message: validationMsg, errors: errors?.cast());
       case 429:
-        return ServerException(
-            message: 'طلبات كثيرة. يرجى الانتظار قليلاً ثم المحاولة.');
+        return ServerException(message: 'error_too_many_requests');
       case 500:
       case 503:
         developer.log('500 Error: $data');
-        return ServerException(
-            message: 'خطأ في الخادم. يرجى المحاولة لاحقاً. $message');
+        return ServerException(message: message);
       default:
         return ServerException(message: message);
     }

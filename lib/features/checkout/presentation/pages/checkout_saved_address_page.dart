@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../data/models/saved_address_model.dart';
@@ -51,12 +52,10 @@ class _CheckoutSavedAddressViewState extends State<_CheckoutSavedAddressView> {
 
   void _onContinue(List<SavedAddressEntity> addresses, List<String> activeGateways) {
     if (_selectedAddressId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('please_choose_a_shipping'.tr(),
-                style: TextStyle(color: Theme.of(context).colorScheme.onError, fontFamily: 'Tajawal')),
-            backgroundColor: context.errorColor,
-        ),
+      showCustomSnackBar(
+        context,
+        'please_choose_a_shipping'.tr(),
+        isError: true,
       );
       return;
     }
@@ -97,14 +96,10 @@ class _CheckoutSavedAddressViewState extends State<_CheckoutSavedAddressView> {
             });
           }
         } else if (state is CheckoutError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                state.message,
-                style: TextStyle(color: Theme.of(context).colorScheme.onError, fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
-              ),
-              backgroundColor: context.errorColor,
-            ),
+          showCustomSnackBar(
+            context,
+            getLocalizedError(state.message),
+            isError: true,
           );
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted && Navigator.of(context).canPop()) {

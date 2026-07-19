@@ -9,6 +9,7 @@ import '../blocs/auth_bloc.dart';
 import '../blocs/auth_event.dart';
 import '../blocs/auth_state.dart';
 import '../widgets/auth_text_field.dart';
+import 'otp_verification_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Model
@@ -65,26 +66,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is ForgotPasswordSuccess) {
-            // Firebase sent a reset link to the email — just inform the user
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
-                  style: const TextStyle(color: Colors.white),
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OtpVerificationPage(
+                  email: _emailController.text.trim(),
+                  isPasswordReset: true,
                 ),
-                backgroundColor: Colors.green.shade600,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                duration: const Duration(seconds: 4),
               ),
             );
-            // Go back to login after short delay
-            Future.delayed(const Duration(seconds: 2), () {
-              if (context.mounted) Navigator.pop(context);
-            });
           } else if (state is AuthError) {
-            showAuthSnackBar(context, getLocalizedAuthError(state.message));
+            showCustomSnackBar(context, getLocalizedError(state.message));
           }
         },
         builder: (context, state) {

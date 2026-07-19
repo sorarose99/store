@@ -271,7 +271,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       final result = await applyCouponUseCase(event.code);
       result.fold(
         (failure) => emit(currentState.copyWith(
-          actionError: 'invalid_promo_code', // Or failure.message
+          actionError: failure.message,
         )),
         (discount) => emit(currentState.copyWith(
           appliedCouponCode: event.code,

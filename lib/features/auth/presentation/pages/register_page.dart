@@ -12,6 +12,7 @@ import '../blocs/auth_state.dart';
 import '../widgets/auth_text_field.dart';
 import 'terms_acceptance_page.dart';
 import 'login_page.dart';
+import 'otp_verification_page.dart';
 import '../../../shell/presentation/pages/main_shell.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,17 +62,12 @@ class _RegisterPageState extends State<RegisterPage> {
   void _onRegisterPressed() {
     if (!_formKey.currentState!.validate()) return;
     if (!_agreedToTerms) {
-      showAuthSnackBar(context, tr('error_accept_terms'));
+      showCustomSnackBar(context, tr('error_accept_terms'));
       return;
     }
-    // Firebase-only: dispatch RegisterSubmitted directly — no OTP step needed
+    // Step 1: Request backend OTP. On success, OtpVerificationPage handles Step 2.
     context.read<AuthBloc>().add(
-          RegisterSubmitted(
-            name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-            otpCode: '', // Not used with Firebase
-          ),
+          RegisterOtpRequested(email: _emailController.text.trim()),
         );
   }
 
@@ -93,16 +89,38 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          // Firebase register success → go to app
-          if (state is RegisterSuccess) {
+        // OTP sent successfully → navigate to OTP verification page
+        if (state is RegisterOtpSendSuccess) {
+          if (state.isRecoveryFallback) {
+            showCustomSnackBar(
+              context,
+              tr('notice_unverified_account_recovering'),
+              isError: false,
+            );
+          }
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => OtpVerificationPage(
+                email: _emailController.text.trim(),
+                isPasswordReset: state.isRecoveryFallback,
+                registerData: RegisterFormData(
+                    name: _nameController.text.trim(),
+                    email: _emailController.text.trim(),
+                    password: _passwordController.text,
+                    agreedToTerms: _agreedToTerms,
+                  ),
+                ),
+              ),
+            );
+          } else if (state is RegisterSuccess) {
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => const MainShell()),
               (route) => false,
             );
           } else if (state is AuthError) {
-            final msg = getLocalizedAuthError(state.message);
+            final msg = getLocalizedError(state.message);
             final isEmailInUse = msg == tr('error_email_in_use');
-            showAuthSnackBar(
+            showCustomSnackBar(
               context,
               msg,
               actionLabel: isEmailInUse ? 'login'.tr() : null,
@@ -321,8 +339,10 @@ const
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4.0,
       children: [
         Text(
           question,

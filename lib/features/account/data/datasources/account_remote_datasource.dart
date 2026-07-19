@@ -90,9 +90,11 @@ class AccountRemoteDataSourceImpl implements AccountRemoteDataSource {
 
   @override
   Future<void> deleteAccount(String password) async {
-    await apiClient.delete(ApiEndpoints.deleteAccount, data: {
-      'password': password,
-    });
+    final data = <String, dynamic>{};
+    if (password.isNotEmpty) {
+      data['password'] = password;
+    }
+    await apiClient.delete(ApiEndpoints.deleteAccount, data: data);
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/constants/colors.dart';
 
 // Pages
@@ -15,6 +16,12 @@ import '../pages/delete_account_step1_page.dart';
 /// Drop it anywhere in the account page — all navigation lives here.
 class QuickLinksSection extends StatelessWidget {
   const QuickLinksSection({super.key});
+
+  bool get _isEmailPasswordUser {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return true; // Default to showing it
+    return user.providerData.any((p) => p.providerId == 'password');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,14 +74,16 @@ class QuickLinksSection extends StatelessWidget {
               label: isArabic ? 'الأسئلة الشائعة' : 'FAQs',
               onTap: () => _push(context, const FaqPage()),
             ),
-            _divider(context),
-            _QuickLinkTile(
-              icon: Icons.delete_outline_rounded,
-              label: isArabic ? 'حذف الحساب' : 'Delete Account',
-              labelColor: context.errorColor,
-              iconColor: context.errorColor,
-              onTap: () => _push(context, const DeleteAccountStep1Page()),
-            ),
+            if (_isEmailPasswordUser) ...[
+              _divider(context),
+              _QuickLinkTile(
+                icon: Icons.delete_outline_rounded,
+                label: isArabic ? 'حذف الحساب' : 'Delete Account',
+                labelColor: context.errorColor,
+                iconColor: context.errorColor,
+                onTap: () => _push(context, const DeleteAccountStep1Page()),
+              ),
+            ],
           ],
         ),
       ],

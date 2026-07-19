@@ -19,7 +19,7 @@ class ApiValidationRepositoryImpl implements ApiValidationRepository {
     } on ConnectionException catch (e) {
       return Left(NetworkFailure(e.message ?? 'Connection error'));
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message ?? 'Server error'));
+      return Left(ServerFailure(e.message ?? 'error_server'));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }

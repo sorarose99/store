@@ -84,3 +84,7 @@ class GoogleSignInSubmitted extends AuthEvent {
 class AppleSignInSubmitted extends AuthEvent {
   const AppleSignInSubmitted();
 }
+
+class LogoutRequested extends AuthEvent {
+  const LogoutRequested();
+}

@@ -3,17 +3,36 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/services/social_auth_service.dart';
 import '../../../../core/network/token_service.dart';
+import '../../../../core/error/exceptions.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
+import '../../data/models/user_model.dart';
 import '../../domain/entities/user.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 /// ─────────────────────────────────────────────────────────────────
-///  AuthBloc — Combined Firebase & Sanctum Backend Authentication
+///  AuthBloc — Hybrid Firebase + Laravel Sanctum Authentication
 ///
-///  Authenticates user sessions in Firebase, then synchronizes
-///  with the legacy Laravel/Sanctum backend to cache a Sanctum API token.
-///  This allows wishlist and cart features to function correctly.
+///  EMAIL flow:
+///    1. backend /api-auth/login                  → full UserModel + Sanctum token
+///    2. TokenService.saveAuthSession(token, user) → persists user, notifies app
+///
+///  REGISTER flow:
+///    1. backend /api-auth/register/send-otp      → OTP to email
+///    2. backend /api-auth/register               → creates backend user
+///    3. backend /api-auth/login                  → full UserModel + token
+///    4. TokenService.saveAuthSession(token, user) → persists user, notifies app
+///
+///  SOCIAL flow (Google / Apple):
+///    1. SocialAuthService.signInWithGoogle/Apple → Firebase session
+///    2. backend /auth/firebase-sync              → Sanctum token
+///    3. backend /account/profile                 → full backend UserModel
+///    4. TokenService.saveAuthSession(token, user) → persists user, notifies app
+///
+///  LOGOUT:
+///    1. backend /api-auth/logout                 → revoke Sanctum token
+///    2. TokenService.clearAll()                  → Firebase signOut + clear prefs
+///    → authUserChanges emits null → StreamBuilder rebuilds to LoginPage
 /// ─────────────────────────────────────────────────────────────────
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final fb.FirebaseAuth _firebaseAuth;
@@ -36,159 +55,155 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ResetPasswordSubmitted>(_onResetPasswordSubmitted);
     on<GoogleSignInSubmitted>(_onGoogleSignInSubmitted);
     on<AppleSignInSubmitted>(_onAppleSignInSubmitted);
-  }
-
-  /// Synchronizes a signed-in Firebase user with the Laravel backend
-  /// by calling the socialLogin API with the Firebase ID token.
-  Future<String?> _syncWithBackend(fb.User firebaseUser) async {
-    try {
-      final token = await firebaseUser.getIdToken();
-      if (token == null || token.isEmpty) return null;
-
-      final name = firebaseUser.displayName ?? '';
-      final email = firebaseUser.email ?? '';
-      
-      // Determine provider name (google, apple, etc.)
-      String provider = 'google';
-      if (firebaseUser.providerData.isNotEmpty) {
-        final provId = firebaseUser.providerData.first.providerId;
-        if (provId.contains('apple')) {
-          provider = 'apple';
-        }
-      }
-
-      final sanctumToken = await _authRemoteDataSource.socialLogin(
-        provider: provider,
-        token: token,
-        name: name,
-        email: email,
-        firebaseUid: firebaseUser.uid,
-      );
-      
-      await _tokenService.saveSanctumToken(sanctumToken);
-      await _tokenService.saveUserId(firebaseUser.uid);
-      return sanctumToken;
-    } catch (e) {
-      developer.log('Backend sync failed: $e', name: 'AuthBloc');
-      return null;
-    }
+    on<LogoutRequested>(_onLogoutRequested);
   }
 
   // ── Email / Password Login ─────────────────────────────────────
+  //
+  //  BACKEND ONLY FLOW:
+  //    1. backend /api-auth/login               → full UserModel + Sanctum token
+  //    2. TokenService.saveAuthSession()        → persists user, notifies app
+  // ──────────────────────────────────────────────────────────────
+  String _extractErrorMessage(dynamic e) {
+    if (e is fb.FirebaseAuthException) return _mapFirebaseError(e);
+    if (e is ServerException) return e.message ?? 'server_error';
+    if (e is UnauthorizedException) return e.message ?? 'error_invalid_credentials';
+    if (e is ValidationException) return e.message ?? 'validation_error';
+    if (e is ConnectionException) return e.message ?? 'error_connection';
+    if (e is NotFoundException) return e.message ?? 'not_found';
+    try {
+      final dynamic msg = (e as dynamic).message;
+      if (msg != null && msg.toString().isNotEmpty) {
+        return msg.toString();
+      }
+    } catch (_) {}
+    return e.toString();
+  }
+
   Future<void> _onLoginSubmitted(
     LoginSubmitted event,
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
     try {
-      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+      // Step 1: Get full backend UserModel + Sanctum token
+      final userModel = await _authRemoteDataSource.login(
         email: event.email.trim(),
         password: event.password,
       );
 
-      final firebaseUser = credential.user;
-      if (firebaseUser == null) {
-        emit(const AuthError('login_failed'));
-        return;
-      }
-
-      // Sync with the legacy backend
-      final sanctumToken = await _syncWithBackend(firebaseUser);
-      if (sanctumToken == null) {
-        await _firebaseAuth.signOut();
+      final sanctumToken = userModel.token;
+      if (sanctumToken == null || sanctumToken.isEmpty) {
         emit(const AuthError('backend_sync_failed'));
         return;
       }
 
-      emit(LoginSuccess(_userFromFirebase(firebaseUser, token: sanctumToken)));
-    } on fb.FirebaseAuthException catch (e) {
-      emit(AuthError(_mapFirebaseError(e)));
+      // Step 2: Persist full user + token, notify whole app
+      await _tokenService.saveAuthSession(
+        sanctumToken: sanctumToken,
+        user: userModel,
+      );
+
+      emit(LoginSuccess(userModel));
     } catch (e) {
       developer.log('Login error: $e', name: 'AuthBloc');
-      emit(const AuthError('server_error'));
+      emit(AuthError(_extractErrorMessage(e)));
     }
   }
 
-  // ── Register: Step 1 — No OTP needed with Firebase ────────────
-  /// We skip the backend OTP step entirely.
-  /// Instead we go directly to RegisterSubmitted.
+  // ── Register: Step 1 — Send Backend OTP ───────────────────────
   Future<void> _onRegisterOtpRequested(
     RegisterOtpRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(RegisterOtpSendSuccess());
+    emit(AuthLoading());
+    try {
+      await _authRemoteDataSource.sendRegisterOtp(email: event.email.trim());
+      emit(const RegisterOtpSendSuccess());
+    } catch (e) {
+      developer.log('Send register OTP error: $e', name: 'AuthBloc');
+      String msg = _extractErrorMessage(e);
+
+      // If the email is already in use (possibly an unverified ghost account),
+      // we automatically fallback to the forgot password flow to recover it.
+      if (msg.contains('already been taken') ||
+          msg.contains('already in use') ||
+          msg.contains('has already been taken')) {
+        try {
+          await _authRemoteDataSource.sendForgotOtp(email: event.email.trim());
+          emit(const RegisterOtpSendSuccess(isRecoveryFallback: true));
+          return;
+        } catch (_) {
+          // If the fallback fails, emit the original email in use error
+          emit(const AuthError('error_email_in_use'));
+          return;
+        }
+      }
+
+      emit(AuthError(msg));
+    }
   }
 
-  // ── Register: Create Account with Firebase ─────────────────────
+  // ── Register: Step 2 — Create on backend ──────────
   Future<void> _onRegisterSubmitted(
     RegisterSubmitted event,
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
     try {
-      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+      // Step 2a: Register on backend (validates OTP, creates DB record)
+      await _authRemoteDataSource.register(
+        name: event.name.trim(),
+        email: event.email.trim(),
+        password: event.password,
+        passwordConfirmation: event.password,
+        otpCode: event.otpCode,
+      );
+
+      // Step 2b: Get full backend UserModel + Sanctum token via login
+      final userModel = await _authRemoteDataSource.login(
         email: event.email.trim(),
         password: event.password,
       );
 
-      final firebaseUser = credential.user;
-      if (firebaseUser == null) {
-        emit(const AuthError('register_failed'));
-        return;
-      }
-
-      // Set the display name from the form
-      if (event.name.trim().isNotEmpty) {
-        await firebaseUser.updateDisplayName(event.name.trim());
-        await firebaseUser.reload();
-      }
-
-      final updatedUser = _firebaseAuth.currentUser ?? firebaseUser;
-
-      // Sync with the legacy backend
-      final sanctumToken = await _syncWithBackend(updatedUser);
-      if (sanctumToken == null) {
-        await _firebaseAuth.signOut();
+      final sanctumToken = userModel.token;
+      if (sanctumToken == null || sanctumToken.isEmpty) {
         emit(const AuthError('backend_sync_failed'));
         return;
       }
 
-      // Send verification email (non-blocking)
-      try {
-        await updatedUser.sendEmailVerification();
-      } catch (_) {
-        // Ignore email sending failures
-      }
+      // Step 2c: Persist full user + token, notify whole app
+      await _tokenService.saveAuthSession(
+        sanctumToken: sanctumToken,
+        user: userModel,
+      );
 
-      emit(RegisterSuccess(_userFromFirebase(updatedUser, token: sanctumToken)));
-    } on fb.FirebaseAuthException catch (e) {
-      emit(AuthError(_mapFirebaseError(e)));
+      emit(RegisterSuccess(userModel));
     } catch (e) {
       developer.log('Register error: $e', name: 'AuthBloc');
-      emit(const AuthError('server_error'));
+      emit(AuthError(_extractErrorMessage(e)));
     }
   }
 
-  // ── Forgot Password — Firebase sends reset email ───────────────
+  // ── Forgot Password — sends backend OTP ───────────────────────
+  //  On success the UI navigates to OtpVerificationPage(isPasswordReset: true).
   Future<void> _onForgotPasswordSubmitted(
     ForgotPasswordSubmitted event,
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
     try {
-      await _firebaseAuth.sendPasswordResetEmail(
-        email: event.email.trim(),
-      );
+      await _authRemoteDataSource.sendForgotOtp(email: event.email.trim());
       emit(ForgotPasswordSuccess());
-    } on fb.FirebaseAuthException catch (e) {
-      emit(AuthError(_mapFirebaseError(e)));
     } catch (e) {
       developer.log('Forgot password error: $e', name: 'AuthBloc');
-      emit(const AuthError('server_error'));
+      emit(AuthError(_extractErrorMessage(e)));
     }
   }
 
-  // ── OTP Verify ───────────────────────────────────────────────
+  // ── OTP Verify (client-side pass-through) ─────────────────────
+  //  Backend OTP validation happens during the reset step.
+  //  This handler simply advances the UI state.
   Future<void> _onVerifyOtpSubmitted(
     VerifyOtpSubmitted event,
     Emitter<AuthState> emit,
@@ -203,26 +218,50 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     )));
   }
 
-  // ── Reset Password ────────────────────────────────────────────
+  // ── Reset Password — uses backend OTP ─────────────────────────
+  //  The OTP comes from the Laravel backend.
   Future<void> _onResetPasswordSubmitted(
     ResetPasswordSubmitted event,
     Emitter<AuthState> emit,
   ) async {
     emit(AuthLoading());
     try {
-      await _firebaseAuth.confirmPasswordReset(
-        code: event.otpCode,
+      // Validate OTP and reset via backend
+      await _authRemoteDataSource.resetPassword(
+        email: event.email,
+        otpCode: event.otpCode,
         newPassword: event.newPassword,
+        passwordConfirmation: event.newPassword,
       );
+
       emit(ResetPasswordSuccess());
-    } on fb.FirebaseAuthException catch (e) {
-      emit(AuthError(_mapFirebaseError(e)));
     } catch (e) {
-      emit(const AuthError('server_error'));
+      developer.log('Reset password error: $e', name: 'AuthBloc');
+      emit(AuthError(_extractErrorMessage(e)));
     }
   }
 
+  // ── Logout ─────────────────────────────────────────────────────
+  Future<void> _onLogoutRequested(
+    LogoutRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    try {
+      await _authRemoteDataSource.logout();
+    } catch (_) {}
+    // clearAll() → Firebase signOut + clears Sanctum token + cached user
+    // → authUserChanges emits null → StreamBuilder in main.dart shows LoginPage
+    await _tokenService.clearAll();
+    emit(AuthInitial());
+  }
+
   // ── Google Sign-In ─────────────────────────────────────────────
+  //  DUAL AUTH FLOW (social):
+  //    1. Firebase signIn via SocialAuthService
+  //    2. /auth/firebase-sync  → Sanctum token
+  //    3. /account/profile     → full backend UserModel
+  //    4. TokenService.saveAuthSession() → persists user, notifies app
+  // ──────────────────────────────────────────────────────────────
   Future<void> _onGoogleSignInSubmitted(
     GoogleSignInSubmitted event,
     Emitter<AuthState> emit,
@@ -243,16 +282,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(const AuthError('google_sign_in_failed'));
           return;
         }
-
-        // Sync with backend
-        final sanctumToken = await _syncWithBackend(firebaseUser);
-        if (sanctumToken == null) {
+        final user = await _syncSocialAndGetUser(firebaseUser);
+        if (user == null) {
           await _firebaseAuth.signOut();
           emit(const AuthError('backend_sync_failed'));
           return;
         }
-
-        emit(SocialLoginSuccess(_userFromFirebase(firebaseUser, token: sanctumToken)));
+        emit(SocialLoginSuccess(user));
       },
     );
   }
@@ -278,32 +314,86 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(const AuthError('apple_sign_in_failed'));
           return;
         }
-
-        // Sync with backend
-        final sanctumToken = await _syncWithBackend(firebaseUser);
-        if (sanctumToken == null) {
+        final user = await _syncSocialAndGetUser(firebaseUser);
+        if (user == null) {
           await _firebaseAuth.signOut();
           emit(const AuthError('backend_sync_failed'));
           return;
         }
-
-        emit(SocialLoginSuccess(_userFromFirebase(firebaseUser, token: sanctumToken)));
+        emit(SocialLoginSuccess(user));
       },
     );
   }
 
   // ── Helpers ───────────────────────────────────────────────────
 
-  User _userFromFirebase(fb.User firebaseUser, {String? token}) {
-    final nameParts = (firebaseUser.displayName ?? '').trim().split(' ');
-    return User(
-      id: firebaseUser.uid,
-      uuid: firebaseUser.uid,
-      firstName: nameParts.isNotEmpty ? nameParts.first : '',
-      lastName: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
-      email: firebaseUser.email ?? '',
-      token: token ?? _tokenService.getSanctumToken(),
-    );
+  /// Syncs a social Firebase user with the backend and returns the full
+  /// backend [UserModel]. Saves auth session so the whole app is notified.
+  Future<User?> _syncSocialAndGetUser(fb.User firebaseUser) async {
+    try {
+      final idToken = await firebaseUser.getIdToken();
+      if (idToken == null || idToken.isEmpty) return null;
+
+      // Determine provider
+      String provider = 'google';
+      if (firebaseUser.providerData.isNotEmpty) {
+        final provId = firebaseUser.providerData.first.providerId;
+        if (provId.contains('apple')) provider = 'apple';
+      }
+
+      // Step 1: Get Sanctum token from backend firebase-sync endpoint
+      final sanctumToken = await _authRemoteDataSource.socialLogin(
+        provider: provider,
+        token: idToken,
+        name: firebaseUser.displayName ?? '',
+        email: firebaseUser.email ?? '',
+        firebaseUid: firebaseUser.uid,
+      );
+
+      // Temporarily save the token so /account/profile call below is authenticated
+      await _tokenService.saveSanctumToken(sanctumToken);
+
+      // Step 2: Fetch the full backend user (real backend id, avatar, etc.)
+      UserModel backendUser;
+      try {
+        backendUser = await _authRemoteDataSource.getProfile();
+        // Override token field since getProfile response doesn't include it
+        backendUser = UserModel(
+          id: backendUser.id,
+          uuid: backendUser.uuid,
+          firstName: backendUser.firstName,
+          lastName: backendUser.lastName,
+          email: backendUser.email,
+          phone: backendUser.phone,
+          avatar: backendUser.avatar,
+          gender: backendUser.gender,
+          birthDate: backendUser.birthDate,
+          token: sanctumToken,
+        );
+      } catch (_) {
+        // If profile fetch fails, build user from Firebase data as fallback
+        final nameParts = (firebaseUser.displayName ?? '').trim().split(' ');
+        backendUser = UserModel(
+          id: firebaseUser.uid,
+          uuid: firebaseUser.uid,
+          firstName: nameParts.isNotEmpty ? nameParts.first : '',
+          lastName: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
+          email: firebaseUser.email ?? '',
+          token: sanctumToken,
+        );
+      }
+
+      // Step 3: Persist full user + token — notifies whole app
+      await _tokenService.saveAuthSession(
+        sanctumToken: sanctumToken,
+        user: backendUser,
+      );
+
+      return backendUser;
+    } catch (e) {
+      developer.log('Social sync failed: $e', name: 'AuthBloc');
+      return null;
+    }
   }
 
   String _mapFirebaseError(fb.FirebaseAuthException e) {
@@ -324,7 +414,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       case 'user-disabled':
         return 'account_disabled';
       default:
-        developer.log('Unhandled Firebase error: ${e.code} — ${e.message}', name: 'AuthBloc');
+        developer.log(
+          'Unhandled Firebase error: ${e.code} — ${e.message}',
+          name: 'AuthBloc',
+        );
         return 'server_error';
     }
   }

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:pinput/pinput.dart';
 import '../../../../core/constants/colors.dart';
 import '../../data/datasources/mock_account_data.dart';
 import 'delete_account_reason_page.dart';
@@ -104,14 +106,70 @@ class _DeleteAccountOtpPageState extends State<DeleteAccountOtpPage> {
                       ),
                       const SizedBox(height: 36),
 
-                      // OTP Boxes
-                      OtpInputRow(
-                        length: 5,
-                        onChanged: (code) {
-                          setState(() {
-                            _otpCode = code;
-                          });
-                        },
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Pinput(
+                          length: 5,
+                          onChanged: (code) {
+                            setState(() {
+                              _otpCode = code;
+                            });
+                          },
+                          onCompleted: (code) {
+                            setState(() {
+                              _otpCode = code;
+                            });
+                          },
+                          defaultPinTheme: PinTheme(
+                            width: 56.w,
+                            height: 56.h,
+                            textStyle: TextStyle(
+                              fontSize: 22.sp,
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9F9F9),
+                              border: Border.all(color: const Color(0xFFEEEEEE)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          focusedPinTheme: PinTheme(
+                            width: 56.w,
+                            height: 56.h,
+                            textStyle: TextStyle(
+                              fontSize: 22.sp,
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(color: AppColors.primary, width: 1.5),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                          ),
+                          submittedPinTheme: PinTheme(
+                            width: 56.w,
+                            height: 56.h,
+                            textStyle: TextStyle(
+                              fontSize: 22.sp,
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9F9F9),
+                              border: Border.all(color: const Color(0xFFEEEEEE)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 24),
 
@@ -185,99 +243,4 @@ class _DeleteAccountOtpPageState extends State<DeleteAccountOtpPage> {
   }
 }
 
-class OtpInputRow extends StatefulWidget {
-  final int length;
-  final ValueChanged<String> onChanged;
-
-  const OtpInputRow({
-    super.key,
-    required this.length,
-    required this.onChanged,
-  });
-
-  @override
-  State<OtpInputRow> createState() => _OtpInputRowState();
-}
-
-class _OtpInputRowState extends State<OtpInputRow> {
-  late List<TextEditingController> _controllers;
-  late List<FocusNode> _focusNodes;
-
-  @override
-  void initState() {
-    super.initState();
-    _controllers = List.generate(widget.length, (_) => TextEditingController());
-    _focusNodes = List.generate(widget.length, (_) => FocusNode());
-  }
-
-  @override
-  void dispose() {
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
-    for (var node in _focusNodes) {
-      node.dispose();
-    }
-    super.dispose();
-  }
-
-  void _onChanged(String value, int index) {
-    if (value.isNotEmpty) {
-      if (index < widget.length - 1) {
-        _focusNodes[index + 1].requestFocus();
-      } else {
-        _focusNodes[index].unfocus();
-      }
-    } else {
-      if (index > 0) {
-        _focusNodes[index - 1].requestFocus();
-      }
-    }
-
-    String code = _controllers.map((c) => c.text).join();
-    widget.onChanged(code);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(widget.length, (index) {
-        return SizedBox(
-          width: 52,
-          height: 52,
-          child: TextFormField(
-            controller: _controllers[index],
-            focusNode: _focusNodes[index],
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
-            ),
-            maxLength: 1,
-            decoration: InputDecoration(
-              counterText: '',
-              filled: true,
-              fillColor: const Color(0xFFF9F9F9),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFEEEEEE)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-              ),
-            ),
-            onChanged: (value) => _onChanged(value, index),
-          ),
-        );
-      }),
-    );
-  }
-}
+// Deleted custom OtpInputRow

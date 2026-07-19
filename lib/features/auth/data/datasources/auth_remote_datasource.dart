@@ -39,6 +39,10 @@ abstract class AuthRemoteDataSource {
     required String email,
     String? firebaseUid,
   });
+
+  /// Fetches the full backend user profile from /account/profile.
+  /// Called after social login to get the backend user id and full data.
+  Future<UserModel> getProfile();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -126,6 +130,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     final response = await apiClient.post(
       ApiEndpoints.sendForgotOtp,
       data: {
+        'email': email,
         'target': email,
       },
     );
@@ -147,6 +152,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     final response = await apiClient.post(
       ApiEndpoints.resetPassword,
       data: {
+        'email': email,
         'target': email,
         'otp': otpCode,
         'password': newPassword,
@@ -170,7 +176,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-  // ── Social Login ─────────────────────────────────────────────
+  // ── Social Login (Firebase-sync) ──────────────────────────────
+  // Uses the shared ApiClient so headers (auth, language, etc.) are consistent.
   @override
   Future<String> socialLogin({
     required String provider,
@@ -180,16 +187,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String? firebaseUid,
   }) async {
     try {
-      final dio = Dio();
-      dio.options.headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      };
-      
       final String uid = firebaseUid ?? token;
-      
-      final response = await dio.post(
-        '${ApiEndpoints.baseUrl}${ApiEndpoints.socialLogin}',
+
+      final response = await apiClient.post(
+        ApiEndpoints.socialLogin,
         data: {
           'email': email,
           'name': name,
@@ -210,6 +211,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } catch (e) {
       developer.log('Social Login Error: $e', name: 'Auth');
       throw ServerException(message: 'Sync failed: $e');
+    }
+  }
+
+  // ── Get Profile (after social login) ──────────────────────────
+  @override
+  Future<UserModel> getProfile() async {
+    try {
+      final response = await apiClient.get(ApiEndpoints.profile);
+      if (response.data is Map<String, dynamic>) {
+        final data = response.data as Map<String, dynamic>;
+        // The profile endpoint returns the user directly (not wrapped in 'user')
+        return UserModel.fromJson(data);
+      }
+      throw ServerException(message: 'Invalid profile response');
+    } catch (e) {
+      developer.log('Get profile error: $e', name: 'AuthRemoteDataSource');
+      rethrow;
     }
   }
 }

@@ -9,6 +9,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:kdx/features/checkout/data/services/native_payment_service.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/utils/error_handler.dart';
 import '../../../cart/presentation/blocs/cart_bloc.dart';
 import '../../../cart/presentation/blocs/cart_state.dart';
 import '../../../account/presentation/blocs/account_bloc.dart';
@@ -426,8 +427,10 @@ class _CheckoutReviewPageState extends State<CheckoutReviewPage> {
                 (route) => route.isFirst,
               );
             } else if (checkoutState is CheckoutError) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(checkoutState.message)),
+              showCustomSnackBar(
+                context,
+                getLocalizedError(checkoutState.message),
+                isError: true,
               );
             }
           },

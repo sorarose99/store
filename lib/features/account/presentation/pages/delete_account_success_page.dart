@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../onboarding/presentation/pages/onboarding_page.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../auth/presentation/blocs/auth_bloc.dart';
+import '../../../auth/presentation/blocs/auth_event.dart';
 
 class DeleteAccountSuccessPage extends StatelessWidget {
   const DeleteAccountSuccessPage({super.key});
 
   Future<void> _handleConfirm(BuildContext context) async {
+    // Clear tokens globally so user is fully logged out after deleting account
+    context.read<AuthBloc>().add(const LogoutRequested());
+
     // Clear onboarding preferences to simulate app reset
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_done', false);

@@ -87,7 +87,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               ),
             );
           } else if (state is AuthError) {
-            showAuthSnackBar(context, getLocalizedAuthError(state.message));
+            showCustomSnackBar(context, getLocalizedError(state.message));
           }
         },
         builder: (context, state) {

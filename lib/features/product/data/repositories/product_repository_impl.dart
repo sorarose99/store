@@ -17,11 +17,11 @@ class ProductRepositoryImpl implements ProductRepository {
       final productDetails = await remoteDataSource.getProductDetails(slug);
       return Right(productDetails);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message ?? 'حدث خطأ في الخادم'));
+      return Left(ServerFailure(e.message ?? 'error_server'));
     } catch (e, stack) {
       print('ProductRepositoryImpl getProductDetails error: $e');
       print(stack);
-      return const Left(ServerFailure('حدث خطأ غير متوقع'));
+      return const Left(ServerFailure('error_unexpected'));
     }
   }
 
@@ -32,9 +32,9 @@ class ProductRepositoryImpl implements ProductRepository {
       final result = await remoteDataSource.getShopProducts(filters);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message ?? 'حدث خطأ في الخادم'));
+      return Left(ServerFailure(e.message ?? 'error_server'));
     } catch (e) {
-      return const Left(ServerFailure('حدث خطأ غير متوقع'));
+      return const Left(ServerFailure('error_unexpected'));
     }
   }
 
@@ -46,9 +46,9 @@ class ProductRepositoryImpl implements ProductRepository {
           await remoteDataSource.getCategoryProducts(mainSlug, subSlug);
       return Right(result);
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message ?? 'حدث خطأ في الخادم'));
+      return Left(ServerFailure(e.message ?? 'error_server'));
     } catch (e) {
-      return const Left(ServerFailure('حدث خطأ غير متوقع'));
+      return const Left(ServerFailure('error_unexpected'));
     }
   }
 }

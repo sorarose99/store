@@ -76,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
               (route) => false,
             );
           } else if (state is AuthError) {
-            showAuthSnackBar(context, getLocalizedAuthError(state.message));
+            showCustomSnackBar(context, getLocalizedError(state.message));
           }
         },
         builder: (context, state) {
@@ -313,45 +313,62 @@ class _RememberForgotRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        GestureDetector(
-          onTap: () => onRememberChanged(!rememberMe),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 22.w,
-                height: 22.h,
-                child: Checkbox(
-                  value: rememberMe,
-                  activeColor: colorScheme.primary,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4)),
-                  side: BorderSide(
-                      color: colorScheme.outline.withValues(alpha: 0.5),
-                      width: 1.5.w),
-                  onChanged: onRememberChanged,
+        Flexible(
+          child: GestureDetector(
+            onTap: () => onRememberChanged(!rememberMe),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 22.w,
+                  height: 22.h,
+                  child: Checkbox(
+                    value: rememberMe,
+                    activeColor: colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4)),
+                    side: BorderSide(
+                        color: colorScheme.outline.withValues(alpha: 0.5),
+                        width: 1.5.w),
+                    onChanged: onRememberChanged,
+                  ),
                 ),
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                'remember_me'.tr(),
-                style: TextStyle(
-                  fontSize: 13.sp,
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
+                SizedBox(width: 8.w),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      'remember_me'.tr(),
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        GestureDetector(
-          onTap: onForgotTap,
-          child: Text(
-            tr('forgot_password'),
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w600,
+        SizedBox(width: 8.w),
+        Flexible(
+          child: GestureDetector(
+            onTap: onForgotTap,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: AlignmentDirectional.centerEnd,
+              child: Text(
+                tr('forgot_password'),
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ),
@@ -399,8 +416,10 @@ class _AuthFooterLink extends StatelessWidget {
   });  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 4.0,
       children: [
         Text(
           question,

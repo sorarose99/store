@@ -36,7 +36,13 @@ class RegisterSuccess extends AuthState {
   List<Object?> get props => [user];
 }
 
-class RegisterOtpSendSuccess extends AuthState {}
+class RegisterOtpSendSuccess extends AuthState {
+  final bool isRecoveryFallback;
+  const RegisterOtpSendSuccess({this.isRecoveryFallback = false});
+
+  @override
+  List<Object?> get props => [isRecoveryFallback];
+}
 
 class ForgotPasswordSuccess extends AuthState {}
 

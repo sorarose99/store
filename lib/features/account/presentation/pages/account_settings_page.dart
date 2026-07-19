@@ -4,11 +4,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/di/injection_container.dart' as di;
+import '../../../../core/network/token_service.dart';
 import '../blocs/account_bloc.dart';
 import '../blocs/account_state.dart';
+import '../../../auth/presentation/blocs/auth_bloc.dart';
+import '../../../auth/presentation/blocs/auth_event.dart';
 import 'change_password_page.dart';
 import 'delete_account_step1_page.dart';
 import '../../../onboarding/presentation/pages/onboarding_page.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/widgets/app_shimmer.dart';
 import 'notifications_page.dart';
@@ -22,12 +27,43 @@ class AccountSettingsPage extends StatefulWidget {
 
 class _AccountSettingsPageState extends State<AccountSettingsPage> {
   Future<void> _handleLogout() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('logout'.tr()),
+        content: Text('logout_confirm'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'logout'.tr(),
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    // Dispatch LogoutRequested to AuthBloc:
+    // This calls backend /logout, then clears Firebase session + Sanctum token.
+    // TokenService.clearAll() emits to authStateChanges stream → whole app reacts.
+    context.read<AuthBloc>().add(const LogoutRequested());
+
+    // Reset onboarding so returning users see it again
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_done', false);
-    
+
+    // Navigate to LoginPage and clear stack to avoid black screen and orphaned routes
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const OnboardingPage()),
+        MaterialPageRoute(builder: (_) => const LoginPage()),
         (route) => false,
       );
     }
@@ -59,8 +95,12 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
         ),
         body: BlocBuilder<AccountBloc, AccountState>(
           builder: (context, state) {
-            if (state is AccountLoaded) {
-              final user = state.user;
+            final loadedState = (state is AccountLoaded) 
+                ? state 
+                : context.read<AccountBloc>().lastLoadedState;
+
+            if (loadedState != null) {
+              final user = loadedState.user;
 
               return SingleChildScrollView(
                 child: Column(
@@ -232,10 +272,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                 ),
               );
             }
-            return ListView.builder(
-              itemCount: 8,
-              itemBuilder: (context, index) => const ListTileShimmer(),
-            );
+            
+            // If we have no data at all (e.g. AccountInitial or AccountLoading before any data is loaded)
+            return const Center(child: CircularProgressIndicator());
           },
         ),
       ),

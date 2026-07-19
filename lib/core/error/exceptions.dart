@@ -2,7 +2,7 @@ class ServerException implements Exception {
   final String? message;
   ServerException({this.message});
   @override
-  String toString() => message ?? 'خطأ في الخادم';
+  String toString() => message ?? 'error_server';
 }
 
 class CacheException implements Exception {

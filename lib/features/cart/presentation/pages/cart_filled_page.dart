@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart' hide TextDirection;
+import '../../../../core/utils/error_handler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection_container.dart' as di;
 import '../../../../core/network/token_service.dart';
@@ -264,14 +265,10 @@ class _CartFilledPageState extends State<CartFilledPage> {
   void _removeCoupon() {
     context.read<CartBloc>().add(const CartCouponRemoved());
     _couponController.clear();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'تمت إزالة كوبون الخصم',
-          style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
-        ),
-        duration: Duration(seconds: 1),
-      ),
+    showCustomSnackBar(
+      context,
+      'تمت إزالة كوبون الخصم',
+      isError: false,
     );
   }
 
@@ -282,26 +279,16 @@ class _CartFilledPageState extends State<CartFilledPage> {
       listener: (context, state) {
         if (state is CartLoaded) {
           if (state.actionError != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.actionError!.tr(),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
-                ),
-                backgroundColor: Colors.red,
-                duration: const Duration(seconds: 2),
-              ),
+            showCustomSnackBar(
+              context,
+              getLocalizedError(state.actionError!),
+              isError: true,
             );
           } else if (state.actionSuccess != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  state.actionSuccess!.tr(),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Tajawal'),
-                ),
-                backgroundColor: const Color(0xFF1BE39A),
-                duration: const Duration(seconds: 2),
-              ),
+            showCustomSnackBar(
+              context,
+              state.actionSuccess!.tr(),
+              isError: false,
             );
           }
         }

@@ -10,6 +10,7 @@ import 'core/di/injection_container.dart' as di;
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_cubit.dart';
 import 'core/theme/language_cubit.dart';
+import 'features/auth/domain/entities/user.dart' as auth_user;
 import 'features/auth/presentation/blocs/auth_bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/onboarding/presentation/pages/onboarding_page.dart';
@@ -30,6 +31,7 @@ import 'core/services/push_notification_service.dart';
 import 'core/config/payment_config.dart';
 import 'package:tabby_flutter_inapp_sdk/tabby_flutter_inapp_sdk.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart' as import_auth_remote;
+import 'features/auth/data/models/user_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,33 +70,83 @@ void main() async {
     ),
   );
 
-  // Background token sync: if the user is signed into Firebase but missing a Sanctum token
+  // Background auth sync: if the user is signed into Firebase as a SOCIAL user
+  // (Google/Apple) but is missing a Sanctum token in prefs, re-sync with the
+  // backend and restore the full user session so the app boots into MainShell.
+  // Email/password users cannot be re-synced without their password.
   WidgetsBinding.instance.addPostFrameCallback((_) async {
     final currentUser = FirebaseAuth.instance.currentUser;
     final tokenService = di.sl<TokenService>();
-    if (currentUser != null && tokenService.getSanctumToken() == null) {
-      try {
-        final token = await currentUser.getIdToken();
-        if (token != null && token.isNotEmpty) {
-          final authDataSource = di.sl<import_auth_remote.AuthRemoteDataSource>();
-          final name = currentUser.displayName ?? '';
-          final email = currentUser.email ?? '';
-          final provider = currentUser.providerData.isNotEmpty 
-              ? currentUser.providerData.first.providerId 
-              : 'google';
-              
-          final sanctumToken = await authDataSource.socialLogin(
-            provider: provider.contains('apple') ? 'apple' : 'google',
-            token: token,
-            name: name,
-            email: email,
-            firebaseUid: currentUser.uid,
+    if (currentUser == null) return;
+    if (tokenService.getSanctumToken() != null) return;
+
+    final provider = currentUser.providerData.isNotEmpty
+        ? currentUser.providerData.first.providerId
+        : '';
+
+    // Skip email/password users — we cannot re-authenticate without the password.
+    if (provider == 'password' || provider.isEmpty) {
+      debugPrint('Background sync skipped: email/password user needs manual login.');
+      await tokenService.clearAll(); // Force logout so they see LoginPage
+      return;
+    }
+
+    // Social user (Google / Apple) — sync via firebase-sync endpoint
+    try {
+      final idToken = await currentUser.getIdToken();
+      if (idToken != null && idToken.isNotEmpty) {
+        final authDataSource = di.sl<import_auth_remote.AuthRemoteDataSource>();
+        final isApple = provider.contains('apple');
+
+        // Step 1: Get Sanctum token
+        final sanctumToken = await authDataSource.socialLogin(
+          provider: isApple ? 'apple' : 'google',
+          token: idToken,
+          name: currentUser.displayName ?? '',
+          email: currentUser.email ?? '',
+          firebaseUid: currentUser.uid,
+        );
+
+        // Temporarily set token so /account/profile is authenticated
+        await tokenService.saveSanctumToken(sanctumToken);
+
+        // Step 2: Fetch full backend user
+        UserModel backendUser;
+        try {
+          backendUser = await authDataSource.getProfile();
+          backendUser = UserModel(
+            id: backendUser.id,
+            uuid: backendUser.uuid,
+            firstName: backendUser.firstName,
+            lastName: backendUser.lastName,
+            email: backendUser.email,
+            phone: backendUser.phone,
+            avatar: backendUser.avatar,
+            gender: backendUser.gender,
+            birthDate: backendUser.birthDate,
+            token: sanctumToken,
           );
-          await tokenService.saveSanctumToken(sanctumToken);
+        } catch (_) {
+          final nameParts = (currentUser.displayName ?? '').trim().split(' ');
+          backendUser = UserModel(
+            id: currentUser.uid,
+            uuid: currentUser.uid,
+            firstName: nameParts.isNotEmpty ? nameParts.first : '',
+            lastName: nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '',
+            email: currentUser.email ?? '',
+            token: sanctumToken,
+          );
         }
-      } catch (e) {
-        debugPrint('Auto-sync of Sanctum token failed: $e');
+
+        // Step 3: Persist full user session — notifies root StreamBuilder
+        await tokenService.saveAuthSession(
+          sanctumToken: sanctumToken,
+          user: backendUser,
+        );
+        debugPrint('Background sync succeeded: ${backendUser.email}');
       }
+    } catch (e) {
+      debugPrint('Background sync failed: $e');
     }
   });
 }
@@ -176,13 +228,13 @@ class MyApp extends StatelessWidget {
                         child: child!,
                       );
                     },
-                     home: StreamBuilder<bool>(
-                      stream: di.sl<TokenService>().authStateChanges,
-                      initialData: di.sl<TokenService>().hasToken,
+                     home: StreamBuilder<auth_user.User?>(
+                      stream: di.sl<TokenService>().authUserChanges,
+                      initialData: di.sl<TokenService>().currentUser,
                       builder: (context, snapshot) {
-                        final hasToken = snapshot.data ?? false;
+                        final activeUser = snapshot.data;
 
-                        if (hasToken) {
+                        if (activeUser != null) {
                           return const MainShell();
                         }
 
